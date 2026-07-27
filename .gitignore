@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# internal planning doc (code-heavy) — public summary lives in docs/plan-summary.md
+/docs/plan.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
