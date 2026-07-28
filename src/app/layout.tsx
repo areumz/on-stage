@@ -19,7 +19,7 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${playfair.variable} ${notoSerifKr.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

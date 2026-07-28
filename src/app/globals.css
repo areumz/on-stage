@@ -11,12 +11,3 @@
   --font-serif-hero: var(--font-playfair), serif;
   --font-serif-kr: var(--font-noto-serif-kr), serif;
 }
-
-@keyframes ticker {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-.ticker-track {
-  animation: ticker 30s linear infinite;
-}
