@@ -1,0 +1,12 @@
+{
+  "totalTickets": { "value": 182430, "delta": "▲ 12.4% vs 지난주" },
+  "avgBookingRate": { "value": 87, "note": "24개 도시 기준" },
+  "nextShow": { "dday": 3, "venue": "서울 · 고척돔" },
+  "cityBookings": [
+    { "city": "서울", "rate": 95 },
+    { "city": "도쿄", "rate": 78 },
+    { "city": "LA", "rate": 86 },
+    { "city": "런던", "rate": 64 },
+    { "city": "파리", "rate": 71 }
+  ]
+}
