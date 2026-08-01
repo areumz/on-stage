@@ -1,0 +1,17 @@
+export default function NowTicker({ items }: { items: { slug: string; news: string }[] }) {
+  const row = () => (
+    <div className="flex shrink-0 items-center gap-12 pr-12">
+      {items.map(({ slug, news }) => (
+        <span key={slug} className="whitespace-nowrap text-sm text-white/70">{news}</span>
+      ))}
+    </div>
+  );
+  return (
+    <div className="flex items-center gap-6 border-t border-white/10 px-8 py-4">
+      <span className="shrink-0 text-sm font-semibold text-brand">● NOW</span>
+      <div className="flex overflow-hidden">
+        <div className="animate-ticker flex">{row()}{row()}</div>
+      </div>
+    </div>
+  );
+}
