@@ -42,6 +42,7 @@ function ArtistNode({ artist, rotation }: { artist: Artist; rotation: React.RefO
           <circleGeometry args={[size, 48]} />
           <meshBasicMaterial color={artist.color} />
         </mesh>
+        {/* drei의 anchorX, anchorY 기본값이지만, 명시적으로 지정 */}
         <Text position={[0, 0, 0.01]} fontSize={size * 0.55} color="#ffffff" anchorX="center" anchorY="middle">
           {artist.initials}
         </Text>
