@@ -229,6 +229,8 @@ src/
 - **React Doctor**:
   - 로컬 스킬 설치 (`npx react-doctor@latest install`) — 작성 단계 예방
   - CI 설치 (`npx react-doctor@latest ci install`) — PR 자동 스캔 + 코멘트 (최종 안전망)
+- **Playwright**: 비주얼 레이어(R3F/셰이더/레이아웃) 시각 검증에 사용. TDD 대상이 아닌 화면을
+  headless 브라우저로 실제 렌더링해 스크린샷으로 대조한다 (`npm install -D playwright`).
 - 커밋 컨벤션: Conventional Commits (`feat:` `fix:` `chore:` …)
 
 ### 7.4 문서화
