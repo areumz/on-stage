@@ -11,7 +11,10 @@ export default function Home() {
 
   useEffect(() => {
     fetch("/api/artists")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((d: { artists: Artist[] }) => setArtists(d.artists))
       .catch((e) => console.error(e));
   }, []);
@@ -30,7 +33,7 @@ export default function Home() {
           HOVER · CLICK TO ENTER
         </p>
       </div>
-      <NowTicker items={artists.map((a) => a.news)} />
+      <NowTicker items={artists.map((a) => ({ slug: a.slug, news: a.news }))} />
     </main>
   );
 }

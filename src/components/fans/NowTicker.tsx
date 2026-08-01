@@ -1,8 +1,8 @@
-export default function NowTicker({ items }: { items: string[] }) {
+export default function NowTicker({ items }: { items: { slug: string; news: string }[] }) {
   const row = () => (
     <div className="flex shrink-0 items-center gap-12 pr-12">
-      {items.map((text, i) => (
-        <span key={i} className="whitespace-nowrap text-sm text-white/70">{text}</span>
+      {items.map(({ slug, news }) => (
+        <span key={slug} className="whitespace-nowrap text-sm text-white/70">{news}</span>
       ))}
     </div>
   );
