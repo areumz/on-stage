@@ -10,4 +10,10 @@
   --color-surface-2: #ffffff;
   --font-serif-hero: var(--font-playfair), serif;
   --font-serif-kr: var(--font-noto-serif-kr), serif;
+  --animate-ticker: ticker 30s linear infinite;
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
 }
