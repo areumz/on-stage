@@ -20,18 +20,29 @@ function Coverflow({ tracks, active, onActive }: {
   return (
     <div
       className="relative mt-14 h-60 cursor-grab touch-pan-y select-none [perspective:1000px] active:cursor-grabbing"
-      onPointerDown={(e) => { dragFrom.current = e.clientX; dragged.current = false; }}
+      onPointerDown={(e) => {
+        dragFrom.current = e.clientX;
+        dragged.current = false;
+      }}
       onPointerMove={(e) => {
         if (dragFrom.current === null) return;
         const dx = e.clientX - dragFrom.current;
         if (Math.abs(dx) < DRAG_STEP) return;
+        // 이동 임계값을 넘는 첫 순간에만 캡처한다 — pointerdown에서 바로 캡처하면
+        // 이동 없는 단순 클릭까지 걸려서 커버 버튼의 onClick이 씹힌다(브라우저가
+        // click을 캡처 대상으로 재타깃함). 캡처해두면 커서가 컨테이너 경계를
+        // 벗어나도 이후 move/up이 계속 이 요소로 온다.
+        if (!dragged.current) e.currentTarget.setPointerCapture(e.pointerId);
         // 오른쪽으로 끌면 왼쪽(이전) 커버가 앞으로 온다
         onActive(clamp(active + (dx > 0 ? -1 : 1)));
         dragFrom.current = e.clientX;
         dragged.current = true;
       }}
-      onPointerUp={() => { dragFrom.current = null; }}
-      onPointerLeave={() => { dragFrom.current = null; }}
+      onPointerUp={(e) => {
+        if (dragged.current) e.currentTarget.releasePointerCapture(e.pointerId);
+        dragFrom.current = null;
+      }}
+      onPointerCancel={() => { dragFrom.current = null; }}
     >
       {tracks.map((track, i) => {
         const offset = i - active;
@@ -43,7 +54,6 @@ function Coverflow({ tracks, active, onActive }: {
           <button
             key={track.no}
             type="button"
-            data-cover={i}
             aria-hidden={!shown}
             tabIndex={shown ? 0 : -1}
             onClick={() => { if (!dragged.current) onActive(i); }}
@@ -91,42 +101,44 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
         {artist.tracks.map((t, i) => {
           const on = i === active;
           return (
-            <li
-              key={t.no}
-              data-track={i}
-              data-active={on}
-              onMouseEnter={() => setActive(i)}
-              className={`-mx-4 flex items-baseline gap-6 rounded-lg px-4 py-5 transition-colors ${on ? "bg-brand/10" : ""}`}
-            >
-              <span className="relative w-8 shrink-0 font-serif-hero text-2xl" style={{ color: artist.color }}>
-                <span className={`transition-opacity ${on ? "opacity-0" : "opacity-100"}`}>
-                  {no(t.no)}
-                </span>
-                {/* 재생 아이콘 — 시각 장식만, 실제 재생은 범위 밖 */}
-                <svg
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                  className={`absolute left-0 top-1/2 h-5 w-5 -translate-y-1/2 transition-opacity ${on ? "opacity-100" : "opacity-0"}`}
-                >
-                  <path d="M5 3.5v13l11-6.5-11-6.5z" />
-                </svg>
-              </span>
-              <span className="flex-1 text-lg">{t.title}</span>
-              {/* 오디오 바 — 순수 장식 (실제 오디오 데이터 아님) */}
-              <span
-                aria-hidden="true"
-                className={`flex items-end gap-[3px] transition-opacity ${on ? "opacity-100" : "opacity-0"}`}
+            <li key={t.no}>
+              {/* button이라 Tab으로 도달 가능 — 마우스 hover와 동일하게 focus에서도 미리보기 전환 */}
+              <button
+                type="button"
+                onMouseEnter={() => setActive(i)}
+                onFocus={() => setActive(i)}
+                className={`-mx-4 flex w-full items-baseline gap-6 rounded-lg px-4 py-5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft ${on ? "bg-brand/10" : ""}`}
               >
-                {EQ_HEIGHTS.map((h, j) => (
-                  <span
-                    key={j}
-                    className="w-0.5 origin-bottom animate-eq rounded-full bg-brand"
-                    style={{ height: h, animationDelay: `${j * -0.15}s` }}
-                  />
-                ))}
-              </span>
-              <span className="text-sm text-white/40">{t.duration}</span>
+                <span className="relative w-8 shrink-0 font-serif-hero text-2xl" style={{ color: artist.color }}>
+                  <span className={`transition-opacity ${on ? "opacity-0" : "opacity-100"}`}>
+                    {no(t.no)}
+                  </span>
+                  {/* 재생 아이콘 — 시각 장식만, 실제 재생은 범위 밖 */}
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                    className={`absolute left-0 top-1/2 h-5 w-5 -translate-y-1/2 transition-opacity ${on ? "opacity-100" : "opacity-0"}`}
+                  >
+                    <path d="M5 3.5v13l11-6.5-11-6.5z" />
+                  </svg>
+                </span>
+                <span className="flex-1 text-lg">{t.title}</span>
+                {/* 오디오 바 — 순수 장식 (실제 오디오 데이터 아님) */}
+                <span
+                  aria-hidden="true"
+                  className={`flex items-end gap-[3px] transition-opacity ${on ? "opacity-100" : "opacity-0"}`}
+                >
+                  {EQ_HEIGHTS.map((h, j) => (
+                    <span
+                      key={j}
+                      className="w-0.5 origin-bottom animate-eq rounded-full bg-brand"
+                      style={{ height: h, animationDelay: `${j * -0.15}s` }}
+                    />
+                  ))}
+                </span>
+                <span className="text-sm text-white/40">{t.duration}</span>
+              </button>
             </li>
           );
         })}

@@ -3,14 +3,8 @@
 import { Canvas } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useMemo, useState } from "react";
+import { ringPoints } from "@/lib/geometry";
 import type { Artist, City } from "@/lib/types";
-
-function ringPoints(r: number): [number, number, number][] {
-  return Array.from({ length: 65 }, (_, i) => {
-    const t = (i / 64) * Math.PI * 2;
-    return [Math.cos(t) * r, Math.sin(t) * r, 0];
-  });
-}
 
 function CityNode({ city, color, index, count, theta, onSelect }: {
   city: City; color: string; index: number; count: number; theta: number; onSelect: (c: City) => void;

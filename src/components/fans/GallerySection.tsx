@@ -104,7 +104,7 @@ export default function GallerySection({ artist }: { artist: Artist }) {
         </div>
         {/* AI 생성 이미지(echo/halo)는 저작권 표기 대상이 아니라 생성 사실만 밝힌다.
             그 외는 CC-BY 출처 표기가 라이선스 조건이라 촬영자·링크를 노출한다. */}
-        {photos[0]?.license === "AI" ? (
+        {photos.every((p) => p.license === "AI") ? (
           <p className="mt-6 text-xs text-white/35">이미지: AI로 생성됨 (Google Gemini)</p>
         ) : (
           <p className="mt-6 text-xs leading-relaxed text-white/35">
@@ -129,6 +129,7 @@ export default function GallerySection({ artist }: { artist: Artist }) {
 
       <dialog
         ref={dialog}
+        aria-label="이미지 확대보기"
         onClose={() => setOpen(null)}
         onClick={(e) => { if (e.target === dialog.current) setOpen(null); }}
         onKeyDown={(e) => {
