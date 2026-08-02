@@ -8,8 +8,7 @@ const DRAG_STEP = 40; // 이만큼 끌 때마다 한 장씩
 
 const no = (n: number) => String(n).padStart(2, "0");
 
-// 3D 회전·밝기·크기만 필요해 R3F 대신 CSS transform으로 만든다(캔버스 없이 선명하고,
-// 이 페이지에 이미 떠 있는 WebGL 컨텍스트 3개에 하나를 더 얹지 않는다).
+// 3D 회전·밝기·크기만 필요해 R3F 대신 CSS 구현
 function Coverflow({ tracks, active, onActive }: {
   tracks: Track[]; active: number; onActive: (i: number) => void;
 }) {
@@ -28,12 +27,12 @@ function Coverflow({ tracks, active, onActive }: {
         if (dragFrom.current === null) return;
         const dx = e.clientX - dragFrom.current;
         if (Math.abs(dx) < DRAG_STEP) return;
-        // 이동 임계값을 넘는 첫 순간에만 캡처한다 — pointerdown에서 바로 캡처하면
-        // 이동 없는 단순 클릭까지 걸려서 커버 버튼의 onClick이 씹힌다(브라우저가
+        // 이동 임계값을 넘는 첫 순간에만 캡처 — pointerdown에서 바로 캡처하면
+        // 이동 없는 단순 클릭까지 걸려서 커버 버튼의 onClick이 씹힘(브라우저가
         // click을 캡처 대상으로 재타깃함). 캡처해두면 커서가 컨테이너 경계를
-        // 벗어나도 이후 move/up이 계속 이 요소로 온다.
+        // 벗어나도 이후 move/up이 계속 이 요소로 옴
         if (!dragged.current) e.currentTarget.setPointerCapture(e.pointerId);
-        // 오른쪽으로 끌면 왼쪽(이전) 커버가 앞으로 온다
+        // 오른쪽으로 끌면 왼쪽(이전) 커버가 앞으로 옴
         onActive(clamp(active + (dx > 0 ? -1 : 1)));
         dragFrom.current = e.clientX;
         dragged.current = true;

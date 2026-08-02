@@ -7,16 +7,16 @@ import type { Artist } from "@/lib/types";
 
 const no = (i: number) => String(i + 1).padStart(2, "0");
 
-// 타일과 라이트박스 언더레이가 반드시 같은 최적화 URL을 받도록 sizes를 공유한다
+// 타일과 라이트박스 언더레이가 반드시 같은 최적화 URL을 받도록 sizes를 공유
 const TILE_SIZES = "(min-width: 1024px) 306px, 33vw";
 
-// 라이트박스는 타일(w=384)과 다른 크기(w=1080)를 요청해 캐시가 어긋난다.
-// 이미 캐시된 썸네일을 즉시 깔아 두고 고해상도가 도착하면 위에 겹쳐 선명해지게 한다.
+// 라이트박스는 타일(w=384)과 다른 크기(w=1080)를 요청해 캐시가 어긋남
+// 이미 캐시된 썸네일을 깔아 두고 고해상도가 도착하면 위에 겹쳐 선명해지게 함
 function LightboxImage({ src, alt }: { src: string; alt: string }) {
   const [sharp, setSharp] = useState(false);
   return (
     <div className="animate-lightbox relative aspect-[4/5] h-[70vh] overflow-hidden rounded-xl">
-      {/* 1.4배 확대라 원래도 크게 흐리지 않다 — 약한 블러로 선명해지는 전환만 자연스럽게 */}
+      {/* 1.4배 확대라 원래도 크게 흐리지 않음 — 약한 블러로 선명해지는 전환만 자연스럽게 */}
       <Image src={src} alt="" aria-hidden fill sizes={TILE_SIZES} className="scale-105 object-cover blur-[3px]" />
       <Image
         src={src}
@@ -71,7 +71,6 @@ export default function GallerySection({ artist }: { artist: Artist }) {
   const [open, setOpen] = useState<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
 
-  // 네이티브 <dialog>가 포커스 트랩·Escape·배경 inert를 대신한다
   useEffect(() => {
     const d = dialog.current;
     if (!d) return;
@@ -84,7 +83,7 @@ export default function GallerySection({ artist }: { artist: Artist }) {
 
   return (
     <section id="gallery" className="relative py-32">
-      {/* 무대 조명 먼지 — 그리드 뒤 전체 폭에 깔린다 */}
+      {/* 무대 조명 먼지 — 그리드 뒤 전체 폭에 깔림 */}
       <GalleryHaze color={artist.color} />
       <div className="relative mx-auto max-w-5xl px-8">
         <p className="text-xs tracking-[0.25em] text-brand-soft">SECTION 04 · GALLERY</p>
@@ -102,8 +101,8 @@ export default function GallerySection({ artist }: { artist: Artist }) {
             />
           ))}
         </div>
-        {/* AI 생성 이미지(echo/halo)는 저작권 표기 대상이 아니라 생성 사실만 밝힌다.
-            그 외는 CC-BY 출처 표기가 라이선스 조건이라 촬영자·링크를 노출한다. */}
+        {/* AI 생성 이미지(echo/halo)는 저작권 표기 대상이 아니라 생성 사실만 밝힘
+            그 외는 CC-BY 출처 표기가 라이선스 조건이라 촬영자·링크를 노출 */}
         {photos.every((p) => p.license === "AI") ? (
           <p className="mt-6 text-xs text-white/35">이미지: AI로 생성됨 (Google Gemini)</p>
         ) : (

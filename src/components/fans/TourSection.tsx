@@ -5,10 +5,7 @@ import TourOrbit from "@/components/three/TourOrbit";
 import { useSectionScroll } from "@/lib/hooks";
 import type { Artist, City } from "@/lib/types";
 
-// badge("● World Tour 2026 · 24 cities")에 이미 아티스트별 투어명이 있어
-// 별도 필드를 추가하지 않고 여기서 뽑아 쓴다. year는 badge 안에서 유일한 4자리 숫자라
-// 그 앞부분만 자르면 투어명이 남는다.
-function tourTypeFrom(badge: string, year: number) {
+function getTourName(badge: string, year: number) {
   return badge.replace("●", "").split(String(year))[0].trim();
 }
 
@@ -44,7 +41,7 @@ export default function TourSection({ artist }: { artist: Artist }) {
         <h2 className="mt-4 font-serif-hero text-4xl leading-snug">
           {artist.name} {artist.tour.year}
           <br />
-          {tourTypeFrom(artist.tour.badge, artist.tour.year)} ({artist.cities.length} Cities)
+          {getTourName(artist.tour.badge, artist.tour.year)} ({artist.cities.length} Cities)
         </h2>
         <p className="mt-6 text-white/60">
           이번 투어의 주요 도시가 궤도를 그립니다.<br />도시를 클릭하면 그날의 공연 정보를 확인할 수 있습니다.
