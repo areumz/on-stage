@@ -1,0 +1,338 @@
+[
+  {
+    "file": "gallery/aurora-1.jpg",
+    "artist": "aurora",
+    "pick": 3,
+    "title": "Concert Singer",
+    "src": "/gallery/aurora-1.jpg",
+    "creator": "Bill Hamway",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-singer-WJO2RVRV0A"
+  },
+  {
+    "file": "gallery/aurora-2.jpg",
+    "artist": "aurora",
+    "pick": 1,
+    "title": "Concert Singer",
+    "src": "/gallery/aurora-2.jpg",
+    "creator": "Samuel Zeller",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-singer-J45DTZD2VJ"
+  },
+  {
+    "file": "gallery/aurora-3.jpg",
+    "artist": "aurora",
+    "pick": 0,
+    "title": "Concert Singer",
+    "src": "/gallery/aurora-3.jpg",
+    "creator": "Austin Neill",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-singer-F66MXRQS1K"
+  },
+  {
+    "file": "gallery/aurora-4.jpg",
+    "artist": "aurora",
+    "pick": 2,
+    "title": "Concert Singer",
+    "src": "/gallery/aurora-4.jpg",
+    "creator": "Austin Neill",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-singer-7OC4YX7S20"
+  },
+  {
+    "file": "gallery/aurora-5.jpg",
+    "artist": "aurora",
+    "pick": 4,
+    "title": "Concert Singer",
+    "src": "/gallery/aurora-5.jpg",
+    "creator": "NeONBRAND",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-singer-NQSVRJOY0Y"
+  },
+  {
+    "file": "gallery/aurora-6.jpg",
+    "artist": "aurora",
+    "pick": 18,
+    "title": "Beach House",
+    "src": "/gallery/aurora-6.jpg",
+    "creator": "Man Alive!",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/24365773@N03/5194606248"
+  },
+  {
+    "file": "gallery/velvet-1.jpg",
+    "artist": "velvet",
+    "pick": 0,
+    "title": "Tour de Cure Jazz Concert - Paul Carr",
+    "src": "/gallery/velvet-1.jpg",
+    "creator": "woodleywonderworks",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/73645804@N00/8688125693"
+  },
+  {
+    "file": "gallery/velvet-2.jpg",
+    "artist": "velvet",
+    "pick": 3,
+    "title": "Tour de Cure Jazz Concert",
+    "src": "/gallery/velvet-2.jpg",
+    "creator": "woodleywonderworks",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/73645804@N00/8688124571"
+  },
+  {
+    "file": "gallery/velvet-3.jpg",
+    "artist": "velvet",
+    "pick": 8,
+    "title": "Paul Carr plays at Tour de Cure Jazz Concert",
+    "src": "/gallery/velvet-3.jpg",
+    "creator": "woodleywonderworks",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/73645804@N00/8689244446"
+  },
+  {
+    "file": "gallery/velvet-4.jpg",
+    "artist": "velvet",
+    "pick": 13,
+    "title": "Tour de Cure Jazz Concert",
+    "src": "/gallery/velvet-4.jpg",
+    "creator": "woodleywonderworks",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/73645804@N00/8689242294"
+  },
+  {
+    "file": "gallery/velvet-5.jpg",
+    "artist": "velvet",
+    "pick": 18,
+    "title": "Tour de Cure Jazz Concert",
+    "src": "/gallery/velvet-5.jpg",
+    "creator": "woodleywonderworks",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/73645804@N00/8689241858"
+  },
+  {
+    "file": "gallery/velvet-6.jpg",
+    "artist": "velvet",
+    "pick": 27,
+    "title": "Andy Hamilton Jazz Musician",
+    "src": "/gallery/velvet-6.jpg",
+    "creator": "Pedro Kwezi Images",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/33320323@N08/3684483511"
+  },
+  {
+    "file": "gallery/nova-1.jpg",
+    "artist": "nova",
+    "pick": 32,
+    "title": "Live Concert Concert Stage People Edited 2020",
+    "src": "/gallery/nova-1.jpg",
+    "creator": "chocolatedazzles",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/186095195@N02/49346751208"
+  },
+  {
+    "file": "gallery/nova-2.jpg",
+    "artist": "nova",
+    "pick": 34,
+    "title": "Concert Stage",
+    "src": "/gallery/nova-2.jpg",
+    "creator": "Julian Lozano",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-stage-F01WSFHEJY"
+  },
+  {
+    "file": "gallery/nova-3.jpg",
+    "artist": "nova",
+    "pick": 28,
+    "title": "Concert Stage",
+    "src": "/gallery/nova-3.jpg",
+    "creator": "Freestocks.org",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-stage-5GPP7A6LVW"
+  },
+  {
+    "file": "gallery/nova-4.jpg",
+    "artist": "nova",
+    "pick": 33,
+    "title": "Concert Stage",
+    "src": "/gallery/nova-4.jpg",
+    "creator": "Marc-Antoine Dépelteau",
+    "license": "CC0 1.0",
+    "origin": "https://stocksnap.io/photo/concert-stage-P7JJ4LKNK8"
+  },
+  {
+    "file": "gallery/nova-5.jpg",
+    "artist": "nova",
+    "pick": 17,
+    "title": "AC/DC Concert Crowd",
+    "src": "/gallery/nova-5.jpg",
+    "creator": "d_neeses_pix",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/18542660@N00/4378890728"
+  },
+  {
+    "file": "gallery/nova-6.jpg",
+    "artist": "nova",
+    "pick": 25,
+    "title": "Green Day Concert Stage (Montreal) - Green Day is Ever Green",
+    "src": "/gallery/nova-6.jpg",
+    "creator": "Anirudh Koul",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/84856173@N00/3735171010"
+  },
+  {
+    "file": "gallery/lumen-1.jpg",
+    "artist": "lumen",
+    "pick": 16,
+    "title": "Country Music Festival de Mirande - 14/07/2008",
+    "src": "/gallery/lumen-1.jpg",
+    "creator": "Jamiecat *",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/27330325@N08/2721560733"
+  },
+  {
+    "file": "gallery/lumen-2.jpg",
+    "artist": "lumen",
+    "pick": 0,
+    "title": "Country Music Festival de Mirande - 14/07/2008",
+    "src": "/gallery/lumen-2.jpg",
+    "creator": "Jamiecat *",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/27330325@N08/2721617713"
+  },
+  {
+    "file": "gallery/lumen-3.jpg",
+    "artist": "lumen",
+    "pick": 13,
+    "title": "Country Music Festival de Mirande - 14/07/2008",
+    "src": "/gallery/lumen-3.jpg",
+    "creator": "Jamiecat *",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/27330325@N08/2721616675"
+  },
+  {
+    "file": "gallery/lumen-4.jpg",
+    "artist": "lumen",
+    "pick": 34,
+    "title": "Rock Concert",
+    "src": "/gallery/lumen-4.jpg",
+    "creator": "motumboe",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/8419224@N08/3293600150"
+  },
+  {
+    "file": "gallery/lumen-5.jpg",
+    "artist": "lumen",
+    "pick": 1,
+    "title": "Country Music Festival de Mirande - 14/07/2008",
+    "src": "/gallery/lumen-5.jpg",
+    "creator": "Jamiecat *",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/27330325@N08/2722387472"
+  },
+  {
+    "file": "gallery/lumen-6.jpg",
+    "artist": "lumen",
+    "pick": 17,
+    "title": "Country Music Festival de Mirande - 14/07/2008",
+    "src": "/gallery/lumen-6.jpg",
+    "creator": "Jamiecat *",
+    "license": "CC BY 2.0",
+    "origin": "https://www.flickr.com/photos/27330325@N08/2721620007"
+  },
+  {
+    "file": "gallery/echo-1.jpg",
+    "artist": "echo",
+    "src": "/gallery/echo-1.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/echo-2.jpg",
+    "artist": "echo",
+    "src": "/gallery/echo-2.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/echo-3.jpg",
+    "artist": "echo",
+    "src": "/gallery/echo-3.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/echo-4.jpg",
+    "artist": "echo",
+    "src": "/gallery/echo-4.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/echo-5.jpg",
+    "artist": "echo",
+    "src": "/gallery/echo-5.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/echo-6.jpg",
+    "artist": "echo",
+    "src": "/gallery/echo-6.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/halo-1.jpg",
+    "artist": "halo",
+    "src": "/gallery/halo-1.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/halo-2.jpg",
+    "artist": "halo",
+    "src": "/gallery/halo-2.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/halo-3.jpg",
+    "artist": "halo",
+    "src": "/gallery/halo-3.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/halo-4.jpg",
+    "artist": "halo",
+    "src": "/gallery/halo-4.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/halo-5.jpg",
+    "artist": "halo",
+    "src": "/gallery/halo-5.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  },
+  {
+    "file": "gallery/halo-6.jpg",
+    "artist": "halo",
+    "src": "/gallery/halo-6.jpg",
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
+  }
+]

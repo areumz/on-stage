@@ -1,5 +1,22 @@
 export type City = { code: string; name: string; date: string };
 
+// 갤러리 사진 — CC0/퍼블릭도메인/CC-BY만 사용한다(NC·ND·SA 제외).
+// CC-BY는 출처 표기가 조건이라 creator/origin을 화면에 노출한다.
+export type GalleryPhoto = {
+  src: string; // public/ 기준 경로
+  creator: string;
+  license: string;
+  origin: string; // 원본 페이지
+};
+
+export type Track = {
+  no: number;
+  title: string;
+  duration: string;
+  // 싱글 커버 — 실제 커버 아트가 없어 2스톱 그라디언트로 대체 (design.md 8장 2차에서 교체)
+  cover: { from: string; to: string };
+};
+
 export type Artist = {
   slug: string;
   name: string; // 영문 대문자 표기
@@ -13,7 +30,8 @@ export type Artist = {
   tour: { badge: string; titleKo: string; year: number };
   stats: { cities: number; countries: number; tracks: number };
   cities: City[];
-  tracks: { no: number; title: string; duration: string }[];
+  tracks: Track[];
+  gallery: GalleryPhoto[];
 };
 
 export type Metrics = {

@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import TabToggle from "@/components/common/TabToggle";
+import AlbumSection from "@/components/fans/AlbumSection";
+import GallerySection from "@/components/fans/GallerySection";
+import TourSection from "@/components/fans/TourSection";
 import HeroBackground from "@/components/three/HeroBackground";
 import { getArtist } from "@/lib/data";
 
@@ -55,7 +58,9 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
           <p className="mt-12 text-xs tracking-[0.3em] text-white/40">SCROLL ↓</p>
         </div>
       </section>
-      {/* Task 6: TourSection / AlbumSection / GallerySection가 여기에 추가됨 */}
+      <TourSection artist={artist} />
+      <AlbumSection artist={artist} />
+      <GallerySection artist={artist} />
     </main>
   );
 }

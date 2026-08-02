@@ -5,16 +5,10 @@ import { Line, Text } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import type { Group } from "three";
+import { ringPoints } from "@/lib/geometry";
 import type { Artist } from "@/lib/types";
 
 const RING_RADII = [1.4, 2.3, 3.2];
-
-function ringPoints(r: number): [number, number, number][] {
-  return Array.from({ length: 65 }, (_, i) => {
-    const t = (i / 64) * Math.PI * 2;
-    return [Math.cos(t) * r, Math.sin(t) * r, 0];
-  });
-}
 
 function ArtistNode({ artist, rotation }: { artist: Artist; rotation: React.RefObject<number> }) {
   const router = useRouter();

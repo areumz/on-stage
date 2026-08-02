@@ -1,110 +1,662 @@
 {
   "artists": [
     {
-      "slug": "aurora", "name": "AURORA", "nameKo": "오로라", "color": "#9F77DD",
-      "initials": "AUR", "orbit": 2, "angle": 90, "size": 1.0,
+      "slug": "aurora",
+      "name": "AURORA",
+      "nameKo": "오로라",
+      "color": "#9F77DD",
+      "initials": "AUR",
+      "orbit": 2,
+      "angle": 90,
+      "size": 1,
       "news": "AURORA 월드투어 서울 공연 D-3",
-      "tour": { "badge": "● World Tour 2026 · 24 cities", "titleKo": "오로라 월드투어", "year": 2026 },
-      "stats": { "cities": 24, "countries": 12, "tracks": 8 },
+      "tour": {
+        "badge": "● World Tour 2026 · 24 cities",
+        "titleKo": "오로라 월드투어",
+        "year": 2026
+      },
+      "stats": {
+        "cities": 24,
+        "countries": 12,
+        "tracks": 8
+      },
       "cities": [
-        { "code": "SEO", "name": "서울", "date": "2026-03-14" },
-        { "code": "TYO", "name": "도쿄", "date": "2026-03-28" },
-        { "code": "LA", "name": "로스앤젤레스", "date": "2026-04-18" },
-        { "code": "LDN", "name": "런던", "date": "2026-05-09" }
+        {
+          "code": "SEO",
+          "name": "서울",
+          "date": "2026-03-14"
+        },
+        {
+          "code": "TYO",
+          "name": "도쿄",
+          "date": "2026-03-28"
+        },
+        {
+          "code": "LA",
+          "name": "로스앤젤레스",
+          "date": "2026-04-18"
+        },
+        {
+          "code": "LDN",
+          "name": "런던",
+          "date": "2026-05-09"
+        }
       ],
       "tracks": [
-        { "no": 1, "title": "Dawn Chorus", "duration": "3:42" },
-        { "no": 2, "title": "Polar Light", "duration": "4:05" },
-        { "no": 3, "title": "Afterglow", "duration": "3:18" },
-        { "no": 4, "title": "Zenith", "duration": "4:31" }
+        {
+          "no": 1,
+          "title": "Dawn Chorus",
+          "duration": "3:42",
+          "cover": {
+            "from": "#7F77DD",
+            "to": "#534AB7"
+          }
+        },
+        {
+          "no": 2,
+          "title": "Polar Light",
+          "duration": "4:05",
+          "cover": {
+            "from": "#9F77DD",
+            "to": "#5F4BC4"
+          }
+        },
+        {
+          "no": 3,
+          "title": "Afterglow",
+          "duration": "3:18",
+          "cover": {
+            "from": "#C7B3F0",
+            "to": "#7A5FCF"
+          }
+        },
+        {
+          "no": 4,
+          "title": "Zenith",
+          "duration": "4:31",
+          "cover": {
+            "from": "#6A62CC",
+            "to": "#2E2870"
+          }
+        }
+      ],
+      "gallery": [
+        {
+          "src": "/gallery/aurora-1.jpg",
+          "creator": "Bill Hamway",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-singer-WJO2RVRV0A"
+        },
+        {
+          "src": "/gallery/aurora-2.jpg",
+          "creator": "Samuel Zeller",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-singer-J45DTZD2VJ"
+        },
+        {
+          "src": "/gallery/aurora-3.jpg",
+          "creator": "Austin Neill",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-singer-F66MXRQS1K"
+        },
+        {
+          "src": "/gallery/aurora-4.jpg",
+          "creator": "Austin Neill",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-singer-7OC4YX7S20"
+        },
+        {
+          "src": "/gallery/aurora-5.jpg",
+          "creator": "NeONBRAND",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-singer-NQSVRJOY0Y"
+        },
+        {
+          "src": "/gallery/aurora-6.jpg",
+          "creator": "Man Alive!",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/24365773@N03/5194606248"
+        }
       ]
     },
     {
-      "slug": "velvet", "name": "VELVET", "nameKo": "벨벳", "color": "#7F77DD",
-      "initials": "VEL", "orbit": 1, "angle": 135, "size": 0.8,
+      "slug": "velvet",
+      "name": "VELVET",
+      "nameKo": "벨벳",
+      "color": "#7F77DD",
+      "initials": "VEL",
+      "orbit": 1,
+      "angle": 135,
+      "size": 0.8,
       "news": "VELVET 단독 콘서트 티켓 오픈",
-      "tour": { "badge": "● Hall Tour 2026 · 8 cities", "titleKo": "벨벳 홀 투어", "year": 2026 },
-      "stats": { "cities": 8, "countries": 3, "tracks": 6 },
+      "tour": {
+        "badge": "● Hall Tour 2026 · 8 cities",
+        "titleKo": "벨벳 홀 투어",
+        "year": 2026
+      },
+      "stats": {
+        "cities": 8,
+        "countries": 3,
+        "tracks": 6
+      },
       "cities": [
-        { "code": "SEO", "name": "서울", "date": "2026-04-04" },
-        { "code": "BUS", "name": "부산", "date": "2026-04-11" },
-        { "code": "TYO", "name": "도쿄", "date": "2026-04-25" },
-        { "code": "TPE", "name": "타이베이", "date": "2026-05-02" }
+        {
+          "code": "SEO",
+          "name": "서울",
+          "date": "2026-04-04"
+        },
+        {
+          "code": "BUS",
+          "name": "부산",
+          "date": "2026-04-11"
+        },
+        {
+          "code": "TYO",
+          "name": "도쿄",
+          "date": "2026-04-25"
+        },
+        {
+          "code": "TPE",
+          "name": "타이베이",
+          "date": "2026-05-02"
+        }
       ],
       "tracks": [
-        { "no": 1, "title": "Crimson", "duration": "3:21" },
-        { "no": 2, "title": "Silk Road", "duration": "3:56" },
-        { "no": 3, "title": "Night Bloom", "duration": "4:12" }
+        {
+          "no": 1,
+          "title": "Crimson",
+          "duration": "3:21",
+          "cover": {
+            "from": "#A79FF0",
+            "to": "#5A52C7"
+          }
+        },
+        {
+          "no": 2,
+          "title": "Silk Road",
+          "duration": "3:56",
+          "cover": {
+            "from": "#7F77DD",
+            "to": "#3F3A9E"
+          }
+        },
+        {
+          "no": 3,
+          "title": "Night Bloom",
+          "duration": "4:12",
+          "cover": {
+            "from": "#6A62CC",
+            "to": "#2E2870"
+          }
+        }
+      ],
+      "gallery": [
+        {
+          "src": "/gallery/velvet-1.jpg",
+          "creator": "woodleywonderworks",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/73645804@N00/8688125693"
+        },
+        {
+          "src": "/gallery/velvet-2.jpg",
+          "creator": "woodleywonderworks",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/73645804@N00/8688124571"
+        },
+        {
+          "src": "/gallery/velvet-3.jpg",
+          "creator": "woodleywonderworks",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/73645804@N00/8689244446"
+        },
+        {
+          "src": "/gallery/velvet-4.jpg",
+          "creator": "woodleywonderworks",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/73645804@N00/8689242294"
+        },
+        {
+          "src": "/gallery/velvet-5.jpg",
+          "creator": "woodleywonderworks",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/73645804@N00/8689241858"
+        },
+        {
+          "src": "/gallery/velvet-6.jpg",
+          "creator": "Pedro Kwezi Images",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/33320323@N08/3684483511"
+        }
       ]
     },
     {
-      "slug": "nova", "name": "NOVA", "nameKo": "노바", "color": "#D4537E",
-      "initials": "NOV", "orbit": 1, "angle": 10, "size": 0.85,
+      "slug": "nova",
+      "name": "NOVA",
+      "nameKo": "노바",
+      "color": "#D4537E",
+      "initials": "NOV",
+      "orbit": 1,
+      "angle": 10,
+      "size": 0.85,
       "news": "NOVA 신보 'Bloom' 발매",
-      "tour": { "badge": "● Showcase Tour 2026 · 6 cities", "titleKo": "노바 쇼케이스 투어", "year": 2026 },
-      "stats": { "cities": 6, "countries": 4, "tracks": 5 },
+      "tour": {
+        "badge": "● Showcase Tour 2026 · 6 cities",
+        "titleKo": "노바 쇼케이스 투어",
+        "year": 2026
+      },
+      "stats": {
+        "cities": 6,
+        "countries": 4,
+        "tracks": 5
+      },
       "cities": [
-        { "code": "SEO", "name": "서울", "date": "2026-05-16" },
-        { "code": "HKG", "name": "홍콩", "date": "2026-05-23" },
-        { "code": "BKK", "name": "방콕", "date": "2026-05-30" },
-        { "code": "SIN", "name": "싱가포르", "date": "2026-06-06" }
+        {
+          "code": "SEO",
+          "name": "서울",
+          "date": "2026-05-16"
+        },
+        {
+          "code": "HKG",
+          "name": "홍콩",
+          "date": "2026-05-23"
+        },
+        {
+          "code": "BKK",
+          "name": "방콕",
+          "date": "2026-05-30"
+        },
+        {
+          "code": "SIN",
+          "name": "싱가포르",
+          "date": "2026-06-06"
+        }
       ],
       "tracks": [
-        { "no": 1, "title": "Bloom", "duration": "3:33" },
-        { "no": 2, "title": "Supernova", "duration": "3:47" },
-        { "no": 3, "title": "Petal", "duration": "4:02" }
+        {
+          "no": 1,
+          "title": "Bloom",
+          "duration": "3:33",
+          "cover": {
+            "from": "#F08AA9",
+            "to": "#C04570"
+          }
+        },
+        {
+          "no": 2,
+          "title": "Supernova",
+          "duration": "3:47",
+          "cover": {
+            "from": "#D4537E",
+            "to": "#7A2A4A"
+          }
+        },
+        {
+          "no": 3,
+          "title": "Petal",
+          "duration": "4:02",
+          "cover": {
+            "from": "#B8406A",
+            "to": "#5E1F38"
+          }
+        }
+      ],
+      "gallery": [
+        {
+          "src": "/gallery/nova-1.jpg",
+          "creator": "chocolatedazzles",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/186095195@N02/49346751208"
+        },
+        {
+          "src": "/gallery/nova-2.jpg",
+          "creator": "Julian Lozano",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-stage-F01WSFHEJY"
+        },
+        {
+          "src": "/gallery/nova-3.jpg",
+          "creator": "Freestocks.org",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-stage-5GPP7A6LVW"
+        },
+        {
+          "src": "/gallery/nova-4.jpg",
+          "creator": "Marc-Antoine Dépelteau",
+          "license": "CC0 1.0",
+          "origin": "https://stocksnap.io/photo/concert-stage-P7JJ4LKNK8"
+        },
+        {
+          "src": "/gallery/nova-5.jpg",
+          "creator": "d_neeses_pix",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/18542660@N00/4378890728"
+        },
+        {
+          "src": "/gallery/nova-6.jpg",
+          "creator": "Anirudh Koul",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/84856173@N00/3735171010"
+        }
       ]
     },
     {
-      "slug": "halo", "name": "HALO", "nameKo": "헤일로", "color": "#BA7517",
-      "initials": "HAL", "orbit": 1, "angle": 185, "size": 0.8,
+      "slug": "halo",
+      "name": "HALO",
+      "nameKo": "헤일로",
+      "color": "#BA7517",
+      "initials": "HAL",
+      "orbit": 1,
+      "angle": 185,
+      "size": 0.8,
       "news": "HALO 팬미팅 'Ring' 개최 확정",
-      "tour": { "badge": "● Fan Meeting 2026 · 4 cities", "titleKo": "헤일로 팬미팅 투어", "year": 2026 },
-      "stats": { "cities": 4, "countries": 2, "tracks": 4 },
+      "tour": {
+        "badge": "● Fan Meeting 2026 · 4 cities",
+        "titleKo": "헤일로 팬미팅 투어",
+        "year": 2026
+      },
+      "stats": {
+        "cities": 4,
+        "countries": 2,
+        "tracks": 4
+      },
       "cities": [
-        { "code": "SEO", "name": "서울", "date": "2026-06-13" },
-        { "code": "ICN", "name": "인천", "date": "2026-06-20" },
-        { "code": "OSA", "name": "오사카", "date": "2026-06-27" },
-        { "code": "TYO", "name": "도쿄", "date": "2026-07-04" }
+        {
+          "code": "SEO",
+          "name": "서울",
+          "date": "2026-06-13"
+        },
+        {
+          "code": "ICN",
+          "name": "인천",
+          "date": "2026-06-20"
+        },
+        {
+          "code": "OSA",
+          "name": "오사카",
+          "date": "2026-06-27"
+        },
+        {
+          "code": "TYO",
+          "name": "도쿄",
+          "date": "2026-07-04"
+        }
       ],
       "tracks": [
-        { "no": 1, "title": "Golden Hour", "duration": "3:28" },
-        { "no": 2, "title": "Ring", "duration": "3:51" },
-        { "no": 3, "title": "Amber", "duration": "4:15" }
+        {
+          "no": 1,
+          "title": "Golden Hour",
+          "duration": "3:28",
+          "cover": {
+            "from": "#E0A24E",
+            "to": "#A66412"
+          }
+        },
+        {
+          "no": 2,
+          "title": "Ring",
+          "duration": "3:51",
+          "cover": {
+            "from": "#BA7517",
+            "to": "#6B420A"
+          }
+        },
+        {
+          "no": 3,
+          "title": "Amber",
+          "duration": "4:15",
+          "cover": {
+            "from": "#A5650F",
+            "to": "#4F3008"
+          }
+        }
+      ],
+      "gallery": [
+        {
+          "src": "/gallery/halo-1.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/halo-2.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/halo-3.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/halo-4.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/halo-5.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/halo-6.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        }
       ]
     },
     {
-      "slug": "lumen", "name": "LUMEN", "nameKo": "루멘", "color": "#1D9E75",
-      "initials": "LUM", "orbit": 2, "angle": 230, "size": 0.85,
+      "slug": "lumen",
+      "name": "LUMEN",
+      "nameKo": "루멘",
+      "color": "#1D9E75",
+      "initials": "LUM",
+      "orbit": 2,
+      "angle": 230,
+      "size": 0.85,
       "news": "LUMEN OST 참여곡 공개",
-      "tour": { "badge": "● Live Club Tour 2026 · 5 cities", "titleKo": "루멘 클럽 투어", "year": 2026 },
-      "stats": { "cities": 5, "countries": 1, "tracks": 5 },
+      "tour": {
+        "badge": "● Live Club Tour 2026 · 5 cities",
+        "titleKo": "루멘 클럽 투어",
+        "year": 2026
+      },
+      "stats": {
+        "cities": 5,
+        "countries": 1,
+        "tracks": 5
+      },
       "cities": [
-        { "code": "SEO", "name": "서울", "date": "2026-07-11" },
-        { "code": "DJN", "name": "대전", "date": "2026-07-18" },
-        { "code": "DGU", "name": "대구", "date": "2026-07-25" },
-        { "code": "BUS", "name": "부산", "date": "2026-08-01" }
+        {
+          "code": "SEO",
+          "name": "서울",
+          "date": "2026-07-11"
+        },
+        {
+          "code": "DJN",
+          "name": "대전",
+          "date": "2026-07-18"
+        },
+        {
+          "code": "DGU",
+          "name": "대구",
+          "date": "2026-07-25"
+        },
+        {
+          "code": "BUS",
+          "name": "부산",
+          "date": "2026-08-01"
+        }
       ],
       "tracks": [
-        { "no": 1, "title": "Lantern", "duration": "3:39" },
-        { "no": 2, "title": "Verdant", "duration": "4:08" },
-        { "no": 3, "title": "Glow Worm", "duration": "3:24" }
+        {
+          "no": 1,
+          "title": "Lantern",
+          "duration": "3:39",
+          "cover": {
+            "from": "#4FC79E",
+            "to": "#17805E"
+          }
+        },
+        {
+          "no": 2,
+          "title": "Verdant",
+          "duration": "4:08",
+          "cover": {
+            "from": "#1D9E75",
+            "to": "#0C543D"
+          }
+        },
+        {
+          "no": 3,
+          "title": "Glow Worm",
+          "duration": "3:24",
+          "cover": {
+            "from": "#158A65",
+            "to": "#073A2A"
+          }
+        }
+      ],
+      "gallery": [
+        {
+          "src": "/gallery/lumen-1.jpg",
+          "creator": "Jamiecat *",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/27330325@N08/2721560733"
+        },
+        {
+          "src": "/gallery/lumen-2.jpg",
+          "creator": "Jamiecat *",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/27330325@N08/2721617713"
+        },
+        {
+          "src": "/gallery/lumen-3.jpg",
+          "creator": "Jamiecat *",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/27330325@N08/2721616675"
+        },
+        {
+          "src": "/gallery/lumen-4.jpg",
+          "creator": "motumboe",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/8419224@N08/3293600150"
+        },
+        {
+          "src": "/gallery/lumen-5.jpg",
+          "creator": "Jamiecat *",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/27330325@N08/2722387472"
+        },
+        {
+          "src": "/gallery/lumen-6.jpg",
+          "creator": "Jamiecat *",
+          "license": "CC BY 2.0",
+          "origin": "https://www.flickr.com/photos/27330325@N08/2721620007"
+        }
       ]
     },
     {
-      "slug": "echo", "name": "ECHO", "nameKo": "에코", "color": "#378ADD",
-      "initials": "ECH", "orbit": 1, "angle": 320, "size": 0.8,
+      "slug": "echo",
+      "name": "ECHO",
+      "nameKo": "에코",
+      "color": "#378ADD",
+      "initials": "ECH",
+      "orbit": 1,
+      "angle": 320,
+      "size": 0.8,
       "news": "ECHO 데뷔 쇼케이스",
-      "tour": { "badge": "● Debut Showcase 2026 · 2 cities", "titleKo": "에코 데뷔 쇼케이스", "year": 2026 },
-      "stats": { "cities": 2, "countries": 1, "tracks": 3 },
+      "tour": {
+        "badge": "● Debut Showcase 2026 · 2 cities",
+        "titleKo": "에코 데뷔 쇼케이스",
+        "year": 2026
+      },
+      "stats": {
+        "cities": 2,
+        "countries": 1,
+        "tracks": 3
+      },
       "cities": [
-        { "code": "SEO", "name": "서울", "date": "2026-08-15" },
-        { "code": "BUS", "name": "부산", "date": "2026-08-22" }
+        {
+          "code": "SEO",
+          "name": "서울",
+          "date": "2026-08-15"
+        },
+        {
+          "code": "BUS",
+          "name": "부산",
+          "date": "2026-08-22"
+        }
       ],
       "tracks": [
-        { "no": 1, "title": "Reverb", "duration": "3:12" },
-        { "no": 2, "title": "First Wave", "duration": "3:45" },
-        { "no": 3, "title": "Blue Hour", "duration": "3:58" }
+        {
+          "no": 1,
+          "title": "Reverb",
+          "duration": "3:12",
+          "cover": {
+            "from": "#6FB0F0",
+            "to": "#2E74BE"
+          }
+        },
+        {
+          "no": 2,
+          "title": "First Wave",
+          "duration": "3:45",
+          "cover": {
+            "from": "#378ADD",
+            "to": "#1A4B87"
+          }
+        },
+        {
+          "no": 3,
+          "title": "Blue Hour",
+          "duration": "3:58",
+          "cover": {
+            "from": "#2A6FB5",
+            "to": "#12365F"
+          }
+        }
+      ],
+      "gallery": [
+        {
+          "src": "/gallery/echo-1.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/echo-2.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/echo-3.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/echo-4.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/echo-5.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        },
+        {
+          "src": "/gallery/echo-6.jpg",
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
+        }
       ]
     }
   ]
