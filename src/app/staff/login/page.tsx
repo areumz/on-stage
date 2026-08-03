@@ -28,16 +28,22 @@ export default function LoginPage() {
         <form onSubmit={onSubmit} className="w-96 rounded-2xl border border-gray-200 bg-surface-2 p-8 shadow-sm">
           <p className="text-center text-lg font-semibold">🔒 관계자 로그인</p>
           <p className="mt-1 text-center text-sm text-gray-500">투어 운영 및 무대 연출 시스템</p>
-          <label className="mt-8 block text-sm text-gray-600">아이디</label>
+          <label htmlFor="staff-id" className="mt-8 block text-sm text-gray-600">아이디</label>
           <input
+            id="staff-id"
+            name="id"
+            autoComplete="username"
             value={id}
             onChange={(e) => setId(e.target.value)}
             placeholder="staff.id"
             className="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-brand"
           />
-          <label className="mt-4 block text-sm text-gray-600">비밀번호</label>
+          <label htmlFor="staff-password" className="mt-4 block text-sm text-gray-600">비밀번호</label>
           <input
+            id="staff-password"
+            name="password"
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-brand"
