@@ -9,16 +9,23 @@ export default function LoginPage() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, password }),
-    });
-    if (res.ok) router.push("/staff/dashboard");
-    else setError(true);
+    if (isSubmittingLogin) return;
+    setIsSubmittingLogin(true);
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, password }),
+      });
+      if (res.ok) router.push("/staff/dashboard");
+      else setError(true);
+    } finally {
+      setIsSubmittingLogin(false);
+    }
   }
 
   return (
@@ -49,7 +56,11 @@ export default function LoginPage() {
             className="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-brand"
           />
           {error && <p className="mt-3 text-sm text-red-500">아이디 또는 비밀번호가 올바르지 않습니다.</p>}
-          <button type="submit" className="mt-6 w-full rounded-lg bg-brand py-3 font-medium text-white hover:opacity-90">
+          <button
+            type="submit"
+            disabled={isSubmittingLogin}
+            className="mt-6 w-full rounded-lg bg-brand py-3 font-medium text-white hover:opacity-90 disabled:opacity-60"
+          >
             로그인
           </button>
           <p className="mt-4 text-center text-xs text-gray-400">Demo account · admin / 1234</p>
