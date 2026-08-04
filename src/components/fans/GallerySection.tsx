@@ -135,7 +135,7 @@ export default function GallerySection({ artist }: { artist: Artist }) {
           if (e.key === "ArrowRight") step(1);
           if (e.key === "ArrowLeft") step(-1);
         }}
-        // m-auto: Tailwind preflight가 margin을 0으로 리셋해 dialog 기본 중앙 정렬이 죽는다
+        // m-auto: Tailwind preflight가 margin을 0으로 리셋해 dialog 기본 중앙 정렬이 죽음
         className="m-auto max-h-none max-w-none bg-transparent p-4 text-white backdrop:bg-black/85"
       >
         {open !== null && (

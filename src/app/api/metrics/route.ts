@@ -1,10 +1,8 @@
-import data from "@/data/metrics.json";
-import type { Metrics } from "@/lib/types";
+import { DEFAULT_METRICS_SLUG, getMetrics } from "@/lib/data";
 
-// 검증용 바인딩: JSON의 필드 누락·타입 불일치를 빌드에서 잡는다.
-// (초과 필드는 잡지 못한다 — TS의 excess property check는 객체 리터럴에만 적용됨)
-const metrics: Metrics = data;
-
-export function GET() {
+export function GET(request: Request) {
+  const slug = new URL(request.url).searchParams.get("slug") ?? DEFAULT_METRICS_SLUG;
+  const metrics = getMetrics(slug);
+  if (!metrics) return Response.json({ error: "not found" }, { status: 404 });
   return Response.json(metrics);
 }

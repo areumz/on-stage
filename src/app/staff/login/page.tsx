@@ -1,11 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "@/components/common/Header";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
@@ -15,17 +13,24 @@ export default function LoginPage() {
     e.preventDefault();
     if (isSubmittingLogin) return;
     setIsSubmittingLogin(true);
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, password }),
-      });
-      if (res.ok) router.push("/staff/dashboard");
-      else setError(true);
-    } finally {
-      setIsSubmittingLogin(false);
+
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, password }),
+    }).catch(() => null);
+
+    // 클라이언트 라우터 캐시에는 로그인 전에 프리페치된 "/staff/dashboard → /staff/login"
+    // 리다이렉트가 남아 있음. router.push는 그 캐시를 그대로 따라가 로그인 화면으로 되돌아옴.
+    // 인증 상태가 바뀌는 순간이라 전체 내비게이션으로 캐시를 통째로 버림.
+    if (res?.ok) {
+      // 내비게이션이 끝날 때까지 이 페이지는 살아 있음. 여기서 잠금을 풀면
+      // 그 사이에 재제출이 가능해짐 — 잠근 채로 둠.
+      window.location.href = "/staff/dashboard";
+      return;
     }
+    setError(true);
+    setIsSubmittingLogin(false);
   }
 
   return (

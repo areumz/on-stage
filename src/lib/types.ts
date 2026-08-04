@@ -1,7 +1,7 @@
 export type City = { code: string; name: string; date: string };
 
-// 갤러리 사진 — CC0/퍼블릭도메인/CC-BY만 사용한다(NC·ND·SA 제외).
-// CC-BY는 출처 표기가 조건이라 creator/origin을 화면에 노출한다.
+// 갤러리 사진 — CC0/퍼블릭도메인/CC-BY만 사용함(NC·ND·SA 제외).
+// CC-BY는 출처 표기가 조건이라 creator/origin을 화면에 노출함.
 export type GalleryPhoto = {
   src: string; // public/ 기준 경로
   creator: string;
@@ -35,7 +35,9 @@ export type Artist = {
 };
 
 export type Metrics = {
-  totalTickets: { value: number; delta: string };
+  // positive: 증감 방향. 카드 보조 텍스트 색(상승 초록 / 하락 빨강)을 정함.
+  // delta 문구의 ▲▼와 같은 사실이라 route.test.ts가 둘의 일치를 검사함.
+  totalTickets: { value: number; delta: string; positive: boolean };
   avgBookingRate: { value: number; note: string };
   nextShow: { dday: number; venue: string };
   cityBookings: { city: string; rate: number }[];
