@@ -35,7 +35,9 @@ export type Artist = {
 };
 
 export type Metrics = {
-  totalTickets: { value: number; delta: string };
+  // positive: 증감 방향. 카드 보조 텍스트 색(상승 초록 / 하락 빨강)을 정한다.
+  // delta 문구의 ▲▼와 같은 사실이라 route.test.ts가 둘의 일치를 검사한다.
+  totalTickets: { value: number; delta: string; positive: boolean };
   avgBookingRate: { value: number; note: string };
   nextShow: { dday: number; venue: string };
   cityBookings: { city: string; rate: number }[];
