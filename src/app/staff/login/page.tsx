@@ -1,11 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Header from "@/components/common/Header";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
@@ -21,7 +19,10 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, password }),
       });
-      if (res.ok) router.push("/staff/dashboard");
+      // 클라이언트 라우터 캐시에는 로그인 전에 프리페치된 "/staff/dashboard → /staff/login"
+      // 리다이렉트가 남아 있다. router.push는 그 캐시를 그대로 따라가 로그인 화면으로 되돌아온다.
+      // 인증 상태가 바뀌는 순간이라 전체 내비게이션으로 캐시를 통째로 버린다.
+      if (res.ok) window.location.href = "/staff/dashboard";
       else setError(true);
     } finally {
       setIsSubmittingLogin(false);
