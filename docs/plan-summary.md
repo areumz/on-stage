@@ -47,7 +47,7 @@ A/B 탭 토글과 로고 헤더를 모든 화면에서 공용으로 쓸 수 있�
 `docs/mockups/b-login.png` 기반. 하드코딩 계정 검증 로직과 라우트 가드를 TDD로 구현. 미로그인 시 대시보드 접근 차단.
 
 ### Task 8 — B탭 대시보드
-`docs/mockups/b-dashboard.png` 기반. 사이드바(메뉴 5개, 1개만 실 화면·나머지 Coming soon), 메트릭 카드 3종, 도시별 예매 차트(Recharts).
+`docs/mockups/b-dashboard.png` 기반. 사이드바(메뉴 5개 — 대시보드만 실 화면, 무대 연출은 Task 9 자리표시, 나머지 3개는 Coming soon), 메트릭 카드 3종, 도시별 예매 차트(Recharts). 설계 보완으로 아티스트 선택기를 추가해 6팀의 지표를 전환할 수 있게 했다 — 선택 상태를 URL 쿼리(`?artist=`)에 두어 대시보드가 서버 컴포넌트로 남는다.
 
 ### Task 9 — 무대 연출 3D 툴
 `docs/mockups/b-stage.png` 기반. R3F 무대 씬 + 우측 컨트롤 패널(조명 프리셋, 조명 on/off, 카메라 앵글 전환).

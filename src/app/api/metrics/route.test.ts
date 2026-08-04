@@ -11,7 +11,7 @@ describe("GET /api/metrics", () => {
     // 목업(b-dashboard.png)의 수치 고정
     expect(await res.json()).toEqual({
       totalTickets: { value: 182430, delta: "▲ 12.4% vs 지난주", positive: true },
-      avgBookingRate: { value: 87, note: "24개 도시 기준" },
+      avgBookingRate: { value: 87, note: "24개 도시 평균 (차트는 주요 5개 도시 표기)" },
       nextShow: { dday: 3, venue: "서울 · 고척돔" },
       cityBookings: [
         { city: "서울", rate: 95 },
@@ -35,6 +35,16 @@ describe("GET /api/metrics", () => {
     const res = await GET(req("?slug=nobody"));
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "not found" });
+  });
+
+  // slug는 URL에서 온 값이라 객체 인덱싱이 프로토타입 체인을 타면 안 된다.
+  // 가드가 없으면 constructor/toString은 직렬화 불가 함수로 500, __proto__는 {}로 200이 된다.
+  it("404s on prototype chain keys", async () => {
+    for (const slug of ["constructor", "__proto__", "toString", "hasOwnProperty"]) {
+      const res = await GET(req(`?slug=${slug}`));
+      expect(res.status, `?slug=${slug}`).toBe(404);
+      expect(await res.json()).toEqual({ error: "not found" });
+    }
   });
 
   // 대시보드 아티스트 선택기가 레이블 6팀을 전부 보여주므로,

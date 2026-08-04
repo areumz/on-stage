@@ -1,7 +1,7 @@
 {
   "aurora": {
     "totalTickets": { "value": 182430, "delta": "▲ 12.4% vs 지난주", "positive": true },
-    "avgBookingRate": { "value": 87, "note": "24개 도시 기준" },
+    "avgBookingRate": { "value": 87, "note": "24개 도시 평균 (차트는 주요 5개 도시 표기)" },
     "nextShow": { "dday": 3, "venue": "서울 · 고척돔" },
     "cityBookings": [
       { "city": "서울", "rate": 95 },
@@ -13,7 +13,7 @@
   },
   "velvet": {
     "totalTickets": { "value": 54120, "delta": "▲ 5.1% vs 지난주", "positive": true },
-    "avgBookingRate": { "value": 82, "note": "8개 도시 기준" },
+    "avgBookingRate": { "value": 82, "note": "8개 도시 평균 (차트는 주요 4개 도시 표기)" },
     "nextShow": { "dday": 12, "venue": "서울 · 올림픽홀" },
     "cityBookings": [
       { "city": "서울", "rate": 93 },
@@ -24,7 +24,7 @@
   },
   "nova": {
     "totalTickets": { "value": 38560, "delta": "▲ 18.7% vs 지난주", "positive": true },
-    "avgBookingRate": { "value": 91, "note": "6개 도시 기준" },
+    "avgBookingRate": { "value": 91, "note": "6개 도시 평균 (차트는 주요 4개 도시 표기)" },
     "nextShow": { "dday": 21, "venue": "서울 · 예스24 라이브홀" },
     "cityBookings": [
       { "city": "서울", "rate": 98 },
@@ -35,7 +35,7 @@
   },
   "halo": {
     "totalTickets": { "value": 21840, "delta": "▼ 2.8% vs 지난주", "positive": false },
-    "avgBookingRate": { "value": 76, "note": "4개 도시 기준" },
+    "avgBookingRate": { "value": 76, "note": "4개 도시 평균" },
     "nextShow": { "dday": 34, "venue": "인천 · 인스파이어 아레나" },
     "cityBookings": [
       { "city": "서울", "rate": 89 },
@@ -46,7 +46,7 @@
   },
   "lumen": {
     "totalTickets": { "value": 16470, "delta": "▼ 4.5% vs 지난주", "positive": false },
-    "avgBookingRate": { "value": 68, "note": "5개 도시 기준" },
+    "avgBookingRate": { "value": 68, "note": "5개 도시 평균 (차트는 주요 4개 도시 표기)" },
     "nextShow": { "dday": 9, "venue": "대전 · 대전예술의전당" },
     "cityBookings": [
       { "city": "서울", "rate": 84 },
@@ -57,7 +57,7 @@
   },
   "echo": {
     "totalTickets": { "value": 7250, "delta": "▲ 24.9% vs 지난주", "positive": true },
-    "avgBookingRate": { "value": 94, "note": "2개 도시 기준" },
+    "avgBookingRate": { "value": 94, "note": "2개 도시 평균" },
     "nextShow": { "dday": 45, "venue": "서울 · 홍대 롤링홀" },
     "cityBookings": [
       { "city": "서울", "rate": 97 },
