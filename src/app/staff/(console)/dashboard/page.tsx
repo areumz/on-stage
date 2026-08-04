@@ -52,7 +52,7 @@ export default async function DashboardPage({
         <div className="rounded-xl border border-gray-200 bg-surface-2 p-6">
           <h2 className="font-medium">도시별 예매 현황</h2>
           <div className="mt-4">
-            <CityChart data={metrics.cityBookings} />
+            <CityChart data={metrics.cityBookings} color={artist.color} />
           </div>
         </div>
         {/* 다크 톤 반전 카드 — A탭 무드 미리보기 */}
