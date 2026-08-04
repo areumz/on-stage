@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { Artist } from "@/lib/types";
 
-// 링크 기반이라 클라이언트 컴포넌트가 아니다 — 선택은 URL(?artist=)로 표현되고
-// 서버 컴포넌트인 대시보드가 그 slug로 지표를 다시 가져온다.
+// 링크 기반이라 클라이언트 컴포넌트가 아님 — 선택은 URL(?artist=)로 표현되고
+// 서버 컴포넌트인 대시보드가 그 slug로 지표를 다시 가져옴.
 export default function ArtistSelect({ artists, current }: { artists: Artist[]; current: string }) {
   return (
     <nav aria-label="아티스트 선택" className="flex flex-wrap gap-1.5">

@@ -4,7 +4,7 @@ import type { Artist, Metrics } from "@/lib/types";
 
 // 검증용 바인딩: JSON 필드 누락·타입 불일치 빌드에서 잡음
 const artists: Artist[] = artistsData.artists;
-// 아티스트 slug → 지표. 대시보드 아티스트 선택기가 이 맵을 조회한다.
+// 아티스트 slug → 지표. 대시보드 아티스트 선택기가 이 맵을 조회함.
 const metrics: Record<string, Metrics> = metricsData;
 
 export function getArtists(): Artist[] {

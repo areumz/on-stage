@@ -9,8 +9,8 @@ export default function MetricCard({
   sub: string;
   positive?: boolean;
 }) {
-  // positive를 넘기지 않으면 중립 — 도시 수·공연장처럼 방향성이 없는 설명이다.
-  // 색만으로 방향을 알리지는 않는다. delta 문구의 ▲▼가 같은 정보를 글자로도 전한다.
+  // positive를 넘기지 않으면 중립 — 도시 수·공연장처럼 방향성이 없는 설명.
+  // 색만으로 방향을 알리지는 않음. delta 문구의 ▲▼가 같은 정보를 글자로도 전함.
   const tone =
     positive === undefined ? "text-gray-600" : positive ? "text-emerald-700" : "text-red-700";
 

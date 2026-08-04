@@ -37,8 +37,8 @@ describe("GET /api/metrics", () => {
     expect(await res.json()).toEqual({ error: "not found" });
   });
 
-  // slug는 URL에서 온 값이라 객체 인덱싱이 프로토타입 체인을 타면 안 된다.
-  // 가드가 없으면 constructor/toString은 직렬화 불가 함수로 500, __proto__는 {}로 200이 된다.
+  // slug는 URL에서 온 값이라 객체 인덱싱이 프로토타입 체인을 타면 안 됨.
+  // 가드가 없으면 constructor/toString은 직렬화 불가 함수로 500, __proto__는 {}로 200이 됨.
   it("404s on prototype chain keys", async () => {
     for (const slug of ["constructor", "__proto__", "toString", "hasOwnProperty"]) {
       const res = await GET(req(`?slug=${slug}`));
@@ -48,7 +48,7 @@ describe("GET /api/metrics", () => {
   });
 
   // 대시보드 아티스트 선택기가 레이블 6팀을 전부 보여주므로,
-  // 지표가 빠진 아티스트가 있으면 선택하는 순간 404가 된다.
+  // 지표가 빠진 아티스트가 있으면 선택하는 순간 404가 됨.
   it("has metrics for every artist in the label", async () => {
     for (const artist of getArtists()) {
       const res = await GET(req(`?slug=${artist.slug}`));
@@ -56,8 +56,8 @@ describe("GET /api/metrics", () => {
     }
   });
 
-  // 화살표(사람이 읽는 문구)와 positive(카드 색을 정하는 플래그)는 같은 사실을 두 번 적는다.
-  // 어긋나면 하락을 초록으로 칠하는 식이 되므로 데이터 쪽에서 묶어둔다.
+  // 화살표(사람이 읽는 문구)와 positive(카드 색을 정하는 플래그)는 같은 사실을 두 번 적음.
+  // 어긋나면 하락을 초록으로 칠하는 식이 되므로 데이터 쪽에서 묶어둠.
   it("keeps the delta arrow and the positive flag in agreement", () => {
     for (const artist of getArtists()) {
       const { delta, positive } = getMetrics(artist.slug)!.totalTickets;

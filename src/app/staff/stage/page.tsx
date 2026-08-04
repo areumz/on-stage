@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-// ponytail: Task 9(무대 연출 3D 툴)가 이 자리를 실제 R3F 씬 + 컨트롤 패널로 교체한다.
-// 브레드크럼 구조는 설계 5.3 그대로라 Task 9에서 그대로 살아남는다.
+// ponytail: Task 9(무대 연출 3D 툴)가 이 자리를 실제 R3F 씬 + 컨트롤 패널로 교체함.
+// 브레드크럼 구조는 설계 5.3 그대로라 Task 9에서 그대로 살아남음.
 export default function StagePage() {
   return (
     <main className="flex min-h-screen flex-col bg-bg-dark text-white">

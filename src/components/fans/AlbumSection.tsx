@@ -47,7 +47,7 @@ function Coverflow({ tracks, active, onActive }: {
         const offset = i - active;
         const away = Math.abs(offset);
         const front = offset === 0;
-        // 좌우 한 장씩만 보이고 나머지는 뒤에 숨는다 — 숨은 카드는 조작 대상에서 뺀다
+        // 좌우 한 장씩만 보이고 나머지는 뒤에 숨음 — 숨은 카드는 조작 대상에서 뺌
         const shown = away <= 1;
         return (
           <button
@@ -85,8 +85,8 @@ function Coverflow({ tracks, active, onActive }: {
 }
 
 export default function AlbumSection({ artist }: { artist: Artist }) {
-  // 트랙 hover / 커버 클릭 / 드래그가 모두 이 하나를 바꾼다 —
-  // 그래서 어느 경로로 바뀌든 커버와 트랙 행이 같이 반응한다 (CSS :hover를 쓰지 않는 이유)
+  // 트랙 hover / 커버 클릭 / 드래그가 모두 이 하나를 바꿈 —
+  // 그래서 어느 경로로 바뀌든 커버와 트랙 행이 같이 반응함 (CSS :hover를 쓰지 않는 이유)
   const [active, setActive] = useState(0);
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 // 무대 조명 먼지 — 사진은 그대로 두고 그리드 뒤에 얹는 장식 레이어.
-// 떠다니는 파티클은 drei의 Sparkles가 정확히 이 용도라 직접 셰이더를 짤 필요가 없다.
+// 떠다니는 파티클은 drei의 Sparkles가 정확히 이 용도라 직접 셰이더를 짤 필요가 없음.
 
 import { Canvas } from "@react-three/fiber";
 import { Sparkles } from "@react-three/drei";
