@@ -1,8 +1,9 @@
 "use client";
 
 import StageControls from "@/components/staff/StageControls";
-import StageScene, { defaultStageState, parseStageState, type StageState } from "@/components/three/StageScene";
+import StageScene from "@/components/three/StageScene";
 import { useStageStateSnapshot, writeStageState } from "@/lib/hooks";
+import { defaultStageState, parseStageState, type StageState } from "@/lib/stageState";
 import type { Artist } from "@/lib/types";
 
 export default function StageStudio({

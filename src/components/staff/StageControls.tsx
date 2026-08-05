@@ -1,6 +1,6 @@
 "use client";
 
-import type { StageState } from "@/components/three/StageScene";
+import type { StageState } from "@/lib/stageState";
 import type { Artist } from "@/lib/types";
 
 const SPOTS = [
@@ -44,7 +44,7 @@ export default function StageControls({ artists, state, onChange }: {
           {SPOTS.map(([key, label]) => {
             const on = state.spots[key];
             return (
-              <label key={key} className="flex items-center justify-between">
+              <div key={key} className="flex items-center justify-between">
                 <span className={on ? "text-white" : "text-white/50"}>{label}</span>
                 <button
                   role="switch"
@@ -55,7 +55,7 @@ export default function StageControls({ artists, state, onChange }: {
                 >
                   <span className={`block h-5 w-5 rounded-full bg-white transition-transform ${on ? "translate-x-5" : ""}`} />
                 </button>
-              </label>
+              </div>
             );
           })}
         </div>

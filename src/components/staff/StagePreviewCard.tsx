@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import StageScene, { defaultStageState, parseStageState } from "@/components/three/StageScene";
+import StageScene from "@/components/three/StageScene";
 import { useStageStateSnapshot } from "@/lib/hooks";
+import { defaultStageState, parseStageState } from "@/lib/stageState";
 
 export default function StagePreviewCard({ slug, color }: { slug: string; color: string }) {
   const [previewing, setPreviewing] = useState(false);
