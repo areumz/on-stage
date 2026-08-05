@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import StageScene, { parseStageState } from "@/components/three/StageScene";
+import StageScene, { defaultStageState, parseStageState } from "@/components/three/StageScene";
 import { useStageStateSnapshot } from "@/lib/hooks";
 
 export default function StagePreviewCard({ slug, color }: { slug: string; color: string }) {
   const [previewing, setPreviewing] = useState(false);
   const saved = useStageStateSnapshot(slug);
-  const state = parseStageState(saved, {
-    color,
-    spots: { left: true, center: true, right: false },
-    angle: "front",
-  });
+  const state = parseStageState(saved, defaultStageState(color));
 
   return (
     <div className="flex flex-col rounded-xl bg-bg-dark p-6 text-white">

@@ -29,6 +29,7 @@ export default function StageControls({ artists, state, onChange }: {
             <button
               key={a.slug}
               aria-label={`조명 색상 ${a.name}`}
+              aria-pressed={state.color === a.color}
               onClick={() => onChange({ ...state, color: a.color })}
               className={`h-10 w-10 rounded-lg ${state.color === a.color ? "ring-2 ring-white" : ""}`}
               style={{ backgroundColor: a.color }}
@@ -66,6 +67,7 @@ export default function StageControls({ artists, state, onChange }: {
           {ANGLES.map(([key, label]) => (
             <button
               key={key}
+              aria-pressed={state.angle === key}
               onClick={() => onChange({ ...state, angle: key })}
               className={`rounded-lg py-2.5 text-sm ${
                 state.angle === key ? "bg-brand font-medium text-white" : "border border-white/25 text-white/70 hover:border-white"

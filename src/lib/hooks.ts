@@ -37,10 +37,6 @@ function subscribeStageState(listener: () => void) {
   return () => stageListeners.delete(listener);
 }
 
-function getServerStageSnapshot() {
-  return null;
-}
-
 export function writeStageState(slug: string, value: string) {
   localStorage.setItem(stageStorageKey(slug), value);
   stageListeners.forEach((listener) => listener());
@@ -50,6 +46,6 @@ export function useStageStateSnapshot(slug: string): string | null {
   return useSyncExternalStore(
     subscribeStageState,
     () => localStorage.getItem(stageStorageKey(slug)),
-    getServerStageSnapshot,
+    () => null,
   );
 }

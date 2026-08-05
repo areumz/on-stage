@@ -1,7 +1,7 @@
 "use client";
 
 import StageControls from "@/components/staff/StageControls";
-import StageScene, { parseStageState, type StageState } from "@/components/three/StageScene";
+import StageScene, { defaultStageState, parseStageState, type StageState } from "@/components/three/StageScene";
 import { useStageStateSnapshot, writeStageState } from "@/lib/hooks";
 import type { Artist } from "@/lib/types";
 
@@ -15,11 +15,7 @@ export default function StageStudio({
   defaultColor: string;
 }) {
   const saved = useStageStateSnapshot(slug);
-  const state = parseStageState(saved, {
-    color: defaultColor,
-    spots: { left: true, center: true, right: false },
-    angle: "front",
-  });
+  const state = parseStageState(saved, defaultStageState(defaultColor));
 
   function handleChange(next: StageState) {
     writeStageState(slug, JSON.stringify(next));
