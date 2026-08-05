@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArtistSelect from "@/components/staff/ArtistSelect";
 import CityChart from "@/components/staff/CityChart";
 import MetricCard from "@/components/staff/MetricCard";
+import StagePreviewCard from "@/components/staff/StagePreviewCard";
 import { DEFAULT_METRICS_SLUG, getArtist, getArtists, getMetrics } from "@/lib/data";
 
 export default async function DashboardPage({
@@ -18,7 +18,7 @@ export default async function DashboardPage({
 
   return (
     <div>
-      {/* A/B 토글은 (console)/layout.tsx가 그린다 */}
+      {/* A/B 토글은 (console)/layout.tsx가 그림 */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">대시보드</h1>
@@ -56,27 +56,7 @@ export default async function DashboardPage({
           </div>
         </div>
         {/* 다크 톤 반전 카드 — A탭 무드 미리보기 */}
-        <div className="flex flex-col rounded-xl bg-bg-dark p-6 text-white">
-          <h2 className="font-medium">무대 연출</h2>
-          <p className="mt-1 text-sm text-white/60">3D 씬 컨트롤</p>
-          <div className="mt-4 flex flex-1 items-center justify-center rounded-lg bg-bg-dark-2">
-            <span className="h-16 w-16 rounded-full bg-brand/60 ring-8 ring-brand/20" />
-          </div>
-          <div className="mt-5 flex gap-3">
-            <Link
-              href="/staff/stage"
-              className="flex-1 rounded-lg border border-white/25 py-2.5 text-center text-sm hover:border-white"
-            >
-              미리보기
-            </Link>
-            <Link
-              href="/staff/stage"
-              className="flex-1 rounded-lg bg-brand py-2.5 text-center text-sm font-medium hover:opacity-90"
-            >
-              열기 →
-            </Link>
-          </div>
-        </div>
+        <StagePreviewCard slug={slug} color={artist.color} />
       </div>
     </div>
   );
