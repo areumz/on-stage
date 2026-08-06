@@ -8,8 +8,6 @@ A dual-perspective platform for a fictional entertainment label — the stage fa
 
 ## 데모 / Demo
 
-배포 후 이 자리에 Vercel 데모 링크가 추가될 예정입니다.
-
 > **Live demo:** https://on-stage-nine.vercel.app/
 
 ![A탭 · 레이블 메인 궤도](public/screenshots/a-tab-orbit.png)
