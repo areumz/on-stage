@@ -10,7 +10,7 @@ A dual-perspective platform for a fictional entertainment label — the stage fa
 
 배포 후 이 자리에 Vercel 데모 링크가 추가될 예정입니다.
 
-> **Live demo:** _coming soon (will be added after Vercel deployment)_
+> **Live demo:** https://on-stage-nine.vercel.app/
 
 ---
 
