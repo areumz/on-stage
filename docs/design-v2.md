@@ -163,6 +163,10 @@ create table stage_presets (
 `sold <= capacity` 교차 테이블 CHECK는 두지 않는다. 티켓 현황을 조회 전용으로 확정했으므로(7장)
 사용자 입력 경로가 없고, 불변식은 시드가 보장한다.
 
+**위 6개 테이블은 생성 직후 전부 RLS를 켜야 한다** — 마이그레이션 파일에서 `create table` 다음에
+오는 것이 4.5의 `alter table ... enable row level security` 블록이다. 이 스키마만 보고 마이그레이션을
+쓰면 빠뜨리기 쉬운 지점이라 여기에 표시해 둔다.
+
 ### 4.2 뷰 — 지표 파생
 
 ```sql
@@ -293,6 +297,14 @@ service role 키는 시드 스크립트 전용이고 런타임 요청 경로에�
 API 라우트에서 service role로 우회하는 두 번째 경로를 만들지 않는다.
 
 ```sql
+-- 0. RLS 활성화. 이게 없으면 아래 정책 전부가 죽은 코드다.
+alter table artists        enable row level security;
+alter table tracks         enable row level security;
+alter table shows          enable row level security;
+alter table ticket_sales   enable row level security;
+alter table gallery_images enable row level security;
+alter table stage_presets  enable row level security;
+
 -- 역할 스코프: 읽기는 공개, 쓰기는 오너만
 create policy "public read"  on artists for select using (true);
 create policy "owner writes" on artists for all to authenticated
@@ -323,6 +335,18 @@ create policy "authed upload" on storage.objects for insert to authenticated
 create policy "own delete"    on storage.objects for delete to authenticated
   using (bucket_id = 'gallery' and owner = auth.uid());
 ```
+
+> 구현 에이전트 주의 (RLS 활성화, 세 가지):
+>
+> 1. **`enable row level security`를 빠뜨리지 말 것.** Postgres는 RLS 기본값이 꺼짐이고, `create policy`는
+>    정책을 등록만 할 뿐 활성화하지 않는다. 빠뜨려도 **에러가 나지 않고 정책이 조용히 무시되므로**,
+>    이 절의 소유 스코프/역할 스코프 구분이 통째로 무력화된 채 배포된다. Supabase **대시보드**로 만든
+>    테이블은 RLS가 자동으로 켜지지만 **SQL 마이그레이션**으로 만든 테이블은 켜지지 않는다.
+>    이 프로젝트는 후자다.
+> 2. **`force row level security`는 쓰지 말 것.** service role이 RLS를 우회하는 것은 의도된 동작이고
+>    시드 스크립트가 거기에 의존한다. `force`를 붙이면 시드가 자기 테이블에 쓰지 못한다.
+> 3. `ticket_sales`처럼 **쓰기 정책이 하나도 없는 테이블은 RLS가 켜져 있어야만 "전부 거부"가 된다.**
+>    꺼져 있으면 정책 없음이 곧 "전부 허용"이다. 정확히 반대 결과다.
 
 버킷 `gallery`는 public read이며 `allowed_mime_types`(`image/jpeg`, `image/png`, `image/webp`)와
 `file_size_limit`을 **버킷 설정에 건다.** API 라우트의 화이트리스트는 사용자에게 빨리 알려주기 위한
@@ -376,6 +400,14 @@ CLI로 push한다. 프로젝트를 둘로 나누면 일시정지 대상만 둘�
 
 `NEXT_PUBLIC_` 접두사를 쓰는 키는 하나도 없다. 이게 제약 4번이 지켜지고 있는지 확인하는 가장 빠른 방법이다.
 
+> **anon key를 서버 전용으로 묶은 것은 의도된 선택이다.** anon key는 이름 그대로 브라우저에 노출돼도
+> 안전하도록 설계된 키이고, Supabase 공식 예제 대부분은 이걸 `NEXT_PUBLIC_`으로 내보낸다. 여기서
+> 굳이 숨기는 이유는 제약 4번(클라이언트는 API Routes 경유) 때문이며, 표준 패턴에서 의도적으로
+> 벗어난 지점이니 "실수로 서버에 둔 것"으로 오해하지 말 것.
+>
+> 덧붙여, anon key가 "공개돼도 안전하다"는 전제 자체가 **RLS가 켜져 있을 때만 성립한다**(4.5).
+> 이 프로젝트는 RLS를 켜고 그 위에 키를 노출하지 않는 층을 한 겹 더 두는 셈이다.
+
 ### 4.8 변경 파일
 
 | 파일 | 작업 |
@@ -388,6 +420,7 @@ CLI로 push한다. 프로젝트를 둘로 나누면 일시정지 대상만 둘�
 | `src/proxy.ts` | 세션 갱신 + `getUser()` 가드 |
 | `src/app/api/{login,artists,metrics}/route.ts` | Supabase 경유로 교체, `async` |
 | `src/app/api/{logout,gallery,gallery/upload-url}/route.ts` | 신규 |
+| `src/app/api/gallery/[id]/route.ts` | 신규 — `DELETE` (4.6). 동적 라우트라 별도 파일 |
 | `next.config.ts` | `images.remotePatterns`에 Storage 호스트 추가 |
 | `supabase/migrations/0001_init.sql` · `scripts/seed.mjs` · `.env.example` | 신규 |
 | `.github/workflows/` | `npm test` 잡 추가 (현재 react-doctor 스캔만 돈다) |
@@ -548,6 +581,12 @@ vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import�
 
 ### 4장 · Supabase 전환
 
+- [ ] **6개 테이블 전부 RLS가 활성화돼 있다.** 아래 쿼리의 `relrowsecurity`가 모두 `t`여야 한다.
+      정책이 있어도 이게 `f`면 전부 무시되므로, 정책 존재 여부와 별개로 반드시 확인한다
+      ```sql
+      select relname, relrowsecurity from pg_class
+      where relname in ('artists','tracks','shows','ticket_sales','gallery_images','stage_presets');
+      ```
 - [ ] `src/data/*.json`을 import하는 앱 코드가 0개 (시드 스크립트만 읽는다)
 - [ ] `NEXT_PUBLIC_` 접두사 환경변수가 0개 — 브라우저 번들에 Supabase 키가 없다
 - [ ] `scripts/seed.mjs`를 두 번 연속 실행해도 모든 테이블의 행 수가 같다 (멱등)
