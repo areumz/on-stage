@@ -1,0 +1,577 @@
+# ON-STAGE — 2차 고도화 설계 문서 (Design Document v2)
+
+> 목업 위의 무대에서, 실제로 굴러가는 무대로.
+> 1차에서 mock JSON과 하드코딩 로그인으로 세운 두 개의 탭을 실제 백엔드 위에 올린다.
+
+- **상태**: 설계 승인 완료 (v2.0)
+- **선행 문서**: [`docs/design.md`](./design.md) 8장 "2차 (고도화)" — 이 문서가 그 목록을 구체화한 것
+- **다음 단계**: 4장(Supabase 전환)을 승인된 설계로 간주하고 `writing-plans`부터 진행
+- **문서 성격**: 이 문서는 **umbrella 설계**다. 5개 항목이 서로 독립 서브시스템이라 구현은 어차피 여러
+  사이클로 쪼개지므로, 우선순위 1번인 Supabase 전환만 실행 가능한 수준(스키마·RLS·API 계약)까지 적고
+  나머지 4개는 스코프와 확정된 결정까지만 적는다. 각 항목은 차례가 오면 해당 절을 확장한 뒤
+  별도 `writing-plans` 사이클로 넘긴다.
+
+---
+
+## 1. 2차 개요
+
+1차는 Vercel 배포까지 완료했고, 그 과정에서 의도적으로 남긴 부채가 세 종류다.
+
+| 부채 | 1차 상태 | 2차 해소 방식 |
+|---|---|---|
+| 인증 | `admin` / `1234` 하드코딩, 쿠키 값이 리터럴 `"ok"` | Supabase Auth (4.4) |
+| 데이터 | `src/data/*.json` 정적 import, 쓰기 경로 없음 | Supabase Postgres (4.1) |
+| 이미지 | `public/gallery/`에 36장 고정, 교체하려면 커밋 필요 | Supabase Storage + B탭 업로드 (4.6) |
+
+1차 로드맵의 "갤러리 이미지 정교화(AI 생성 이미지로 교체 검토)"는 **관리자가 직접 업로드·관리하는 기능으로
+대체한다.** 결과물 이미지를 한 번 더 만드는 것보다, 그걸 다루는 화면을 만드는 쪽이 이 포트폴리오의
+성격에 맞는다.
+
+---
+
+## 2. 확정된 제약과 결정
+
+| # | 항목 | 결정 | 근거 |
+|---|---|---|---|
+| 1 | 백엔드 | 별도 서버(Java/Spring 등)로 확장 **금지**. Supabase 단독으로 Auth/DB/Storage 전부 처리 | Java는 별도 프로젝트에서 학습 중. 이 포트폴리오는 프론트/AI 워크플로우 강점에 집중 |
+| 2 | 요금제 | 무료 티어 (500MB DB, 1GB Storage, 5만 MAU) | 이 규모엔 충분. 단 7일 비활성 시 일시정지 → 시드 재현성이 설계 제약 |
+| 3 | DB 범위 | 화면이 읽거나 쓰는 것 전부를 관계형 테이블로. `tracks` 포함 | `tracks` 편집 UI는 7장(B탭 잔여 메뉴)에서 붙는다. 지금 JSONB로 넣었다가 그때 관계형으로 재마이그레이션하는 걸 피한다 |
+| 4 | 접근 경로 | 서버 전용. 브라우저에 Supabase 키를 노출하지 않는다 | 1차 원칙("클라이언트는 API Routes 경유") 유지 |
+| 5 | 지표 | 저장하지 않고 판매 데이터에서 파생 | 1차 metrics.json의 부채(완성된 문자열, 박제된 d-day)를 DB로 이사시키지 않는다 |
+| 6 | 문서 | 1차와 동일하게 AI 협업 프로세스를 계속 문서에 남긴다 | 이 프로젝트의 핵심 차별점 |
+
+> 구현 에이전트 주의: 제약 1번은 강한 금지다. "이건 서버가 있으면 쉬운데"라는 이유로 별도 백엔드,
+> 커스텀 Node 서버, 외부 큐/워커를 도입하지 말 것. Supabase가 제공하지 않는 기능은 스코프에서 뺀다.
+
+---
+
+## 3. 시퀀싱
+
+```
+2.1  Supabase 전환 (4장)          ← 나머지 전부의 기반
+      ├─ 2.2  무대 연출 툴 고도화 (5장)      stage_presets 의존
+      ├─ 2.3  B탭 잔여 메뉴 (7장)           스키마 전체 의존
+      └─ 2.4  셰이더 심화 (8장)             artists.shader_* 컬럼 의존
+2.5  반응형 (6장)                 화면이 다 나온 뒤 + 3D 전략 별도 브레인스토밍
+```
+
+각 단계는 별도 `writing-plans` → `executing-plans` 사이클로 돌린다.
+반응형을 마지막에 두는 이유는 2.1과 2.3이 화면 구성을 바꾸기 때문이다 — 아직 없는 화면의
+브레이크포인트를 먼저 정하는 건 낭비다.
+
+---
+
+## 4. Supabase 전환 (로드맵 1번)
+
+### 4.1 스키마
+
+핵심 판단: **`tour_cities`를 별도 테이블로 만들지 않고 `shows`로 통합한다.**
+
+> 브레인스토밍 당시 후보 스키마에는 `tour_cities`가 별도 테이블로 있었다. 설계를 구체화하면서
+> 티켓 현황 화면이 공연 전체 목록을 필요로 한다는 걸 확인했고, 그러면 `tour_cities`는 `shows`의
+> 부분집합에 불과해 중복이 된다. **결정을 뒤집은 게 아니라, "화면이 읽거나 쓰는 것 전부를 테이블로"라는
+> 같은 원칙을 더 적은 테이블로 만족시키는 대안을 찾은 것이다.** A탭 투어 오빗이 필요로 하던 도시 4개는
+> `shows.featured` 플래그가 대신한다.
+
+이 통합의 부수 효과로 `stats.cities`와 `stats.countries`가 집계로 나오므로 컬럼에서 없앤다.
+`shows`는 A탭에 노출되는 4개가 아니라 **실제 투어 규모(아티스트별 `stats.cities` 개수, AURORA 기준
+24개)로 존재해야 한다** — 티켓 현황 화면이 그걸 나열하기 때문이다.
+
+`stat_tracks`만 컬럼으로 남긴다. 이건 "총 발매곡 수"이고 `tracks` 행은 사이트 노출용 대표곡만 담아
+의미가 다르다. 1차 `artists.json`에서 `stats.tracks: 8`과 `tracks` 배열 길이 4가 어긋나 있던 것은
+버그가 아니라 이 의도였다.
+
+```sql
+create table artists (
+  id             uuid primary key default gen_random_uuid(),
+  slug           text unique not null,
+  name           text not null,
+  name_ko        text not null,
+  color          text not null,          -- 시그니처 hex
+  initials       text not null,
+  orbit          smallint not null,      -- A탭 홈 궤도 인덱스 0(안)~2(밖)
+  angle          numeric  not null,      -- 궤도 위 각도(deg)
+  size           numeric  not null,      -- 노드 반지름 배율
+  news           text not null,          -- NOW 티커 문구
+  tour_badge     text not null,
+  tour_title_ko  text not null,
+  tour_year      smallint not null,
+  stat_tracks    smallint not null,      -- 총 발매곡 수. tracks 행 수(노출용 대표곡)와 의도적으로 다름
+  shader_pattern text    not null default 'wave',   -- 8장(셰이더 심화)
+  shader_freq    numeric not null default 9,
+  shader_falloff numeric not null default 0.75,
+  shader_speed   numeric not null default 0.5,
+  created_at     timestamptz not null default now()
+);
+
+create table tracks (
+  id         uuid primary key default gen_random_uuid(),
+  artist_id  uuid not null references artists on delete cascade,
+  no         smallint not null,
+  title      text not null,
+  duration   text not null,
+  cover_from text not null,              -- 2스톱 그라디언트 (실 커버아트 없음)
+  cover_to   text not null,
+  unique (artist_id, no)
+);
+
+create table shows (
+  id        uuid primary key default gen_random_uuid(),
+  artist_id uuid not null references artists on delete cascade,
+  city_code text not null,
+  city_name text not null,
+  country   text not null,
+  venue     text not null,
+  show_date date not null,
+  capacity  int  not null check (capacity > 0),
+  featured  boolean not null default false,   -- A탭 투어 오빗 노출 대상
+  unique (artist_id, city_code, show_date)
+);
+
+-- 일별 스냅샷. "지난주 대비 delta"를 계산하려면 시계열이 필요하다.
+create table ticket_sales (
+  id          bigserial primary key,
+  show_id     uuid not null references shows on delete cascade,
+  recorded_on date not null,
+  sold        int  not null check (sold >= 0),
+  unique (show_id, recorded_on)
+);
+
+create table gallery_images (
+  id           uuid primary key default gen_random_uuid(),
+  artist_id    uuid not null references artists on delete cascade,
+  storage_path text not null,
+  creator      text,
+  license      text,                     -- 'CC0 1.0' | 'CC BY 2.0' | 'AI' | 업로드 시 입력
+  origin       text,
+  sort_order   smallint not null default 0,
+  created_by   uuid references auth.users,   -- NULL = 시드 행 (4.5의 소유 스코프에서 불변)
+  created_at   timestamptz not null default now()
+);
+
+create table stage_presets (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users default auth.uid(),
+  artist_id  uuid not null references artists on delete cascade,
+  name       text not null,
+  state      jsonb not null,             -- StageState (5장)
+  created_at timestamptz not null default now(),
+  unique (user_id, artist_id, name)
+);
+```
+
+`sold <= capacity` 교차 테이블 CHECK는 두지 않는다. 티켓 현황을 조회 전용으로 확정했으므로(7장)
+사용자 입력 경로가 없고, 불변식은 시드가 보장한다.
+
+### 4.2 뷰 — 지표 파생
+
+```sql
+create view show_status with (security_invoker = true) as
+with bounds as (select max(recorded_on) as latest from ticket_sales),
+latest as (
+  select distinct on (show_id) show_id, sold from ticket_sales
+  order by show_id, recorded_on desc
+),
+prev as (
+  select distinct on (show_id) show_id, sold from ticket_sales
+  where recorded_on <= (select latest from bounds) - 7
+  order by show_id, recorded_on desc
+)
+select s.*,
+       coalesce(l.sold, 0) as sold,
+       p.sold              as sold_prev,
+       coalesce(l.sold, 0)::numeric / s.capacity as rate
+from shows s
+left join latest l on l.show_id = s.id
+left join prev   p on p.show_id = s.id;
+
+create view artist_metrics with (security_invoker = true) as
+select artist_id,
+       sum(sold)               as total_tickets,
+       sum(sold_prev)          as total_tickets_prev,
+       avg(rate)               as avg_booking_rate,
+       count(*)                as city_count,
+       count(distinct country) as country_count
+from show_status
+group by artist_id;
+```
+
+세 가지가 설계 의도다.
+
+**`security_invoker = true`는 생략 금지.** Postgres 뷰는 기본적으로 정의자 권한으로 실행되어
+기반 테이블의 RLS를 우회한다. 이 옵션이 없으면 4.5의 정책이 뷰 경로에서 전부 무력화된다.
+
+**`current_date`가 아니라 `max(recorded_on)` 기준으로 "최신 / 7일 전"을 잡는다.** 제약 2번(7일 비활성
+일시정지) 때문에 시드 이후 시간이 흐르는 상황이 정상 시나리오다. 절대 날짜로 잡으면 며칠만 지나도
+비교 대상이 데이터 범위를 벗어나 delta가 NULL이 된다.
+
+**`latest` 조인은 반드시 LEFT JOIN이어야 한다.** 7장에서 오너가 `/staff/tours`로 새 공연을 만들면
+`ticket_sales` 행이 아직 없다. INNER JOIN이면 그 공연이 `show_status`에서 통째로 사라져 티켓 현황
+화면에도, `artist_metrics`의 도시 수 집계에도 잡히지 않는다. `coalesce(l.sold, 0)`으로 판매량 0인
+공연으로 표시한다. 반면 `sold_prev`는 NULL로 남겨둔다 — 지난주에 존재하지 않던 공연이 지난주
+합계에 들어가면 안 되고, `sum`이 NULL을 무시하는 게 정확히 그 동작이다.
+
+다음 공연은 뷰에 억지로 밀어넣지 않고 `show_status`에서 `show_date >= current_date` 정렬 후 1건 조회한다.
+
+### 4.3 표시 레이어 = TDD 대상
+
+`src/lib/metricsView.ts`의 순수 함수 `toMetricsView(metrics, nextShow)`가 DB 숫자를 화면용 모양으로 바꾼다.
+API 라우트는 "쿼리 → 매핑 → 응답" 세 줄로 얇아진다.
+
+이 분리가 1차의 부채 두 개를 구조적으로 해소한다.
+
+- 1차에서 **테스트로 강제하던** "`▲`/`▼` 화살표와 `positive` 불리언 일치" 불변식이 여기서는
+  같은 계산에서 둘 다 나오므로 **어긋날 수가 없다.** 데이터 정합성 테스트가 필요 없어진다.
+- 박제된 `dday` 정수가 `show_date - current_date` 계산으로 대체되어 더 이상 조용히 낡지 않는다.
+
+| 테스트 케이스 | 확인 내용 |
+|---|---|
+| delta 양수 / 음수 / 0 | 화살표 문자와 `positive` 플래그가 항상 같은 방향 |
+| `total_tickets_prev`가 NULL | 7일 전 스냅샷이 없는 신규 공연에서 0으로 나누지 않음 |
+| d-day 0일 / 과거 날짜 | 오늘 공연과 지난 공연의 표기 |
+| 예매율 반올림 | 소수점 처리 일관성 |
+
+> 구현 에이전트 주의: 1차 `src/app/api/metrics/route.test.ts`의 프로토타입 체인 가드 테스트
+> (`constructor` / `__proto__` / `toString` / `hasOwnProperty`)는 **되살리지 말 것.** 객체 인덱싱이
+> `.eq('slug', slug)` 쿼리로 바뀌면서 취약점 자체가 사라졌다. `src/lib/data.ts`의 `Object.hasOwn` 가드도
+> 함께 없어진다. 없어진 방어 코드를 습관적으로 복원하면 의미 없는 분기가 남는다.
+
+### 4.4 인증
+
+| 대상 | 작업 |
+|---|---|
+| `POST /api/login` | 서버에서 `signInWithPassword` 호출, `@supabase/ssr` 서버 클라이언트가 세션 쿠키 세팅 |
+| `POST /api/logout` | 신규 (1차엔 로그아웃 경로가 없다) |
+| `src/proxy.ts` | 세션 갱신 + `/staff/*` 가드 |
+| `src/lib/auth.ts` | `validateCredentials`와 `STAFF_COOKIE` 삭제. 순수 함수 `staffRedirectPath`와 그 테스트는 유지 |
+| `src/app/staff/login/page.tsx` | 아이디 → 이메일 필드로 변경. 데모 계정 안내 문구 갱신 |
+
+시드가 계정 두 개를 만든다.
+
+- **데모 계정** — `app_metadata`에 role 없음. README에 공개
+- **오너 계정** — `app_metadata: { role: "owner" }`. 비밀번호는 환경변수, 공개하지 않음
+
+4.5의 역할 스코프 정책이 이 `role` 클레임을 읽는다.
+
+> 구현 에이전트 주의 (세 가지, 전부 놓치기 쉬움):
+>
+> 1. **Next 16이라 파일명은 `src/proxy.ts`이며 `middleware.ts`가 아니다.** `@supabase/ssr` 공식 문서의
+>    세션 갱신 보일러플레이트는 `middleware.ts`를 가정하므로, 내용은 가져오되 파일명과 export 이름
+>    (`proxy`)은 이 프로젝트 것을 유지할 것.
+> 2. **`proxy.ts`에서는 `getSession()`이 아니라 `getUser()`를 쓴다.** 전자는 쿠키를 그대로 신뢰하고
+>    서명을 검증하지 않아 가드로 쓸 수 없다.
+> 3. **로그인 성공 후의 `window.location.href` 전체 네비게이션은 그대로 둔다.** 이건 App Router
+>    클라이언트 캐시에 로그인 전 리다이렉트가 남아 `router.push`가 로그인 화면으로 되돌아오는 문제의
+>    우회책이고, 인증 방식과 무관하다. "Supabase로 바꿨으니 이제 `router.push`로 되돌려도 되겠다"는
+>    판단은 틀렸다.
+
+### 4.5 RLS — 쓰기 스코프가 두 가지다
+
+**이 절이 7장(B탭 잔여 메뉴)의 전제다.** 쓰기 경로는 두 종류이며 **둘 다 RLS로 강제한다.**
+service role 키는 시드 스크립트 전용이고 런타임 요청 경로에서는 사용하지 않는다.
+
+| 스코프 | 대상 | 정책 조건 | 누가 쓰나 |
+|---|---|---|---|
+| **소유 스코프** | `gallery_images`, `stage_presets`, Storage 객체 | 소유자 컬럼 = `auth.uid()` (`created_by` / `user_id` / `owner`) | 공유 데모 계정 포함 모든 로그인 사용자 |
+| **역할 스코프** | `artists`, `tracks`, `shows` | `app_metadata.role = 'owner'` | 오너 계정만 |
+| (쓰기 정책 없음) | `ticket_sales` | — | 시드(service role)만 |
+
+`ticket_sales`에는 쓰기 정책을 아예 만들지 않는다. 판매량을 쓰는 화면이 없고(7장에서 티켓 현황을
+조회 전용으로 확정), 시드는 service role이라 RLS를 우회하므로 정책이 필요 없다. "나중에 필요할 테니
+오너 정책이라도 붙여두자"는 판단은 하지 않는다.
+
+**소유 스코프가 필요한 이유**: 배포된 포트폴리오라 데모 계정으로 누구나 로그인한다. 시드된 갤러리 36장은
+`created_by = NULL`이라 어떤 방문자도 지울 수 없고, 방문자가 올린 것만 방문자가 지운다. 업로드 기능은
+그대로 시연되면서 갤러리가 훼손되지 않는다.
+
+**역할 스코프가 따로 필요한 이유**: 소유 스코프만으로는 7장에서 같은 문제가 되살아난다. `artists`나
+`shows`는 시드가 만든 행이 전부라 `created_by` 소유 스코프가 성립하지 않고(방문자가 새로 만들 게 없다),
+그렇다고 로그인만으로 쓰기를 열면 공유 데모 계정을 쓰는 아무 방문자나 아티스트 정보와 투어 일정을
+고칠 수 있다.
+
+역할을 JWT 클레임으로 받아 RLS에서 직접 검사하므로 **쓰기 경로는 여전히 하나(RLS)로 통일된다.**
+API 라우트에서 service role로 우회하는 두 번째 경로를 만들지 않는다.
+
+```sql
+-- 역할 스코프: 읽기는 공개, 쓰기는 오너만
+create policy "public read"  on artists for select using (true);
+create policy "owner writes" on artists for all to authenticated
+  using      (auth.jwt() #>> '{app_metadata,role}' = 'owner')
+  with check (auth.jwt() #>> '{app_metadata,role}' = 'owner');
+-- tracks / shows 동일
+
+-- ticket_sales: 읽기만. 쓰기 정책 없음 (service role 시드 전용)
+create policy "public read" on ticket_sales for select using (true);
+
+-- 소유 스코프: gallery_images
+create policy "public read"   on gallery_images for select using (true);
+create policy "authed insert" on gallery_images for insert to authenticated
+  with check (created_by = auth.uid());
+create policy "own update"    on gallery_images for update to authenticated
+  using (created_by = auth.uid());
+create policy "own delete"    on gallery_images for delete to authenticated
+  using (created_by = auth.uid());
+
+-- 소유 스코프: stage_presets (완전 사용자 스코프)
+create policy "own all" on stage_presets for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Storage: 시드는 service role로 올려 owner가 NULL → 방문자가 못 지움 (테이블 정책과 대칭)
+create policy "public read"   on storage.objects for select using (bucket_id = 'gallery');
+create policy "authed upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'gallery' and owner = auth.uid());
+create policy "own delete"    on storage.objects for delete to authenticated
+  using (bucket_id = 'gallery' and owner = auth.uid());
+```
+
+버킷 `gallery`는 public read이며 `allowed_mime_types`(`image/jpeg`, `image/png`, `image/webp`)와
+`file_size_limit`을 **버킷 설정에 건다.** API 라우트의 화이트리스트는 사용자에게 빨리 알려주기 위한
+것이고 진짜 신뢰 경계는 버킷 설정이다. 둘 다 둔다.
+
+### 4.6 이미지 업로드 — 서명 URL 3단계
+
+`createSignedUploadUrl`이 돌려주는 URL은 그냥 `PUT` 가능한 단일 목적 URL이라 브라우저에 supabase-js도
+anon key도 필요 없다. 제약 4번("클라이언트는 API Routes 경유")이 유지되면서 Vercel 서버리스의
+4.5MB 요청 바디 제한도 피한다.
+
+| 단계 | 경로 | 하는 일 |
+|---|---|---|
+| 1 | `POST /api/gallery/upload-url` | 인증 확인 → 파일 타입/크기 1차 검사 → 경로 생성 → 서명. 응답 `{ signedUrl, path }` |
+| 2 | (브라우저) `PUT {signedUrl}` | 파일 바이트를 Storage로 직접 전송. 서버를 거치지 않음 |
+| 3 | `POST /api/gallery` | `created_by = 세션 uid`로 `gallery_images` 행 삽입 |
+
+`DELETE /api/gallery/[id]`는 RLS가 소유 검사를 하므로 서버 코드에서 소유자를 다시 확인하지 않는다.
+
+`next/image`가 Storage 호스트를 로드하려면 `next.config.ts`에 `images.remotePatterns`를 추가해야 한다
+(1차엔 로컬 파일만 써서 `images` 설정 자체가 없다).
+
+### 4.7 마이그레이션 · 시드 · 환경
+
+**환경**: Supabase 원격 프로젝트 **1개**(dev = prod). 스키마는 `supabase/migrations/*.sql`로 버전 관리하고
+CLI로 push한다. 프로젝트를 둘로 나누면 일시정지 대상만 둘이 되어 관리 포인트가 오히려 늘어난다.
+
+**시드**(`scripts/seed.mjs`): 의존성을 추가하지 않으려고 타입 없는 평범한 ESM으로 쓴다. 전 단계가
+멱등(upsert)이라 7일 일시정지 복구든 로컬 초기화든 한 명령이다.
+
+1. `src/data/artists.json` → `artists` upsert (셰이더 파라미터는 slug별 고정 매핑)
+2. `tracks` upsert
+3. `shows` 생성 — 기존 `cities` 4개는 `featured = true`, 나머지는 `stats.cities` 개수만큼 결정론적 생성.
+   공연 날짜는 **향후 6개월에 분포**시켜 d-day가 쉽게 낡지 않게 한다
+4. `ticket_sales` 14일치 스냅샷 생성 (전 아티스트 합계 2천 행 안팎 — 무료 티어 500MB에 무관)
+5. `public/gallery/*.jpg` 36장을 service role로 Storage 업로드 + `gallery_images` 행(`created_by = NULL`)
+6. 데모 계정과 오너 계정 생성 (4.4)
+
+> 구현 에이전트 주의: `public/gallery/`와 `src/data/*.json`을 **삭제하지 말 것.** DB로 옮겼으니
+> 지워도 된다고 판단하기 쉬우나, 이 파일들은 시드의 원본이고 재현성은 제약 2번에서 온 요구사항이다.
+> 앱 코드에서 import하지 않게 되는 것과 저장소에서 지우는 것은 다르다.
+
+**환경변수**(`.env.example` 신규):
+
+| 키 | 용도 | 노출 |
+|---|---|---|
+| `SUPABASE_URL` | 프로젝트 URL | 서버 전용 |
+| `SUPABASE_ANON_KEY` | 사용자 세션 기반 접근 | 서버 전용 (제약 4번) |
+| `SUPABASE_SERVICE_ROLE_KEY` | 시드 스크립트 전용 | 서버 전용, Vercel에는 등록하지 않음 |
+| `SEED_OWNER_EMAIL` / `SEED_OWNER_PASSWORD` | 오너 계정 생성 | 로컬 전용 |
+
+`NEXT_PUBLIC_` 접두사를 쓰는 키는 하나도 없다. 이게 제약 4번이 지켜지고 있는지 확인하는 가장 빠른 방법이다.
+
+### 4.8 변경 파일
+
+| 파일 | 작업 |
+|---|---|
+| `src/lib/supabase/server.ts` · `admin.ts` | 신규 — 쿠키 어댑터 서버 클라이언트 / service role 클라이언트 |
+| `src/lib/data.ts` | 쿼리 모듈로 교체. 세 함수가 전부 `async`가 되고 호출부 5곳에 `await` 추가 |
+| `src/lib/metricsView.ts` | 신규 — 순수 매핑, TDD 대상 (4.3) |
+| `src/lib/types.ts` | DB 행 타입과 화면용 뷰 타입 분리 |
+| `src/lib/auth.ts` | `validateCredentials` · `STAFF_COOKIE` 삭제, `staffRedirectPath` 유지 |
+| `src/proxy.ts` | 세션 갱신 + `getUser()` 가드 |
+| `src/app/api/{login,artists,metrics}/route.ts` | Supabase 경유로 교체, `async` |
+| `src/app/api/{logout,gallery,gallery/upload-url}/route.ts` | 신규 |
+| `next.config.ts` | `images.remotePatterns`에 Storage 호스트 추가 |
+| `supabase/migrations/0001_init.sql` · `scripts/seed.mjs` · `.env.example` | 신규 |
+| `.github/workflows/` | `npm test` 잡 추가 (현재 react-doctor 스캔만 돈다) |
+
+---
+
+## 5. 무대 연출 툴 고도화 (로드맵 2번)
+
+`StageState`를 확장한다.
+
+```ts
+type StageState = {
+  color: string;                                   // 고정 팔레트 → 자유 선택
+  spots: { on: boolean; intensity: number; angle: number; penumbra: number }[];  // ×3
+  camera: "front" | "audience" | "top";
+  smoke: { density: number; color: string };       // 신규
+};
+```
+
+1차 `StageControls`에는 슬라이더가 하나도 없다(앱 전체에 `type="range"`가 0개). `StageScene`의 `Spot`에
+하드코딩돼 있던 `intensity={300} angle={0.45} penumbra={0.6}`을 그대로 슬라이더로 노출하는 것이
+세밀 조명 조절의 실체다.
+
+**스모그는 three.js 기본 `fog` + drei `<Cloud>`로 구현하고 직접 쓰는 셰이더는 0줄이다.**
+1차에서 91줄 커스텀 파티클 셰이더를 16줄 drei `Sparkles`로 교체한 이력이 있다(README 참조).
+같은 판단을 반복한다.
+
+**선행 작업**: `parseStageState`가 전부-아니면-전무 방식이라 필드를 하나만 추가해도 저장된 상태가
+전부 무효화되고 사용자가 defaults로 되돌아간다. **필드별 폴백 병합 방식으로 먼저 고쳐야 하며,
+이건 TDD 대상이다.** 새 필드가 없는 구버전 저장값이 나머지 필드를 유지한 채 로드되는지 테스트한다.
+
+프리셋은 두 층으로 나눈다.
+
+| 층 | 저장소 | 동작 |
+|---|---|---|
+| 작업 중 상태 | localStorage (`stage-state:${slug}`) | 조작할 때마다 자동. 1차의 `useSyncExternalStore` 스토어 그대로 |
+| 명명된 프리셋 | Supabase `stage_presets` | 사용자가 이름 붙여 명시적으로 저장/불러오기 |
+
+기존 `src/lib/hooks.ts`를 건드리지 않고 프리셋 API만 얹는 게 가장 짧은 경로다.
+
+---
+
+## 6. 반응형 (로드맵 3번 — 구현은 마지막)
+
+- 브레이크포인트: Tailwind 기본 (`sm` 640 / `md` 768 / `lg` 1024). 커스텀 브레이크포인트 추가 금지
+- 대응 우선순위: A탭 홈 → 아티스트 페이지 → B탭 대시보드 → 무대 툴
+- **모바일 3D 전략(R3F 유지 + 예산 조정 / 정적 폴백)은 이 문서에서 정하지 않는다.** 4장과 7장 구현이
+  레이아웃을 바꾸므로 그 뒤에 별도 브레인스토밍으로 결정한다
+
+현재 앱 전체에 반응형 클래스가 **0개**다(`sm:` / `md:` / `lg:` 검색 결과 없음). 1차에서 의도적으로
+데스크톱 전용으로 만든 결과이며, 알려진 데스크톱 가정은 다음과 같다.
+
+| 위치 | 가정 |
+|---|---|
+| 갤러리 그리드, 대시보드 지표 카드 | `grid-cols-3` |
+| 투어 섹션, 대시보드 하단 | `grid-cols-2` |
+| 아티스트 페이지 히어로 | `text-[10rem]` |
+| B탭 사이드바 | `w-56` 고정 |
+| 무대 컨트롤 패널 | `w-72` 고정 |
+| 무대 스튜디오 | `h-screen` + `overflow-hidden` |
+
+---
+
+## 7. B탭 잔여 메뉴 실 화면 (로드맵 4번)
+
+**전제**: 여기서 붙는 CRUD는 4.5의 **역할 스코프**(`app_metadata.role = 'owner'`)로 막힌다. 4장의
+소유 스코프(`created_by = auth.uid()`)와는 다른 정책이며, 소유 스코프가 적용되는 건 갤러리와
+프리셋뿐이다. 따라서 공유 데모 계정으로 로그인한 방문자는 세 화면을 **읽기 전용으로** 본다.
+서버 컴포넌트가 세션의 role 클레임을 읽어 편집 버튼을 비활성 렌더하되, **최종 게이트는 RLS이고
+UI 비활성화는 안내용이다.** 2차의 핵심 시연 기능인 갤러리 업로드와 프리셋 저장은 데모 계정으로도
+그대로 동작한다.
+
+| 경로 | 깊이 | 내용 |
+|---|---|---|
+| `/staff/tours` | CRUD | `shows` 관리 (날짜·도시·베뉴·수용인원·`featured`) |
+| `/staff/artists` | CRUD | `artists` 편집(색상·뉴스·투어 배지·셰이더 파라미터) + `tracks` CRUD + 갤러리 관리(4.6 업로드 재사용) |
+| `/staff/tickets` | 조회 전용 | 공연별 판매율 테이블. 지표 파생의 원천이라 손으로 고치지 못하게 한다 |
+
+`/staff/tickets`를 조회 전용으로 두는 이유는 편집 UI를 아끼려는 게 아니라, 대시보드 수치가 손으로
+조작 가능해지면 파생 지표(4.2)의 신뢰도가 떨어지기 때문이다. 실제 예매 시스템도 판매량은 시스템이
+쓰고 관계자는 본다.
+
+**함께 수정할 것**: `/staff/stage`가 `(console)` 라우트 그룹 **바깥**에 있어 이동하면 사이드바가
+언마운트되고, 사이드바의 "무대 연출" 메뉴는 어떤 상황에서도 활성으로 표시되지 않는다. 그룹 안으로
+옮긴다. 1차의 stub 페이지 3개는 삭제한다.
+
+---
+
+## 8. 셰이더 심화 (로드맵 5번)
+
+1차의 셰이더는 `HeroBackground` 하나뿐이고 아티스트별 차이는 **`uColor` 하나**다. 파동 주파수, 글로우
+감쇠, 속도가 6명 모두 같다.
+
+**`artists` 테이블의 `shader_*` 컬럼 4개가 유니폼을 구동한다.** 셰이더 파일을 아티스트 수만큼 늘리지
+않고 하나를 유지하며, `shader_pattern` enum 3종(`wave` / `ripple` / `grain`)은 프래그먼트 내 분기
+하나로 처리한다. 파라미터 조절 UI는 7장의 `/staff/artists` 화면에 붙는다 — DB가 비주얼을 구동하므로
+관리자가 실시간으로 무드를 바꿀 수 있다.
+
+`OrbitScene` 노드까지 셰이더를 확장하는 것은 이번 스코프 밖이다.
+
+> 구현 에이전트 주의: `docs/design.md:125`는 `artists.json`에 "셰이더 테마" 필드가 있다고 적었으나
+> 실제로는 없다. 1차 설계와 구현이 어긋난 지점이며, 이 장이 그 격차를 메우는 작업이다.
+
+---
+
+## 9. 개발 워크플로우 (2차)
+
+1차 프로세스를 그대로 유지한다 ([`docs/design.md`](./design.md) 7장).
+
+```
+[설계]  이 문서 = 승인된 설계 (brainstorming 완료)
+[계획]  writing-plans        → 항목별 구현 계획 생성
+[구현]  executing-plans      → 배치 실행 + 사람 체크포인트
+[품질]  TDD (범위 한정, 아래)
+        requesting-code-review → /ponytail-review
+        verification-before-completion
+[머지]  finishing-a-development-branch → PR 생성
+        react-doctor + npm test CI → 이슈 시 receiving-code-review 루프 → merge
+```
+
+### 9.1 유지되는 1차 원칙
+
+| 원칙 | 2차에서의 의미 |
+|---|---|
+| 클라이언트는 API Routes 경유 | 제약 4번. Supabase 키가 브라우저에 나가지 않는다 (4.6의 서명 URL 포함) |
+| 서버 컴포넌트가 초기 데이터 조회 | 선택된 아티스트가 URL 쿼리(`?artist=`)에 있는 구조를 유지해 서버 컴포넌트로 남긴다 |
+| TDD는 로직 레이어만 | 2차 대상: `metricsView`(4.3), `parseStageState` 병합(5장), `staffRedirectPath`(유지) |
+| R3F·셰이더는 브라우저 시각 검증 | 5장·8장은 Playwright 스크린샷으로 확인 |
+
+vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import할 수 없다는 사실이 형식적 테스트를
+막는 실질적 강제 장치이기 때문이며, 1차에서 이 제약 덕분에 상태 로직이 `src/lib/stageState.ts`로
+분리됐다.
+
+### 9.2 문서화
+
+- README의 2차 로드맵 섹션을 진행 상황에 맞게 갱신
+- Supabase Auth 도입에 따른 인증 플로우 문서 추가 (`docs/design.md` 7.4의 예고 이행)
+- 1차와 동일하게 각 항목의 계획 요약과 검증 노트를 공개 문서로 남긴다 (제약 6번)
+
+---
+
+## 10. 범위 제외 (2차 기준 명시적 Out of Scope)
+
+- 별도 백엔드 서버 (제약 1번)
+- 회원가입 · 비밀번호 재설정 · 소셜 로그인 — 계정은 시드가 만든 둘뿐
+- 실 결제 / 예매 기능
+- 다국어(i18n)
+- 이미지 자동 리사이즈 · 썸네일 파이프라인 — 업로드된 원본을 그대로 쓴다
+- 감사 로그 · 소프트 삭제 · 되돌리기
+- `tracks` 편집 UI (4장 스코프에서는 읽기 전용, 7장에서 붙는다)
+- `OrbitScene` 셰이더화 (8장 스코프 밖)
+
+> 구현 에이전트 주의: 위 항목을 선제적으로 구현하지 말 것 (YAGNI).
+
+---
+
+## 11. 완료 기준
+
+### 4장 · Supabase 전환
+
+- [ ] `src/data/*.json`을 import하는 앱 코드가 0개 (시드 스크립트만 읽는다)
+- [ ] `NEXT_PUBLIC_` 접두사 환경변수가 0개 — 브라우저 번들에 Supabase 키가 없다
+- [ ] `scripts/seed.mjs`를 두 번 연속 실행해도 모든 테이블의 행 수가 같다 (멱등)
+- [ ] 데모 계정으로 시드 갤러리 이미지 삭제를 시도하면 RLS에 막힌다
+- [ ] 데모 계정으로 `artists` / `shows` UPDATE를 시도하면 막히고, 오너 계정으로는 통과한다
+- [ ] B탭에서 이미지를 업로드하면 A탭 갤러리에 반영되고, 같은 계정으로 되돌려 지울 수 있다
+- [ ] 대시보드 d-day가 오늘 날짜 기준으로 계산된다 (박제된 값이 아니다)
+- [ ] `npm test`가 CI에서 돌고 통과한다
+- [ ] Vercel 배포 URL에서 A탭·B탭 전체 플로우가 1차와 동일하게 동작한다
+
+### 5장 · 무대 연출 툴
+
+- [ ] 새 필드가 없는 구버전 저장 상태를 로드해도 기존 필드가 유지된다 (병합 폴백)
+- [ ] 슬라이더 조작이 R3F 씬에 실시간 반영된다 (시각 검증)
+- [ ] 프리셋을 저장한 뒤 로그아웃 → 재로그인해도 남아 있다
+- [ ] 직접 작성한 셰이더 코드가 0줄이다
+
+### 7장 · B탭 잔여 메뉴
+
+- [ ] 사이드바 메뉴 5개 모두 실 화면으로 연결되고 stub이 없다
+- [ ] `/staff/stage`에서 사이드바가 유지되고 "무대 연출"이 활성으로 표시된다
+- [ ] 데모 계정에서 세 화면이 읽기 전용으로 보인다
+
+### 8장 · 셰이더 심화
+
+- [ ] 6명의 히어로 배경이 색상 외에도 서로 다르게 보인다 (시각 검증)
+- [ ] `/staff/artists`에서 파라미터를 바꾸면 A탭 히어로에 반영된다
