@@ -1,4 +1,7 @@
-# ON-STAGE 2차 구현 계획 — Supabase 전환 (Implementation Plan v2)
+# ON-STAGE 2차 구현 계획 2.1 — Supabase 전환 (Implementation Plan v2.1)
+
+> 2차 고도화는 항목마다 별도 계획 문서를 갖는다. 번호는 [`docs/design-v2.md`](./design-v2.md) 3장의
+> 시퀀싱(2.1~2.5)을 따른다. 이 문서는 **2.1 Supabase 전환**만 다룬다.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: `superpowers:executing-plans`로 태스크 단위 실행.
 > 각 스텝은 체크박스(`- [ ]`)로 추적한다.
@@ -17,28 +20,6 @@ Supabase CLI / Postgres 15+ / vitest (node 환경)
 쪼갠 것이며, 스키마 DDL·RLS 정책·API 계약의 **단일 진실 공급원은 design-v2.md다.**
 
 **브랜치:** `feat/supabase` (1차 관행 `feat/<area>` 유지)
-
----
-
-## 이 계획 문서의 방침 (1차와 다른 점)
-
-1차는 `docs/plan.md`에 컴포넌트·라우트 핸들러 코드를 통째로 실어 두고, 그대로 공개하면
-"AI 초안을 검증 없이 커밋한 것"처럼 보일 수 있어 코드를 뺀 `docs/plan-summary.md`를 따로 만들었다.
-같은 내용을 두 번 쓰는 이중 작업이었다.
-
-2차는 **문서 하나만 운영한다.**
-
-- **이 문서에는 컴포넌트·라우트 핸들러 코드를 싣지 않는다.** 스키마 DDL과 RLS 정책은 이미
-  design-v2.md 4장에 있으므로 각 Task는 그 절을 참조한다. 실제 코드는 executing-plans 단계에서
-  그 자리에서 작성한다.
-- 각 Task는 **무엇을(파일 경로) · 왜(design-v2.md 절 참조 + 판단 근거) · 완료조건** 중심으로 쓴다.
-  단, `**Interfaces:**`의 함수 시그니처는 유지한다 — Task를 순서대로 읽지 않는 구현자가 이웃 Task의
-  이름과 타입을 알 수 있는 유일한 통로이고, 이건 "미리 써둔 구현 코드"가 아니다.
-- `plan-summary.md`를 나중에 따로 만들지 않는다. **각 Task를 끝낼 때마다 그 Task 아래 "검증 노트"에
-  실제로 무엇을 발견하고 어떻게 고쳤는지를 바로 누적한다.**
-
-> 각 Task의 `**검증 노트**` 항목은 의도적으로 비워 둔 자리다. 구현 전에는 비어 있는 게 정상이며,
-> Task 완료 시점에 채운다.
 
 ---
 
@@ -101,7 +82,7 @@ src/
         ├── route.ts             # 신규 — POST (행 삽입)
         └── [id]/route.ts        # 신규 — DELETE
 
-supabase/migrations/0001_init.sql   # 신규 — 테이블 + RLS + 뷰 + 버킷
+supabase/migrations/<타임스탬프>_init.sql  # 신규 — 테이블 + RLS + 뷰 + 버킷 (CLI가 이름을 정한다)
 scripts/seed.mjs                    # 신규 — 멱등 시드
 .env.example                        # 신규
 .github/workflows/test.yml          # 신규 — npm test
@@ -156,6 +137,7 @@ Task 8  완료 기준 검증 · 문서 갱신
 
 **Files:**
 - Modify: `package.json` (의존성 3개, `seed` 스크립트)
+- Modify: `.gitignore` (`!.env.example` 예외 추가 — 아래 Step 3)
 - Create: `.env.example`
 - Create: `.env.local` (gitignored — `.gitignore`의 `.env*`가 이미 잡는다)
 - Create: `.github/workflows/test.yml`
@@ -174,9 +156,14 @@ Task 8  완료 기준 검증 · 문서 갱신
 - [ ] **Step 1: Supabase 프로젝트 생성** — 무료 티어, 리전은 지연이 가장 낮은 곳. **사람이 직접 한다**
       (대시보드 로그인 필요). 생성 후 URL·anon key·service role key를 확보한다
 - [ ] **Step 2: 의존성 설치** — 위 세 개
-- [ ] **Step 3: `.env.example` 작성** — §4.7 표의 5개 키, 각각 용도 주석 한 줄
+- [ ] **Step 3: `.env.example` 작성 + `.gitignore`에 `!.env.example` 예외 추가** — §4.7 표의 5개 키,
+      각각 용도 주석 한 줄. **`.gitignore`의 `.env*` 패턴은 `.env.local`뿐 아니라 `.env.example`까지
+      잡는다.** 키 이름과 용도를 담은 문서용 파일이라 커밋돼야 하므로 `!.env.example` 부정 패턴이
+      반드시 필요하다 (`.env*` 다음 줄에 둘 것 — gitignore는 나중 규칙이 이긴다)
 - [ ] **Step 4: `.env.local` 작성** — Step 1에서 받은 실제 값
-- [ ] **Step 5: `package.json`에 `seed` 스크립트 추가** — `node scripts/seed.mjs`
+- [ ] **Step 5: `package.json`에 `seed` 스크립트 추가** —
+      `node --env-file=.env.local scripts/seed.mjs`. **`dotenv`를 추가하지 않는다** — Node 22의
+      `--env-file` 플래그로 충분하고, 의존성은 §주의의 세 개로 끝이다
 - [ ] **Step 6: `.github/workflows/test.yml` 작성** — `push`/`pull_request`에서 Node 22로
       `npm ci && npm test`. react-doctor 워크플로와 별도 파일로 둔다 (목적과 트리거가 다르다)
 - [ ] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
@@ -184,9 +171,16 @@ Task 8  완료 기준 검증 · 문서 갱신
 **완료조건:**
 - `npx supabase --version`이 동작한다
 - `.env.local`에 5개 키가 모두 있고, `.env.example`에는 값이 비어 있다
-- `grep -r "NEXT_PUBLIC_" .env.example` 결과가 0건이다
+- **키 정의** 중 `NEXT_PUBLIC_` 접두사가 0건이다. 파일 전체를 grep하면 "이 프로젝트는 `NEXT_PUBLIC_`을
+  쓰지 않는다"는 **주석 설명까지 잡혀 오탐이 난다.** 주석을 제외하고 셀 것:
+  ```bash
+  grep -v '^[[:space:]]*#' .env.example | grep -c "NEXT_PUBLIC_"   # 0이어야 한다
+  ```
 - `npm test`가 로컬에서 통과한다 (기존 5개 테스트 파일)
-- `git status`에 `.env.local`이 나타나지 않는다
+- **`git status --porcelain -uall`에 `.env.example`은 나타나고 `.env.local`은 나타나지 않는다.**
+  `git check-ignore -v`로 확인하지 말 것 — 부정 패턴(`!`)이 매칭돼도 종료 코드 0에 패턴 이름을
+  출력해서, 예외를 제대로 넣은 뒤에도 "여전히 무시됨"처럼 보인다. `git add --dry-run`도 함께 쓰면
+  확실하다 (`.env.local`에 대해서만 거부 메시지가 나와야 한다)
 
 **검증 노트**: _(Task 완료 시 기록)_
 
@@ -195,7 +189,7 @@ Task 8  완료 기준 검증 · 문서 갱신
 ### Task 2: 마이그레이션 — 테이블 · RLS · 뷰 · 버킷
 
 **Files:**
-- Create: `supabase/migrations/0001_init.sql`
+- Create: `supabase/migrations/<타임스탬프>_init.sql` (파일명은 CLI가 정한다 — Step 1 참조)
 - Create: `supabase/config.toml` (CLI `init` 산출물)
 
 **Interfaces:**
@@ -212,8 +206,11 @@ Task 8  완료 기준 검증 · 문서 갱신
 우회하는 것은 의도된 동작이고 Task 3이 거기에 의존한다. 뷰에는 `with (security_invoker = true)`가
 반드시 붙어야 한다 (§4.2).
 
-- [ ] **Step 1: `npx supabase init` 실행** 후 원격 프로젝트에 `link`
-- [ ] **Step 2: `0001_init.sql`에 테이블 6개 작성** — §4.1 DDL 그대로. 컬럼 주석도 함께 옮긴다
+- [ ] **Step 1: `npx supabase init` 실행** 후 원격 프로젝트에 `link`.
+      마이그레이션 파일은 손으로 만들지 말고 **`npx supabase migration new init`으로 생성할 것** —
+      CLI는 `<타임스탬프>_init.sql` 형식을 쓰므로 `20260812114804_init.sql` 같은 모양이 된다.
+      design-v2.md §4.8은 `0001_init.sql`로 적고 있으나 CLI 규칙을 따른다
+- [ ] **Step 2: 그 마이그레이션 파일에 테이블 6개 작성** — §4.1 DDL 그대로. 컬럼 주석도 함께 옮긴다
       (`stat_tracks`가 왜 남는지 등의 판단 근거가 주석에 있다)
 - [ ] **Step 3: 같은 파일에 RLS 활성화 6줄 + 정책 작성** — §4.5 SQL 그대로. 역할 스코프(`artists`
       `tracks` `shows`) / 소유 스코프(`gallery_images` `stage_presets`) / 읽기 전용(`ticket_sales`)의
@@ -238,7 +235,14 @@ Task 8  완료 기준 검증 · 문서 갱신
   where c.relname in ('show_status','artist_metrics');
   ```
 - `select id, public, allowed_mime_types, file_size_limit from storage.buckets where id = 'gallery';`가
-  1행을 반환한다
+  1행을 반환한다. `file_size_limit`은 **4.5MB보다 커야 한다** — Task 7이 "서명 URL이 Vercel의
+  4.5MB 바디 제한을 우회한다"를 그보다 큰 파일로 증명하기 때문이다
+- **`gallery_images.storage_path`에 unique 제약이 걸려 있다** (Task 3의 결정 1). 이게 없으면
+  시드 upsert가 성립하지 않는다:
+  ```sql
+  select conname from pg_constraint
+  where conrelid = 'gallery_images'::regclass and contype = 'u';
+  ```
 - 마이그레이션 파일을 처음부터 다시 적용해도 같은 결과가 나온다 (재현성 — §제약 2번)
 
 **검증 노트**: _(Task 완료 시 기록)_
@@ -271,20 +275,87 @@ Task 8  완료 기준 검증 · 문서 갱신
 4. **생성은 결정론적이어야 한다.** 난수를 쓰면 실행할 때마다 데이터가 바뀌어 멱등성이 깨진다.
    slug 기반 고정 시드를 쓴다.
 
+#### 멱등성 — "전부 upsert"가 아니다
+
+완료조건이 "두 번 연속 실행해도 행 수가 같다"이고, 이건 단순한 체크박스가 아니라 **제약 2번(7일 비활성
+일시정지 복구)이 걸린 기능 요구사항이다.** 스크립트가 중간에 죽으면 "한 명령으로 재현 가능"이라는 전제
+자체가 거짓이 된다.
+
+그런데 6단계 중 **테이블 upsert로 해결되는 건 4단계뿐이다.** 나머지 두 단계는 upsert가 아닌 API를
+쓰므로 각각 따로 멱등하게 만들어야 한다.
+
+| 단계 | 대상 | 손대지 않으면 두 번째 실행에서 | 필요한 처리 |
+|---|---|---|---|
+| 2·3 | `artists` `tracks` | 안전 | upsert (유니크 키가 이미 있다 — §4.1) |
+| 4·5 | `shows` `ticket_sales` | **날짜가 바뀌어 갱신이 아닌 새 행이 됨** | 삭제 후 재삽입 (아래 결정 2) |
+| 6 (파일) | Storage 객체 | **409 "resource already exists"로 실패** | `upload(..., { upsert: true })` |
+| 6 (행) | `gallery_images` | **충돌 대상이 없어 36행이 매번 추가됨** | `storage_path` 기준 upsert (아래 결정 1) |
+| 7 | `auth.users` | **"User already registered"로 실패 → 스크립트 중단** | 존재 확인 후 생성/갱신 |
+
+**계정 생성이 가장 위험하다.** 테이블 쓰기가 아니라 Auth Admin API 호출이라 upsert 개념이 없고,
+같은 이메일로 두 번째 실행하면 에러가 나면서 거기서 스크립트가 죽는다. 마지막 단계라 앞 단계는
+이미 반영된 뒤지만, 종료 코드가 실패로 떨어지므로 "시드가 성공했다"고 볼 수 없다.
+
+> 구현 시 확인: supabase-js v2의 admin 클라이언트에는 `getUserById`는 있지만 **`getUserByEmail`은
+> 없다.** 이메일로 찾으려면 `listUsers()` 결과에서 걸러야 한다(계정이 둘뿐이라 비용은 무시 가능).
+> API 표면은 구현 시점에 한 번 더 확인할 것.
+
+#### 결정된 것 두 가지 (설계 검토에서 확정)
+
+**결정 1 — `gallery_images.storage_path`에 `unique`를 건다.** 원래 이 테이블의 유일한 키는 생성된
+`id`뿐이라 upsert 충돌 기준을 줄 수 없었고, 실행할 때마다 36행이 쌓였다. 시드가 쓰는 나머지 네 테이블은
+전부 자연 유니크 키를 갖고 있는데(`artists.slug`, `tracks(artist_id, no)`,
+`shows(artist_id, city_code, show_date)`, `ticket_sales(show_id, recorded_on)`) 여기만 없었다.
+
+시드 편의를 위한 우회가 아니라 데이터 모델링이 맞아지는 쪽이라 채택했다 — 하나의 Storage 객체를
+두 행이 가리키는 상태는 어떤 경로로 생기든 버그다. Task 7의 삭제(행 → 객체)가 1:1이라는 것도
+이 제약이 보장한다. **design-v2.md §4.1에 반영 완료.**
+
+**결정 2 — `shows`는 upsert가 아니라 삭제 후 재삽입한다.** 주의 3번("향후 6개월 분포")과
+4번("결정론적")이 충돌하는 지점이었다. 실행 시각 기준으로 날짜를 만들면 며칠 뒤 두 번째 실행에서
+`show_date`가 달라지는데, 그게 유니크 키의 일부라 **갱신이 아니라 새 행이 된다.** 반대로 고정 날짜
+상수를 쓰면 멱등하지만 시간이 지나 전 공연이 과거가 되고 d-day가 죽는다(Task 5 완료조건
+"d-day가 오늘 날짜 기준으로 계산된다"가 무의미해진다).
+
+유니크 키를 `(artist_id, city_code)`로 바꿔 날짜를 갱신 대상으로 만드는 안도 있었으나, 같은 도시
+다회차 공연을 표현할 수 없게 되어 기각했다. 고정 앵커 상수는 포트폴리오가 방치되기 쉬운 성격상
+d-day가 조용히 죽을 위험이 커서 기각했다.
+
+**대가는 명확히 해 둔다: 시드는 `shows`·`ticket_sales`에 한해 파괴적이다.** 지금은 이 두 테이블의
+유일한 작성자가 시드라 문제가 없지만, 로드맵 4번에서 `/staff/tours` 편집 UI가 생기면 재시드가
+사용자가 추가한 공연을 지우게 된다. **그때 재검토할 항목이다.** `ticket_sales`는 FK cascade로 함께
+지워지므로 별도 삭제 코드가 필요 없다. **design-v2.md §4.7에 반영 완료.**
+
 - [ ] **Step 1: 스크립트 골격** — `.env.local` 로드, service role 클라이언트 생성 (인라인. `admin.ts`를
       만들지 않는 이유는 위 "설계 문서에서 조정한 두 가지" 참조)
 - [ ] **Step 2: `artists` upsert** — `artists.json`에서. 셰이더 파라미터 4개는 slug별 고정 매핑
       (§4.1의 default 값을 기준으로 아티스트마다 다르게)
 - [ ] **Step 3: `tracks` upsert** — `artists.json`의 `tracks` 배열에서
-- [ ] **Step 4: `shows` 생성** — 위 주의 2·3·4번 준수
-- [ ] **Step 5: `ticket_sales` 14일치 스냅샷 생성** — 공연별 판매 추이가 단조 증가하도록
-- [ ] **Step 6: 갤러리 36장 Storage 업로드 + `gallery_images` 행 삽입** — `created_by`는 **NULL**
-      (시드 행은 방문자가 못 지운다 — §4.5). 라이선스 메타데이터는 `public/gallery/CREDITS.json` 참조
-- [ ] **Step 7: 계정 2개 생성** — 데모(role 없음) / 오너(`app_metadata.role = "owner"`)
+- [ ] **Step 4: `shows` 삭제 후 재생성** — 해당 아티스트의 기존 `shows`를 먼저 지운다
+      (`ticket_sales`는 FK cascade로 함께 사라지므로 별도 삭제 코드가 필요 없다). 그 다음
+      위 주의 2·3·4번을 지켜 재삽입. **upsert가 아닌 이유는 결정 2 참조**
+- [ ] **Step 5: `ticket_sales` 14일치 스냅샷 생성** — 공연별 판매 추이가 단조 증가하도록.
+      Step 4에서 cascade로 비워진 뒤라 삽입만 하면 된다
+- [ ] **Step 6: 갤러리 36장 Storage 업로드 + `gallery_images` 행 upsert** — `created_by`는 **NULL**
+      (시드 행은 방문자가 못 지운다 — §4.5). 라이선스 메타데이터는 `public/gallery/CREDITS.json` 참조.
+      **업로드는 `{ upsert: true }`로 할 것** — 기본값이면 두 번째 실행에서 409로 실패한다.
+      행 삽입은 `storage_path` 충돌 기준 upsert (결정 1이 이 컬럼에 `unique`를 걸어 뒀다)
+- [ ] **Step 7: 계정 2개를 멱등하게 생성** — 데모(role 없음) / 오너(`app_metadata.role = "owner"`).
+      **`createUser`를 그냥 호출하면 두 번째 실행에서 죽는다.** `listUsers()`로 이메일 존재 여부를
+      먼저 확인해, 없으면 `createUser`, 있으면 `updateUserById`로 `app_metadata`와 비밀번호를 맞춘다.
+      갱신까지 하는 이유는 시드를 계정 속성의 단일 진실 공급원으로 두기 위해서다 — 오너의
+      `role` 클레임이 어긋나면 역할 스코프 RLS(§4.5)가 조용히 실패한다.
+      시드는 두 계정의 uid를 어디에도 쓰지 않으므로(갤러리 시드 행은 `created_by = NULL`)
+      반환된 uid를 저장할 필요는 없다
 - [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - `npm run seed`를 **두 번 연속 실행해도 모든 테이블의 행 수가 같다** (§11 완료 기준)
+- **두 번째 실행이 종료 코드 0으로 끝난다.** 행 수만 보면 스크립트가 중간에 죽은 것을 놓친다 —
+  계정 생성이 마지막 단계라 앞 단계는 이미 반영된 뒤이기 때문이다. `npm run seed && echo OK`로 확인
+- **세 번째 실행도 마찬가지다.** 두 번은 통과하고 세 번째에 깨지는 경우는 없어야 한다
+- `select count(*) from gallery_images;` = 36 (2회 실행 후에도)
+- Storage `gallery` 버킷의 객체 수 = 36 (2회 실행 후에도)
 - `select count(*) from artists;` = 6
 - `select artist_id, city_count, country_count from artist_metrics;`가 6행을 반환하고,
   `city_count`가 각 아티스트의 `stats.cities`와 일치한다
@@ -512,9 +583,35 @@ Task 8  완료 기준 검증 · 문서 갱신
 3. **이미지 리사이즈·썸네일 생성을 넣지 말 것** (§10 범위 밖). 업로드된 원본을 그대로 쓴다.
 4. `created_by`는 서버가 세션 uid로 채운다. 클라이언트가 보낸 값을 신뢰하지 않는다.
 
+#### 삭제는 두 곳을 지워야 한다
+
+§4.6은 `DELETE /api/gallery/[id]`를 **DB 행 삭제 기준으로만** 서술한다. 그대로 구현하면 `gallery_images`
+행만 사라지고 **Storage의 실제 파일은 그대로 남는다.** 결과는 둘 다 나쁘다 — 무료 티어 1GB 한도가
+업로드·삭제를 반복할수록 조용히 차고, 시연 관점에서 "업로드 → 삭제" 사이클이 실제로는 절반만 도는
+기능이 된다.
+
+**순서는 DB 행 → Storage 객체다.** 반대로 하면 파일이 없는데 행이 남아 갤러리에 깨진 이미지가 뜬다.
+이 순서에서는 최악의 경우가 "보이지 않는 고아 파일"이라 실패 영향이 훨씬 작고, 무엇보다 **인가 게이트가
+DB 행 삭제(RLS)이므로 권한이 없으면 Storage를 건드리기 전에 걸러진다.**
+
+행을 지우기 전에 `storage_path`를 확보해야 하므로 `delete().select('storage_path')`로 삭제된 행을
+돌려받아 그 경로를 `storage.from('gallery').remove([path])`에 넘긴다.
+
+> **RLS가 막은 DELETE는 에러가 아니라 "0행 삭제"로 돌아온다.** 예외가 던져지지 않으므로 그냥 204를
+> 반환하면 데모 계정이 시드 이미지를 지우려 했을 때 **성공한 것처럼 보인다.** 반환된 행 수가 0이면
+> 403으로 응답할 것. 완료조건의 "RLS에 막힌다"를 관측 가능하게 만드는 지점이 여기다.
+
+> Storage 정책과 테이블 정책은 소유자 판단 근거가 다르다 — 전자는 `storage.objects.owner`,
+> 후자는 `gallery_images.created_by`다. 서명 URL 업로드가 `owner`를 세션 uid로 채우는지
+> **Task 7에서 실제로 확인할 것.** 채우지 않는다면 행은 지워지는데 파일은 안 지워지는 비대칭이
+> 생기고, 아래 완료조건의 "Storage에 객체가 존재하지 않는다"가 그걸 잡아낸다.
+
 - [ ] **Step 1: `/api/gallery/upload-url` 작성** — 인증 확인 → 타입·크기 검사 → 경로 생성 → 서명
 - [ ] **Step 2: `/api/gallery` POST 작성** — `created_by = 세션 uid`
-- [ ] **Step 3: `/api/gallery/[id]` DELETE 작성**
+- [ ] **Step 3: `/api/gallery/[id]` DELETE 작성** — **DB 행과 Storage 객체를 둘 다 지운다.**
+      `delete().select('storage_path')`로 삭제된 행의 경로를 받아 `storage.from('gallery').remove([path])`
+      호출. 반환 행이 0이면 RLS가 막은 것이므로 Storage를 건드리지 말고 403 (위 "삭제는 두 곳을
+      지워야 한다" 참조)
 - [ ] **Step 4: `data.ts`에 갤러리 목록 조회 추가**
 - [ ] **Step 5: `/staff/artists` 갤러리 섹션 구현** — 아티스트별 목록 + 업로드 + 삭제.
       B탭 라이트 팔레트 유지
@@ -526,7 +623,11 @@ Task 8  완료 기준 검증 · 문서 갱신
 **완료조건:**
 - 위 5개 시나리오가 전부 동작한다 (§11 완료 기준의 업로드·RLS 항목)
 - **데모 계정으로 시드 갤러리 이미지 삭제를 시도하면 RLS에 막힌다** — 화면뿐 아니라 API를 직접
-  호출해도 막혀야 한다
+  호출해도 막혀야 하고, **204가 아니라 403이 돌아와야 한다** (0행 삭제를 성공으로 응답하면 안 된다)
+- **삭제 후 Storage에 해당 경로의 객체가 존재하지 않는다.** DB 행만 지우고 파일이 남는 반쪽 삭제를
+  잡는 조건이다. 업로드 → 삭제를 한 번 돌린 뒤 버킷 객체 수가 원래대로 돌아오는지 확인
+- **막힌 삭제에서는 Storage 객체가 그대로 남아 있다.** 인가 실패인데 파일만 지워지는 반대 방향의
+  버그를 잡는다
 - 업로드된 파일이 4.5MB를 넘어도 성공한다 (서명 URL이 서버를 우회하는지 확인)
 - `grep -rn "SERVICE_ROLE" src/` 결과가 0건이다 (§4.5 — 런타임 경로에서 service role 금지)
 - `npm test` · `npm run build` 통과
@@ -540,7 +641,7 @@ Task 8  완료 기준 검증 · 문서 갱신
 **Files:**
 - Modify: `README.md` (데모 계정, 기술 스택, 2차 로드맵 진행 상황)
 - Modify: `docs/design-v2.md` (11장 4장 체크박스)
-- Modify: `docs/plan-v2.md` (Task 1~7 검증 노트 최종 확인)
+- Modify: `docs/plan-v2.1-supabase.md` (Task 1~7 검증 노트 최종 확인)
 
 **Interfaces:**
 - Consumes: Task 1~7 전부
@@ -565,7 +666,7 @@ Task 8  완료 기준 검증 · 문서 갱신
 - §11 "4장 · Supabase 전환" 체크박스 **10개 전부** 확인 완료
 - 배포 URL에서 A탭 전체 플로우와 B탭 로그인 → 대시보드 → 무대 씬이 1차와 동일하게 동작한다
 - README의 데모 계정으로 실제 로그인이 된다
-- `docs/plan-v2.md`의 Task 1~7 검증 노트가 전부 채워져 있다
+- `docs/plan-v2.1-supabase.md`의 Task 1~7 검증 노트가 전부 채워져 있다
 - react-doctor CI 통과 (error 레벨 0) + `npm test` CI 통과
 
 **검증 노트**: _(Task 완료 시 기록)_
