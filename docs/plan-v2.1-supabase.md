@@ -215,21 +215,21 @@ Task 8  완료 기준 검증 · 문서 갱신
 우회하는 것은 의도된 동작이고 Task 3이 거기에 의존한다. 뷰에는 `with (security_invoker = true)`가
 반드시 붙어야 한다 (§4.2).
 
-- [ ] **Step 1: `npx supabase init` 실행** 후 원격 프로젝트에 `link`.
+- [x] **Step 1: `npx supabase init` 실행** 후 원격 프로젝트에 `link`.
       마이그레이션 파일은 손으로 만들지 말고 **`npx supabase migration new init`으로 생성할 것** —
       CLI는 `<타임스탬프>_init.sql` 형식을 쓰므로 `20260812114804_init.sql` 같은 모양이 된다.
       design-v2.md §4.8은 `0001_init.sql`로 적고 있으나 CLI 규칙을 따른다
-- [ ] **Step 2: 그 마이그레이션 파일에 테이블 6개 작성** — §4.1 DDL 그대로. 컬럼 주석도 함께 옮긴다
+- [x] **Step 2: 그 마이그레이션 파일에 테이블 6개 작성** — §4.1 DDL 그대로. 컬럼 주석도 함께 옮긴다
       (`stat_tracks`가 왜 남는지 등의 판단 근거가 주석에 있다)
-- [ ] **Step 3: 같은 파일에 RLS 활성화 6줄 + 정책 작성** — §4.5 SQL 그대로. 역할 스코프(`artists`
+- [x] **Step 3: 같은 파일에 RLS 활성화 6줄 + 정책 작성** — §4.5 SQL 그대로. 역할 스코프(`artists`
       `tracks` `shows`) / 소유 스코프(`gallery_images` `stage_presets`) / 읽기 전용(`ticket_sales`)의
       구분을 지킬 것
-- [ ] **Step 4: 같은 파일에 뷰 2개 작성** — §4.2 SQL 그대로. `security_invoker` 확인
-- [ ] **Step 5: 같은 파일에 Storage 버킷 `gallery` 생성** — public read, `allowed_mime_types`는
+- [x] **Step 4: 같은 파일에 뷰 2개 작성** — §4.2 SQL 그대로. `security_invoker` 확인
+- [x] **Step 5: 같은 파일에 Storage 버킷 `gallery` 생성** — public read, `allowed_mime_types`는
       `image/jpeg` `image/png` `image/webp`, `file_size_limit` 지정 (§4.5 말미)
-- [ ] **Step 6: 같은 파일에 Storage 정책 3개 작성** — §4.5 SQL 그대로
-- [ ] **Step 7: `npx supabase db push`로 적용**
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: 같은 파일에 Storage 정책 3개 작성** — §4.5 SQL 그대로
+- [x] **Step 7: `npx supabase db push`로 적용**
+- [x] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - `db push`가 에러 없이 끝난다
@@ -254,7 +254,24 @@ Task 8  완료 기준 검증 · 문서 갱신
   ```
 - 마이그레이션 파일을 처음부터 다시 적용해도 같은 결과가 나온다 (재현성 — §제약 2번)
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- `npx supabase migration list --linked` → local `20260813120014` = remote `20260813120014` (적용 확인).
+  `db push` 완료 메시지 뒤에 뜬 "failed to cache migrations catalog... Docker" 경고는 로컬 diff용
+  pg-delta 캐시 생성 실패일 뿐, 원격 마이그레이션 적용과는 무관해 무시함 (Docker 미설치 환경)
+- `select relname, relrowsecurity from pg_class where relname in (...)` → 6개 테이블 전부 `relrowsecurity: true`
+- `select c.relname, c.reloptions from pg_class c where c.relname in ('show_status','artist_metrics')` →
+  둘 다 `security_invoker=true`
+- `select id, public, allowed_mime_types, file_size_limit from storage.buckets where id = 'gallery'` →
+  1행, `public: true`, `allowed_mime_types: [image/jpeg, image/png, image/webp]`,
+  `file_size_limit: 10485760` (10MB, 4.5MB 기준 충족)
+- `select conname from pg_constraint where conrelid = 'gallery_images'::regclass and contype = 'u'` →
+  `gallery_images_storage_path_key` 존재
+- **재현성은 "빈 원격 프로젝트에 최초 적용"으로 갈음함.** design-v2.md §4.7이 원격 프로젝트를
+  1개(dev = prod)로 고정했고 로컬 Docker도 없어, `supabase db reset`으로 별도 환경에 재적용해
+  비교할 방법이 없었다. 대신 이번 `db push` 자체가 테이블·뷰·정책이 하나도 없던 빈 프로젝트에
+  전체 스키마를 처음부터 적용해 에러 없이 성공한 것이므로 "처음부터 적용" 조건은 이미 충족됨.
+  이후 진짜 반복 재현성이 필요해지면(예: 스키마 변경 마이그레이션 추가 시) 그때 로컬 Docker 환경을
+  들여 `db diff`/`db reset`으로 검증하는 게 맞다
 
 ---
 
