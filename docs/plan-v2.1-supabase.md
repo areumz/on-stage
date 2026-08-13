@@ -3,9 +3,6 @@
 > 2차 고도화는 항목마다 별도 계획 문서를 갖는다. 번호는 [`docs/design-v2.md`](./design-v2.md) 3장의
 > 시퀀싱(2.1~2.5)을 따른다. 이 문서는 **2.1 Supabase 전환**만 다룬다.
 
-> **For agentic workers:** REQUIRED SUB-SKILL: `superpowers:executing-plans`로 태스크 단위 실행.
-> 각 스텝은 체크박스(`- [ ]`)로 추적한다.
-
 **Goal:** 하드코딩 로그인과 mock JSON을 걷어내고 Auth·DB·Storage를 Supabase로 옮겨,
 B탭 관리자가 갤러리 이미지를 직접 업로드·관리할 수 있게 한다.
 
@@ -43,8 +40,6 @@ Supabase CLI / Postgres 15+ / vitest (node 환경)
   R3F 씬·셰이더·레이아웃에 형식적 테스트를 생성하지 말 것.
 - **vitest는 `environment: "node"`를 유지한다.** 3D 컴포넌트를 import할 수 없다는 사실이 형식적
   테스트를 막는 강제 장치다.
-- **커밋은 사용자가 직접 한다.** 각 Task의 커밋 스텝은 실행하지 말고, 구현·검증을 끝낸 뒤 변경 파일과
-  검증 결과를 보고하고 멈춘다.
 - 커밋 컨벤션: Conventional Commits (`feat:` `fix:` `test:` `docs:` `refactor:`), 소문자 명령형.
 
 ### 범위 밖 (선제 구현 금지)
@@ -153,20 +148,20 @@ Task 8  완료 기준 검증 · 문서 갱신
 **세 개뿐이다.** ORM·검증 라이브러리·상태관리 라이브러리를 추가하지 말 것. `.env.example`에는 키 이름과
 용도만 적고 실제 값을 넣지 않는다.
 
-- [ ] **Step 1: Supabase 프로젝트 생성** — 무료 티어, 리전은 지연이 가장 낮은 곳. **사람이 직접 한다**
+- [x] **Step 1: Supabase 프로젝트 생성** — 무료 티어, 리전은 지연이 가장 낮은 곳. **사람이 직접 한다**
       (대시보드 로그인 필요). 생성 후 URL·anon key·service role key를 확보한다
-- [ ] **Step 2: 의존성 설치** — 위 세 개
-- [ ] **Step 3: `.env.example` 작성 + `.gitignore`에 `!.env.example` 예외 추가** — §4.7 표의 5개 키,
+- [x] **Step 2: 의존성 설치** — 위 세 개
+- [x] **Step 3: `.env.example` 작성 + `.gitignore`에 `!.env.example` 예외 추가** — §4.7 표의 5개 키,
       각각 용도 주석 한 줄. **`.gitignore`의 `.env*` 패턴은 `.env.local`뿐 아니라 `.env.example`까지
       잡는다.** 키 이름과 용도를 담은 문서용 파일이라 커밋돼야 하므로 `!.env.example` 부정 패턴이
       반드시 필요하다 (`.env*` 다음 줄에 둘 것 — gitignore는 나중 규칙이 이긴다)
-- [ ] **Step 4: `.env.local` 작성** — Step 1에서 받은 실제 값
-- [ ] **Step 5: `package.json`에 `seed` 스크립트 추가** —
+- [x] **Step 4: `.env.local` 작성** — Step 1에서 받은 실제 값
+- [x] **Step 5: `package.json`에 `seed` 스크립트 추가** —
       `node --env-file=.env.local scripts/seed.mjs`. **`dotenv`를 추가하지 않는다** — Node 22의
       `--env-file` 플래그로 충분하고, 의존성은 §주의의 세 개로 끝이다
-- [ ] **Step 6: `.github/workflows/test.yml` 작성** — `push`/`pull_request`에서 Node 22로
+- [x] **Step 6: `.github/workflows/test.yml` 작성** — `push`/`pull_request`에서 Node 22로
       `npm ci && npm test`. react-doctor 워크플로와 별도 파일로 둔다 (목적과 트리거가 다르다)
-- [ ] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - `npx supabase --version`이 동작한다
@@ -182,7 +177,21 @@ Task 8  완료 기준 검증 · 문서 갱신
   출력해서, 예외를 제대로 넣은 뒤에도 "여전히 무시됨"처럼 보인다. `git add --dry-run`도 함께 쓰면
   확실하다 (`.env.local`에 대해서만 거부 메시지가 나와야 한다)
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- `npx supabase --version` → `2.114.0`
+- `.env.local` 5개 키 전부 값 있음. `SUPABASE_URL`·`SUPABASE_ANON_KEY`·`SUPABASE_SERVICE_ROLE_KEY`는
+  사용자가 이미 만들어 둔 프로젝트(`htmfbhgjxgxbhuujfvwm`)에서 받은 실값. **`SEED_OWNER_EMAIL`/
+  `SEED_OWNER_PASSWORD`는 자리표시자**(`owner@onstage.local` / `changeme-task3`) — 사용자가 Task 3에서
+  직접 정하기로 함. Task 3 시작 전에 실제 값으로 교체 필요
+- `.env.example` 5개 키 모두 값 비어 있음, 용도 주석 각 1줄
+- `grep -v '^[[:space:]]*#' .env.example | grep -c "NEXT_PUBLIC_"` → `0`
+- `npm test` → 5 files, 25 tests 전부 pass
+- `git status --porcelain -uall`: `.env.example` `??`로 나타남, `.env.local` 안 나타남.
+  `git add --dry-run .env.local` → ignored 거부, `git add --dry-run .env.example` → add 성공
+- 의존성 정확히 3개만 추가됨: `@supabase/supabase-js` `@supabase/ssr`(runtime),
+  `supabase`(devDependency, CLI). ORM·검증·상태관리 라이브러리 없음
+- `npm audit`에 high severity 7건 있으나 전부 `brace-expansion`·`fast-uri`·`js-yaml`·`nanoid`·
+  `postcss`·`sharp` 등 **기존 의존성 체인에서 온 것** (Supabase 패키지와 무관, 범위 밖이라 손대지 않음)
 
 ---
 
