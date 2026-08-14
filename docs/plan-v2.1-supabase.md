@@ -423,6 +423,51 @@ d-day가 조용히 죽을 위험이 커서 기각했다.
 **Project Settings → Data API가 꺼져 있었다.** 사용자가 토글을 켠 뒤 정상화됨. 이 프로젝트를 나중에
 재생성하거나 새 환경으로 옮길 때 다시 겪을 수 있는 체크포인트라 기록해 둔다.
 
+**수정 이력 — Task 6 이후 대시보드를 보다가 발견된 시드 데이터 품질 버그 세 건 (2026-08-15)**
+
+사용자가 대시보드에서 "모든 아티스트가 항상 증가만 뜬다", "다음 공연 venue가 전부 서울 아레나"를
+관찰해 재조사했고, 조사 과정에서 dday 계산의 타임존 버그까지 추가로 발견했다. 셋 다
+`scripts/seed.mjs`(및 하나는 `src/lib/metricsView.ts`)를 고치고 재시드해 해결했다.
+
+1. **venue가 전 아티스트에서 항상 "서울 아레나"였다.** 날짜 오프셋과 venue 접미사를 둘 다 `cities`
+   배열의 원래 인덱스로 정했는데, `artists.json`의 `cities[0]`이 6명 전원 서울이라 인덱스 0이
+   항상 (a) 가장 가까운 날짜 (b) `VENUE_SUFFIXES[0]`("아레나")를 받았다. "다음 공연"은 항상 이
+   인덱스 0이므로 전원이 서울+아레나로 수렴했다. **고침**: 날짜 순위를 배열 인덱스 대신
+   `hash(slug+city.code)` 기반으로 다시 매기고, venue 접미사도 별도 해시로 골라 배열 위치와의
+   우연한 결합을 끊었다(`rankCitiesByHash`).
+2. **모든 아티스트가 항상 ▲(증가)만 보였다.** 일별 `sold`를 `Math.max(raw, prevSold)`로 매일
+   단조 비감소시켰는데, 이러면 7일 전 대비 합계가 절대 감소할 수 없다(단조 수열의 합은 단조).
+   1차 목업(halo -2.8%, lumen -4.5% 등)과 `metricsView.test.ts`의 음수 delta 케이스는 감소
+   사례를 전제하므로 수학적으로 재현이 불가능한 상태였다. **고침**: `hash(slug+"::cooling")`으로
+   아티스트를 결정론적으로 "냉각기"로 지정(현재 lumen·echo)하고, 냉각기 아티스트는 공연 전부가
+   1주차엔 peak까지 증가·2주차엔 소폭 환불성 하락을 겪게 했다. 처음엔 공연별 80% 확률로만
+   하락시켰는데 공연 수가 적은 아티스트(lumen 5개)는 표본이 작아 기대 비율에서 벗어나 하락
+   공연이 절반도 안 됐고 성장폭(30~60%)이 하락폭(3~8%)보다 커서 합계가 여전히 양수였다 —
+   냉각기 아티스트는 공연 수와 무관하게 전원 하락으로 바꿔 합계가 항상 음수가 되게 확정했다.
+   덧붙여 시작 판매 비율이 전 공연 고정값(0.45)이었던 것도 발견 — 14일 선형 보간에서 이 비율이
+   고정이면 day13/day6 비가 공연·아티스트와 무관하게 항상 같은 상수가 되어(계산상 42.1%),
+   냉각기가 아닌 5개 아티스트가 전부 똑같이 "+42.1%"로 뜨는 (venue 버그와 같은 종류의) 새 버그를
+   만들고 있었다. 시작 비율도 공연별 해시로 다르게 줘서 해소
+3. **dday가 실제 날짜보다 하루 밀려 있었다** (부수 발견). `metricsView.ts`의 `toDayNumber`가
+   `Date` 인자에 로컬 타임존 getter(`getFullYear` 등)를 썼는데, 이 서버는 `Asia/Seoul`(UTC+9)이고
+   Supabase Postgres는 UTC라 하루 중 최대 9시간(KST 자정~오전 9시) 동안 로컬 날짜가 UTC보다
+   하루 앞선다 — 그 구간에 `today`가 하루 앞으로 밀려 dday가 실제보다 1 작게 나왔다.
+   `select (show_date - current_date)`로 DB에 직접 물어본 값과 화면 값을 대조해서 잡았다.
+   **고침**: `getUTCFullYear/getUTCMonth/getUTCDate`로 전환, 회귀 테스트
+   ("computes d-day from the UTC calendar date, not the runner's local timezone") 추가 —
+   고치기 전 코드로 되돌려 이 테스트가 실제로 실패하는 것까지 확인했다. `scripts/seed.mjs`의
+   `today`/`addDays`도 로컬 자정을 만든 뒤 `toISOString()`으로 UTC 변환하는 같은 종류의 버그가
+   있어(로컬 자정이 UTC로는 아직 전날) 함께 UTC 기준으로 통일
+
+**재검증**: 세 수정 반영 후 `npm run seed`를 3회 연속 실행해 Task 3 완료조건 전부 재확인
+(gallery_images/storage 36, storage owner 전부 NULL, artists 6, `city_count` 6개 아티스트 전부
+`stats.cities`와 일치, `total_tickets_prev is null` 0행, 데모·오너 로그인 정상, `storage_path`
+unique 제약 유지). 재시드 후 dday를 DB의 `show_date - current_date`와 다시 대조해 6개 아티스트
+전부 정확히 일치함을 확인(aurora D-7=7, velvet D-20=20, nova D-26=26, halo D-36=36, lumen
+D-30=30, echo D-60=60). venue도 아티스트마다 다른 도시·접미사로 갈림(로스앤젤레스 아레나 / 부산
+아레나 / 인천 스타디움 / 방콕 홀 / 베를린 공연장 등). `npm test`(20개, `metricsView.test.ts`
+회귀 테스트 1개 추가로 8→9) · `npm run build` 재통과
+
 ---
 
 ### Task 4: 서버 클라이언트 + A탭 읽기 경로 전환
@@ -603,6 +648,14 @@ Task 4에서 이미 이 집합을 `cities[]`로 쓰고 있어 "표기 도시" �
 (1차의 하드코딩된 N을 그대로 재현하려 하지 않음 — §11 완료 기준은 "1차와 같은 모양"이지 숫자
 일치가 아니므로)
 
+**교차 기록 (2026-08-15, 원본은 Task 3 검증 노트)**: Task 6 이후 대시보드를 살펴보다가 `toDayNumber`가
+`Date` 인자에 로컬 타임존 getter(`getFullYear` 등)를 써서, 서버 타임존(Asia/Seoul, UTC+9)이 Supabase
+Postgres(UTC)보다 앞서는 하루 중 최대 9시간 구간에 dday가 실제보다 1 작게 나오는 버그를 발견했다.
+`getUTCFullYear/getUTCMonth/getUTCDate`로 고치고, 이 시차 경계를 직접 겨냥한 회귀 테스트
+("computes d-day from the UTC calendar date, not the runner's local timezone")를 `metricsView.test.ts`에
+추가했다(8→9개, 고치기 전 코드로 되돌려 실제로 실패하는 것까지 확인). 같은 조사에서 `scripts/seed.mjs`의
+venue 반복·delta 항상 양수 버그도 함께 잡았다 — 자세한 내용과 재검증 기록은 Task 3 검증 노트 참조.
+
 ---
 
 ### Task 6: 인증 전환
@@ -640,18 +693,18 @@ Task 4에서 이미 이 집합을 `cities[]`로 쓰고 있어 "표기 도시" �
 추가 주의: `staffRedirectPath`는 순수 함수라 **테스트를 지우지 말 것.** 인증 방식이 바뀌어도 리다이렉트
 규칙은 그대로다. 반면 `login/route.test.ts`는 `staff_auth=ok` 쿠키를 단언하므로 함께 사라진다.
 
-- [ ] **Step 1: `src/lib/auth.ts` 축소** — `staffRedirectPath`만 남긴다
-- [ ] **Step 2: `src/lib/auth.test.ts` 정리** — `validateCredentials` 테스트 제거, 나머지 유지
-- [ ] **Step 3: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
-- [ ] **Step 4: `/api/login/route.ts` 재작성** — `signInWithPassword`, `route.test.ts` 삭제
-- [ ] **Step 5: `/api/logout/route.ts` 신규 작성**
-- [ ] **Step 6: `src/proxy.ts` 재작성** — 세션 갱신 + `getUser()` 가드. matcher `/staff/:path*` 유지
-- [ ] **Step 7: 로그인 페이지 수정** — 이메일 필드, 데모 계정 안내 문구
-- [ ] **Step 8: 시각 검증 (브라우저)** — **사람 확인 지점.** 1차와 같은 4개 시나리오 + 로그아웃:
+- [x] **Step 1: `src/lib/auth.ts` 축소** — `staffRedirectPath`만 남긴다
+- [x] **Step 2: `src/lib/auth.test.ts` 정리** — `validateCredentials` 테스트 제거, 나머지 유지
+- [x] **Step 3: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
+- [x] **Step 4: `/api/login/route.ts` 재작성** — `signInWithPassword`, `route.test.ts` 삭제
+- [x] **Step 5: `/api/logout/route.ts` 신규 작성**
+- [x] **Step 6: `src/proxy.ts` 재작성** — 세션 갱신 + `getUser()` 가드. matcher `/staff/:path*` 유지
+- [x] **Step 7: 로그인 페이지 수정** — 이메일 필드, 데모 계정 안내 문구
+- [x] **Step 8: 시각 검증 (브라우저)** — **사람 확인 지점.** 1차와 같은 4개 시나리오 + 로그아웃:
       ① 미로그인으로 `/staff/dashboard` 접근 시 로그인으로 차단 ② 오답 입력 시 인라인 에러
       ③ 로그인 성공 시 대시보드 이동 ④ 로그인 상태로 `/staff/login` 재방문 시 대시보드로
       ⑤ 로그아웃 후 ①로 되돌아감
-- [ ] **Step 9: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 9: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - 위 5개 시나리오가 전부 동작한다 (시각 검증, 스크린샷·콘솔 로그로 확인)
@@ -661,7 +714,42 @@ Task 4에서 이미 이 집합을 `cities[]`로 쓰고 있어 "표기 도시" �
 - 브라우저 새로고침 후에도 세션이 유지된다 (쿠키 갱신이 동작한다)
 - `npm test` · `npm run build` 통과
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- Playwright + 시스템 Chrome으로 5개 시나리오 전부 자동 확인 (스크린샷으로 ②의 인라인 에러 문구 확인,
+  나머지는 URL 전이로 확인): ① 미로그인 `/staff/dashboard` → `/staff/login`으로 리다이렉트
+  ② 오답 로그인 → "이메일 또는 비밀번호가 올바르지 않습니다." 인라인 에러, 로그인 페이지 유지
+  ③ `demo@onstage.local`/`demo1234`로 로그인 성공 → `/staff/dashboard` 이동
+  ④ 로그인 상태로 `/staff/login` 재방문 → `/staff/dashboard`로 리다이렉트
+  ⑤ `/api/logout` 호출 후 `/staff/dashboard` 재접근 → 다시 `/staff/login`으로 차단.
+  콘솔/5xx 에러 0건
+- 새로고침 후 세션 유지 확인: 로그인 후 페이지를 reload해도 `/staff/dashboard`에 그대로 남음
+  (세션 쿠키가 `getUser()` 경로로 정상 갱신·전달됨)
+- `grep -rn "validateCredentials\|STAFF_COOKIE\|staff_auth" src/` → 0건
+- `grep -n "getSession()" src/proxy.ts` → 0건. **주의**: 처음 작성했을 때 "getSession()은 쓰면 안
+  된다"는 설명 주석 자체에 그 문자열이 들어가 있어 이 grep이 스스로 걸렸다 (Task 1의
+  `NEXT_PUBLIC_` 주석 오탐과 같은 함정). 주석 문구를 바꿔 재확인
+- `src/middleware.ts` 없음 (여전히 `src/proxy.ts` + export `proxy`)
+- `npm test` → 3 files, 19 tests 전부 pass (`login/route.test.ts` 삭제로 파일 수 4→3).
+  `npm run build` → 성공, `/api/logout` 라우트 신규 추가됨
+
+**계획보다 한 걸음 더 간 것**: `@supabase/ssr` 0.12.4의 `setAll`은 문서에 나온 것과 달리
+`(cookiesToSet, headers)` **2개 인자**를 받는다 — 두 번째 `headers`는 인증 쿠키 응답에
+`Cache-Control: no-store` 등을 강제로 붙이기 위한 것으로, 이 버전에서 새로 생긴 요구사항이다
+(AGENTS.md가 경고한 "훈련 데이터와 다른 부분"의 한 사례). `proxy.ts`는 세션 갱신이 명시 요구사항이라
+공식 예제대로 `request.cookies`도 함께 갱신한 뒤 `NextResponse.next({ request })`를 다시 만드는
+2단 패턴을 그대로 따랐고, `headers`도 응답에 반영했다
+
+**계획 외 추가 작업 — 헤더/사이드바 role 표시**:
+
+- `src/lib/data.ts`에 `getStaffRoleLabel(): Promise<"관리자" | "게스트">` 추가 — `getUser()`의
+  `app_metadata.role`이 `"owner"`면 관리자, 그 외(공유 데모 계정 포함)는 게스트
+- 표시 위치 두 곳: `src/components/staff/Sidebar.tsx`("관계자 전용 · {roleLabel}", `(console)`
+  레이아웃이 서버에서 값을 받아 prop으로 내려줌 — 대시보드·투어·아티스트·티켓 4개 화면 커버),
+  `src/app/staff/stage/page.tsx`(사이드바가 없는 별도 레이아웃이라 상단 배지 옆에 따로 표시 — 두
+  화면을 합쳐야 B탭 전체가 커버된다)
+- 검증: 데모 계정(`demo@onstage.local`)으로 로그인 시 두 화면 모두 "게스트", 오너 계정으로 로그인 시
+  두 화면 모두 "관리자" 표시를 Playwright로 확인 (스크린샷 확인 포함). `npm test`(19개) · `npm run build`
+  재확인 — 둘 다 통과, 회귀 없음
 
 ---
 

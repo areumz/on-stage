@@ -74,6 +74,15 @@ describe("toMetricsView", () => {
     expect(view.nextShow.dday).toBe(-5);
   });
 
+  // show_date는 타임존 없는 날짜라 UTC 자정 기준이다. today를 서버 로컬 타임존(getFullYear 등)으로
+  // 뽑으면 UTC+지역(KST 등)에서 자정 근처에 dday가 하루 밀리는 회귀가 있었다 — UTC 기준을 고정한다.
+  it("computes d-day from the UTC calendar date, not the runner's local timezone", () => {
+    const todayLateUtc = new Date(Date.UTC(2026, 7, 14, 20, 0, 0)); // UTC 2026-08-14 20:00
+    const next = show({ show_date: "2026-08-14" });
+    const view = toMetricsView(baseMetrics, next, [], todayLateUtc);
+    expect(view.nextShow.dday).toBe(0);
+  });
+
   // 예매율 반올림 — avg_booking_rate·show rate 둘 다 정수 퍼센트로 일관되게 반올림
   it("rounds avg booking rate and per-city rate to whole percents", () => {
     const metrics = { ...baseMetrics, avg_booking_rate: 0.865 };

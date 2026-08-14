@@ -2,7 +2,9 @@ import type { ArtistMetricsRow, Metrics, ShowStatusRow } from "@/lib/types";
 
 function toDayNumber(date: Date | string): number {
   if (typeof date === "string") return Date.parse(`${date}T00:00:00Z`) / 86_400_000;
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
+  // show_date는 타임존 없는 날짜라 UTC 자정으로 취급한다(Postgres 세션도 UTC) — 서버 로컬
+  // 타임존(getFullYear 등)으로 today를 뽑으면 UTC+양수 지역에서 하루 밀린다.
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / 86_400_000;
 }
 
 function ticketsDelta(current: number, prev: number | null): { delta: string; positive: boolean } {
