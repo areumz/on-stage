@@ -352,28 +352,28 @@ d-day가 조용히 죽을 위험이 커서 기각했다.
 사용자가 추가한 공연을 지우게 된다. **그때 재검토할 항목이다.** `ticket_sales`는 FK cascade로 함께
 지워지므로 별도 삭제 코드가 필요 없다. **design-v2.md §4.7에 반영 완료.**
 
-- [ ] **Step 1: 스크립트 골격** — `.env.local` 로드, service role 클라이언트 생성 (인라인. `admin.ts`를
+- [x] **Step 1: 스크립트 골격** — `.env.local` 로드, service role 클라이언트 생성 (인라인. `admin.ts`를
       만들지 않는 이유는 위 "설계 문서에서 조정한 두 가지" 참조)
-- [ ] **Step 2: `artists` upsert** — `artists.json`에서. 셰이더 파라미터 4개는 slug별 고정 매핑
+- [x] **Step 2: `artists` upsert** — `artists.json`에서. 셰이더 파라미터 4개는 slug별 고정 매핑
       (§4.1의 default 값을 기준으로 아티스트마다 다르게)
-- [ ] **Step 3: `tracks` upsert** — `artists.json`의 `tracks` 배열에서
-- [ ] **Step 4: `shows` 삭제 후 재생성** — 해당 아티스트의 기존 `shows`를 먼저 지운다
+- [x] **Step 3: `tracks` upsert** — `artists.json`의 `tracks` 배열에서
+- [x] **Step 4: `shows` 삭제 후 재생성** — 해당 아티스트의 기존 `shows`를 먼저 지운다
       (`ticket_sales`는 FK cascade로 함께 사라지므로 별도 삭제 코드가 필요 없다). 그 다음
       위 주의 2·3·4번을 지켜 재삽입. **upsert가 아닌 이유는 결정 2 참조**
-- [ ] **Step 5: `ticket_sales` 14일치 스냅샷 생성** — 공연별 판매 추이가 단조 증가하도록.
+- [x] **Step 5: `ticket_sales` 14일치 스냅샷 생성** — 공연별 판매 추이가 단조 증가하도록.
       Step 4에서 cascade로 비워진 뒤라 삽입만 하면 된다
-- [ ] **Step 6: 갤러리 36장 Storage 업로드 + `gallery_images` 행 upsert** — `created_by`는 **NULL**
+- [x] **Step 6: 갤러리 36장 Storage 업로드 + `gallery_images` 행 upsert** — `created_by`는 **NULL**
       (시드 행은 방문자가 못 지운다 — §4.5). 라이선스 메타데이터는 `public/gallery/CREDITS.json` 참조.
       **업로드는 `{ upsert: true }`로 할 것** — 기본값이면 두 번째 실행에서 409로 실패한다.
       행 삽입은 `storage_path` 충돌 기준 upsert (결정 1이 이 컬럼에 `unique`를 걸어 뒀다)
-- [ ] **Step 7: 계정 2개를 멱등하게 생성** — 데모(role 없음) / 오너(`app_metadata.role = "owner"`).
+- [x] **Step 7: 계정 2개를 멱등하게 생성** — 데모(role 없음) / 오너(`app_metadata.role = "owner"`).
       **`createUser`를 그냥 호출하면 두 번째 실행에서 죽는다.** `listUsers()`로 이메일 존재 여부를
       먼저 확인해, 없으면 `createUser`, 있으면 `updateUserById`로 `app_metadata`와 비밀번호를 맞춘다.
       갱신까지 하는 이유는 시드를 계정 속성의 단일 진실 공급원으로 두기 위해서다 — 오너의
       `role` 클레임이 어긋나면 역할 스코프 RLS(§4.5)가 조용히 실패한다.
       시드는 두 계정의 uid를 어디에도 쓰지 않으므로(갤러리 시드 행은 `created_by = NULL`)
       반환된 uid를 저장할 필요는 없다
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - `npm run seed`를 **두 번 연속 실행해도 모든 테이블의 행 수가 같다** (§11 완료 기준)
@@ -390,7 +390,38 @@ d-day가 조용히 죽을 위험이 커서 기각했다.
 - Storage 버킷에 36개 객체가 있고 전부 `owner`가 NULL이다
 - 데모 계정과 오너 계정으로 각각 로그인이 되고, 오너 JWT에만 `app_metadata.role = "owner"`가 있다
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- `npm run seed`를 3회 연속 실행. 매회 `artists: 6행`, 아티스트별 공연 수(aurora 24 / velvet 8 /
+  nova 6 / halo 4 / lumen 5 / echo 2), 갤러리 6장 upload 로그가 동일하게 찍힘. 2·3회차부터
+  계정 로그가 "생성"에서 "갱신"으로 바뀜 (기대한 동작). `npm run seed && echo OK`로 세 번 모두
+  종료 코드 0 확인
+- `select count(*) from gallery_images;` → `36`
+- `select count(*) from storage.objects where bucket_id = 'gallery';` → `36`,
+  `count(*) filter (where owner is null)` → `36` (전부 NULL)
+- `select count(*) from artists;` → `6`
+- `artist_metrics` 6행, `city_count`가 6개 아티스트 전부 `stats.cities`와 일치
+  (aurora 24 / velvet 8 / nova 6 / halo 4 / lumen 5 / echo 2).
+  `country_count`는 완료조건에 없어 참고용으로만 확인 (17/7/6/2/2/1 — 그럴듯한 분포)
+- `select * from artist_metrics where total_tickets_prev is null;` → 0행
+- 데모 계정(`demo@onstage.local` / `demo1234`)·오너 계정(`SEED_OWNER_EMAIL`/`SEED_OWNER_PASSWORD`)
+  둘 다 `/auth/v1/token?grant_type=password`로 로그인 성공. JWT 디코드 결과 데모는
+  `app_metadata`에 `role` 키 자체가 없고, 오너만 `role: "owner"` 확인
+
+**설계 문서 대비 조정 두 가지 (구현 중 결정)**:
+1. **라이선스 메타데이터는 `CREDITS.json` 대신 `artists.json`의 `gallery[]`를 그대로 썼다.**
+   두 파일 내용이 동일(같은 creator/license/origin)하고 `artists.json`은 이미 Step 2·3에서
+   읽어 아티스트별로 그룹돼 있어, 파일을 하나 더 열어 파일명으로 다시 조인할 필요가 없었다.
+   `CREDITS.json`은 손대지 않고 그대로 남겨둠 (원본 삭제 금지 원칙과 별개로, 애초에 안 건드림)
+2. **`artists.json`의 `cities[].date`는 쓰지 않았다.** design-v2.md §4.7이 "공연 날짜는 실행 시각
+   기준 향후 6개월에 분포"라고 명시했으므로, 4개 featured 도시도 코드/이름만 가져오고 날짜는
+   시드 실행 시각 기준으로 새로 생성했다. `stats.cities`가 4보다 큰 아티스트(aurora 24 등)를 위한
+   추가 도시는 `EXTRA_CITY_POOL`(30개, 기존 13개 코드와 안 겹침)에서 slug 해시 오프셋으로
+   결정론적으로 골랐다
+
+**인프라 블로커 하나 (해결됨)**: 첫 실행 시도에서 `PGRST002`(Data API가 스키마 캐시를 못 읽음, 503)로
+계속 실패. Management API·Storage API는 정상이라 프로젝트 자체는 건강했는데, 알고 보니 대시보드에서
+**Project Settings → Data API가 꺼져 있었다.** 사용자가 토글을 켠 뒤 정상화됨. 이 프로젝트를 나중에
+재생성하거나 새 환경으로 옮길 때 다시 겪을 수 있는 체크포인트라 기록해 둔다.
 
 ---
 
