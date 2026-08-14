@@ -467,18 +467,18 @@ d-day가 조용히 죽을 위험이 커서 기각했다.
    로직이 남지 않는다. 로직은 Task 5의 `metricsView.ts`로 옮겨 가고 거기서 TDD된다 (§9.1).
 4. **`src/lib/supabase/admin.ts`를 만들지 말 것** (위 "설계 문서에서 조정한 두 가지" 참조).
 
-- [ ] **Step 1: `src/lib/supabase/server.ts` 작성** — `@supabase/ssr`의 `createServerClient` +
+- [x] **Step 1: `src/lib/supabase/server.ts` 작성** — `@supabase/ssr`의 `createServerClient` +
       Next 16 쿠키 어댑터
-- [ ] **Step 2: `src/lib/types.ts` 재작성** — DB 행 타입과 화면용 뷰 타입 분리
-- [ ] **Step 3: `src/lib/data.ts` 재작성** — `getArtists` / `getArtist`를 async 쿼리로.
+- [x] **Step 2: `src/lib/types.ts` 재작성** — DB 행 타입과 화면용 뷰 타입 분리
+- [x] **Step 3: `src/lib/data.ts` 재작성** — `getArtists` / `getArtist`를 async 쿼리로.
       `tracks` · featured `shows` · `gallery_images`를 조인하고 Storage 공개 URL로 조립
-- [ ] **Step 4: `/api/artists/route.ts` async 전환**, `route.test.ts` 삭제
-- [ ] **Step 5: 호출부 3개 페이지에 `await` 추가**
-- [ ] **Step 6: `next.config.ts`에 `images.remotePatterns` 추가** — Supabase Storage 호스트
-- [ ] **Step 7: 시각 검증 (브라우저)** — **사람 확인 지점.** A탭 홈의 궤도에 아티스트 6명이 뜨는지,
+- [x] **Step 4: `/api/artists/route.ts` async 전환**, `route.test.ts` 삭제
+- [x] **Step 5: 호출부 3개 페이지에 `await` 추가**
+- [x] **Step 6: `next.config.ts`에 `images.remotePatterns` 추가** — Supabase Storage 호스트
+- [x] **Step 7: 시각 검증 (브라우저)** — **사람 확인 지점.** A탭 홈의 궤도에 아티스트 6명이 뜨는지,
       아티스트 페이지의 히어로·투어 궤도·디스코그래피·갤러리 36장이 전부 렌더되는지, 콘솔 에러가
       없는지 확인
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - `grep -rn "artists.json" src/` 결과가 0건이다.
@@ -489,7 +489,39 @@ d-day가 조용히 죽을 위험이 커서 기각했다.
 - `npm test`가 통과한다 (남은 테스트 4개)
 - `npm run build`가 통과한다
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- `grep -rn "artists.json" src/` → 0건. `metrics.json` import는 `data.ts`·`api/metrics/route.test.ts`에
+  그대로 남아 있음 (의도대로)
+- 시각 검증(Playwright + 시스템 Chrome, 아래 "환경 메모" 참조): A탭 홈 궤도에 6명 전부 표시,
+  `aurora` 아티스트 페이지 히어로("24 cities · 17 countries · 8 tracks" — DB 집계와 일치)·투어
+  궤도(featured 4개: TYO/SEO/LA/LDN)·디스코그래피 4곡·갤러리 6장 렌더 확인. 6개 아티스트 전원의
+  갤러리 페이지를 순회해 36장 전부 `complete && naturalWidth > 0` 확인, 콘솔/페이지 에러 0건
+- B탭도 회귀 확인(완료조건에는 없지만 Task 4가 두 페이지의 호출부를 수정했으므로): 대시보드·무대
+  연출 페이지 모두 정상 렌더, 아티스트 선택기 6명 전부 정상 동작. `getMetrics`는 여전히
+  JSON 값(예: AURORA 182,430)을 보여줌 — Task 5 전까지 정상
+- `/api/artists`, `/api/artists?slug=aurora` 응답 모양 확인 (브라우저 홈 화면이 이 엔드포인트를
+  그대로 쓰므로 궤도 렌더 자체가 계약 검증을 겸함)
+- `npm test` → 4 files, 22 tests 전부 pass
+- `npm run build` → 성공. `/artists/[slug]`·`/api/artists`·`/api/metrics`·`/staff/dashboard`·
+  `/staff/stage`가 `ƒ`(동적)로 전환됨 — `cookies()`를 쓰는 서버 클라이언트가 요청 스코프를
+  요구하게 되면서 생긴 예상된 변화
+
+**계획에 없던 조정 하나**: `src/app/api/metrics/route.test.ts`의 두 테스트("has metrics for every
+artist", "delta/positive agreement")가 `getArtists()`를 동기 호출로 순회하고 있었는데, Task 4가
+`getArtists`를 async·DB I/O로 바꾸면서 깨짐. `next/headers`의 `cookies()`는 실제 Next 요청 스코프
+밖(vitest의 node 환경)에서 호출하면 항상 던지므로 `await`만 붙이는 걸로는 해결되지 않았다 — 이건
+Task 5가 처리할 부분이 아니라 Task 4 자신의 완료조건("`npm test`가 남은 4개 전부 통과")이 요구하는
+최소 수정이었다. 두 테스트가 실제로 필요한 건 "슬러그 목록"뿐이라 `getArtists()` 대신
+`metrics.json`의 키 목록(`Object.keys(metricsData)`)으로 바꿨다 — `getMetrics`가 검증하는 것과
+같은 원본이라 오히려 더 정확하고, `artists.json`을 다시 참조하지 않아 위 "`artists.json` 0건"
+완료조건과도 충돌하지 않는다. 두 테스트의 검증 내용(커버리지·delta/positive 일치)은 그대로 유지.
+Task 5가 이 파일 전체를 지울 때 자연히 함께 사라진다
+
+**환경 메모**: `chromium-cli`가 이 환경에 없고, `npx playwright install`도 이 머신(macOS 12
+arm64)을 지원하지 않아 실패함. 시스템에 설치된 Google Chrome을 `chromium.launch({ channel: "chrome" })`로
+띄워 우회함. 첫 이미지 요청 확인 스크립트에서 `naturalWidth: 0`이 나온 적이 있었는데, 실제로는
+Next Image Optimizer의 최초 리사이즈 지연(같은 URL을 `curl`로 직접 재현하니 0.25초에 200 반환)이라
+검증 스크립트의 대기시간 문제였음 — 실제 버그 아님, 대기시간을 늘려 재확인함
 
 ---
 

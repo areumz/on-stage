@@ -1,9 +1,67 @@
+// ── DB 행 타입 (supabase/migrations/*.sql과 1:1) ──────────────────────
+
+export type ArtistRow = {
+  id: string;
+  slug: string;
+  name: string;
+  name_ko: string;
+  color: string;
+  initials: string;
+  orbit: number;
+  angle: number;
+  size: number;
+  news: string;
+  tour_badge: string;
+  tour_title_ko: string;
+  tour_year: number;
+  stat_tracks: number;
+  shader_pattern: string;
+  shader_freq: number;
+  shader_falloff: number;
+  shader_speed: number;
+};
+
+export type TrackRow = {
+  id: string;
+  artist_id: string;
+  no: number;
+  title: string;
+  duration: string;
+  cover_from: string;
+  cover_to: string;
+};
+
+export type ShowRow = {
+  id: string;
+  artist_id: string;
+  city_code: string;
+  city_name: string;
+  country: string;
+  venue: string;
+  show_date: string;
+  capacity: number;
+  featured: boolean;
+};
+
+export type GalleryImageRow = {
+  id: string;
+  artist_id: string;
+  storage_path: string;
+  creator: string | null;
+  license: string | null;
+  origin: string | null;
+  sort_order: number;
+  created_by: string | null;
+};
+
+// ── 화면용 뷰 타입 (컴포넌트가 실제로 소비하는 모양 — 1차와 동일하게 유지) ──
+
 export type City = { code: string; name: string; date: string };
 
 // 갤러리 사진 — CC0/퍼블릭도메인/CC-BY만 사용함(NC·ND·SA 제외).
 // CC-BY는 출처 표기가 조건이라 creator/origin을 화면에 노출함.
 export type GalleryPhoto = {
-  src: string; // public/ 기준 경로
+  src: string; // Storage 공개 URL
   creator: string;
   license: string;
   origin: string; // 원본 페이지

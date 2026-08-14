@@ -12,9 +12,10 @@ export default async function DashboardPage({
 }) {
   const raw = (await searchParams).artist;
   const slug = typeof raw === "string" ? raw : DEFAULT_METRICS_SLUG;
-  const artist = getArtist(slug);
+  const artist = await getArtist(slug);
   const metrics = getMetrics(slug);
   if (!artist || !metrics) notFound();
+  const artists = await getArtists();
 
   return (
     <div>
@@ -26,7 +27,7 @@ export default async function DashboardPage({
             {artist.tour.titleKo} {artist.tour.year} · 실시간
           </p>
         </div>
-        <ArtistSelect artists={getArtists()} current={slug} />
+        <ArtistSelect artists={artists} current={slug} />
       </div>
 
       <div className="mt-8 grid grid-cols-3 gap-5">
