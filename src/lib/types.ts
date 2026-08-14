@@ -54,6 +54,32 @@ export type GalleryImageRow = {
   created_by: string | null;
 };
 
+// ── DB 뷰 행 타입 (supabase/migrations/*.sql의 뷰와 1:1) ──────────────
+
+export type ArtistMetricsRow = {
+  artist_id: string;
+  total_tickets: number;
+  total_tickets_prev: number | null;
+  avg_booking_rate: number; // 0~1
+  city_count: number;
+  country_count: number;
+};
+
+export type ShowStatusRow = {
+  id: string;
+  artist_id: string;
+  city_code: string;
+  city_name: string;
+  country: string;
+  venue: string;
+  show_date: string;
+  capacity: number;
+  featured: boolean;
+  sold: number;
+  sold_prev: number | null;
+  rate: number; // 0~1
+};
+
 // ── 화면용 뷰 타입 (컴포넌트가 실제로 소비하는 모양 — 1차와 동일하게 유지) ──
 
 export type City = { code: string; name: string; date: string };

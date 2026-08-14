@@ -1,11 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase/server";
-import metricsData from "@/data/metrics.json";
-import type { Artist, ArtistRow, GalleryImageRow, Metrics, ShowRow, TrackRow } from "@/lib/types";
-
-// 아티스트 slug → 지표. 대시보드 아티스트 선택기가 이 맵을 조회함.
-// TODO(Task 5): DB의 artist_metrics 뷰로 교체. 그때까지 JSON 경로를 유지해 대시보드가 깨지지 않게 한다.
-const metrics: Record<string, Metrics> = metricsData;
+import { toMetricsView } from "@/lib/metricsView";
+import type {
+  Artist,
+  ArtistMetricsRow,
+  ArtistRow,
+  GalleryImageRow,
+  Metrics,
+  ShowRow,
+  ShowStatusRow,
+  TrackRow,
+} from "@/lib/types";
 
 const ARTIST_SELECT = "*, tracks(*), shows(*), gallery_images(*)";
 
@@ -75,8 +80,57 @@ export async function getArtist(slug: string): Promise<Artist | undefined> {
 
 export const DEFAULT_METRICS_SLUG = "aurora";
 
-export function getMetrics(slug: string): Metrics | undefined {
-  // slug는 URL에서 그대로 들어오는 값. 그냥 인덱싱하면 프로토타입 체인까지 타서
-  // ?slug=constructor는 함수를(500), ?slug=__proto__는 {}를(가짜 200) 돌려줄 수 있으므로 방어 코드 추가
-  return Object.hasOwn(metrics, slug) ? metrics[slug] : undefined;
+async function getArtistId(supabase: SupabaseClient, slug: string): Promise<string | undefined> {
+  const { data, error } = await supabase.from("artists").select("id").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(`getArtistId: ${error.message}`);
+  return data?.id;
+}
+
+export async function getArtistMetrics(slug: string): Promise<ArtistMetricsRow | undefined> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return undefined;
+  const { data, error } = await supabase.from("artist_metrics").select("*").eq("artist_id", artistId).maybeSingle();
+  if (error) throw new Error(`getArtistMetrics: ${error.message}`);
+  return data ?? undefined;
+}
+
+export async function getNextShow(slug: string): Promise<ShowStatusRow | null> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("show_status")
+    .select("*")
+    .eq("artist_id", artistId)
+    .gte("show_date", today)
+    .order("show_date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`getNextShow: ${error.message}`);
+  return data ?? null;
+}
+
+// 대시보드 '도시별 예매 현황' 차트용. A탭 투어 궤도와 같은 featured 도시 집합을 재사용해
+// "표기 도시 수"가 화면마다 따로 노는 걸 막는다.
+export async function getFeaturedShows(slug: string): Promise<ShowStatusRow[]> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return [];
+  const { data, error } = await supabase
+    .from("show_status")
+    .select("*")
+    .eq("artist_id", artistId)
+    .eq("featured", true)
+    .order("show_date", { ascending: true });
+  if (error) throw new Error(`getFeaturedShows: ${error.message}`);
+  return data ?? [];
+}
+
+export async function getMetrics(slug: string): Promise<Metrics | undefined> {
+  const metrics = await getArtistMetrics(slug);
+  if (!metrics) return undefined;
+  const [nextShow, featuredShows] = await Promise.all([getNextShow(slug), getFeaturedShows(slug)]);
+  return toMetricsView(metrics, nextShow, featuredShows, new Date());
 }

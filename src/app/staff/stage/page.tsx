@@ -12,9 +12,7 @@ export default async function StagePage({
 }) {
   const raw = (await searchParams).artist;
   const slug = typeof raw === "string" ? raw : DEFAULT_METRICS_SLUG;
-  const artists = await getArtists();
-  const artist = await getArtist(slug);
-  const metrics = getMetrics(slug);
+  const [artists, artist, metrics] = await Promise.all([getArtists(), getArtist(slug), getMetrics(slug)]);
   if (!artist || !metrics) notFound();
 
   return (

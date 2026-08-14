@@ -12,10 +12,8 @@ export default async function DashboardPage({
 }) {
   const raw = (await searchParams).artist;
   const slug = typeof raw === "string" ? raw : DEFAULT_METRICS_SLUG;
-  const artist = await getArtist(slug);
-  const metrics = getMetrics(slug);
+  const [artist, metrics, artists] = await Promise.all([getArtist(slug), getMetrics(slug), getArtists()]);
   if (!artist || !metrics) notFound();
-  const artists = await getArtists();
 
   return (
     <div>

@@ -553,18 +553,18 @@ Next Image Optimizer의 최초 리사이즈 지연(같은 URL을 `curl`로 직�
 되어 d-day 케이스를 고정할 수 없다. 시각은 인자로 받는다. 그리고 `total_tickets_prev`는 NULL일 수
 있다 (§4.2 — 지난주에 없던 공연). 0으로 나누지 않도록 처리한다.
 
-- [ ] **Step 1: 실패하는 테스트 작성** — §4.3 표의 **4개 케이스**:
+- [x] **Step 1: 실패하는 테스트 작성** — §4.3 표의 **4개 케이스**:
       delta 양수/음수/0 · `total_tickets_prev`가 NULL · d-day 0일과 과거 날짜 · 예매율 반올림.
       각 케이스에 왜 존재하는지 한국어 주석 한 줄 (1차 관행)
-- [ ] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (모듈 없음)
-- [ ] **Step 3: `metricsView.ts` 최소 구현**
-- [ ] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
-- [ ] **Step 5: `data.ts`에 `getArtistMetrics` · `getNextShow` 추가**
-- [ ] **Step 6: `/api/metrics/route.ts`를 "쿼리 → 매핑 → 응답"으로 재작성**, `route.test.ts` 삭제
-- [ ] **Step 7: 대시보드·무대 페이지 호출부 전환**
-- [ ] **Step 8: 시각 검증 (브라우저)** — **사람 확인 지점.** 대시보드 지표 카드 3개와 도시별 예매
+- [x] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (모듈 없음)
+- [x] **Step 3: `metricsView.ts` 최소 구현**
+- [x] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
+- [x] **Step 5: `data.ts`에 `getArtistMetrics` · `getNextShow` 추가**
+- [x] **Step 6: `/api/metrics/route.ts`를 "쿼리 → 매핑 → 응답"으로 재작성**, `route.test.ts` 삭제
+- [x] **Step 7: 대시보드·무대 페이지 호출부 전환**
+- [x] **Step 8: 시각 검증 (브라우저)** — **사람 확인 지점.** 대시보드 지표 카드 3개와 도시별 예매
       막대 차트가 1차와 같은 모양으로 뜨는지, 아티스트를 바꿔도 수치가 따라오는지 확인
-- [ ] **Step 9: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 9: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - §4.3 표의 4개 테스트 케이스가 전부 통과한다
@@ -575,7 +575,33 @@ Next Image Optimizer의 최초 리사이즈 지연(같은 URL을 `curl`로 직�
 - delta 문자열의 화살표 방향과 `positive` 플래그가 항상 일치한다 (테스트가 강제)
 - `npm test` · `npm run build` 통과
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- TDD 순서 그대로 진행: `metricsView.test.ts` 8개 케이스 작성 → `npm test` FAIL(모듈 없음) 확인 →
+  `metricsView.ts` 구현 → 8개 전부 PASS. §4.3 표의 4개 항목은 각각 최소 1개 테스트로 커버
+  (delta 양수/음수/0 3개, prev NULL 1개, d-day 0/과거 2개, 반올림 1개, note 문구 1개)
+- `grep -rn "@/data/" src/` → 0건 (`metrics.json` import가 `data.ts`에서 완전히 사라짐)
+- `grep -n "new Date()\|supabase\|Supabase" src/lib/metricsView.ts` → 0건 (순수성)
+- **d-day 실제 계산 검증**: 브라우저에서 echo 아티스트 대시보드가 `D-58`을 표시, 같은 순간
+  `select show_date, (show_date - current_date) from show_status ... where slug='echo' and
+  show_date >= current_date order by show_date limit 1`을 DB에 직접 질의해 `expected_dday: 58`로
+  정확히 일치 확인. "시스템 날짜를 하루 넘겨" 재확인하는 대신, DB의 실제 `show_date`와 대조하는
+  방식으로 "오늘 날짜 기준 계산"을 검증함 (시스템 클럭을 바꾸는 건 부작용이 있는 조작이라 피함)
+- delta 화살표/`positive` 일치는 `ticketsDelta` 한 곳에서만 계산되므로 구조적으로 어긋날 수 없음
+  (테스트로도 3방향 확인: 양수 ▲/true, 음수 ▼/false, 0 ▲/true)
+- 시각 검증: AURORA(24개 도시 평균, 차트 4개 표기)와 ECHO(2개 도시 평균, 표기 문구 없음 — city_count와
+  featured 수가 같을 때 접미사가 붙지 않는 분기 확인)를 오가며 카드 3개·막대 차트가 1차와 같은
+  레이아웃으로 뜨고 수치가 아티스트별로 갈아 끼워지는 것 확인. 콘솔/5xx 에러 0건
+- `npm test` → 4 files, 24 tests 전부 pass. `npm run build` → 성공
+
+**계획에 없던 추가 하나**: `toMetricsView`의 파라미터가 계획엔 `(metrics, nextShow)` 2개로 적혀
+있었지만, `Metrics.cityBookings`(도시별 막대 차트)는 이 두 값만으로 만들 수 없다 — 하나는 아티스트
+전체 집계 행이고 하나는 공연 1건뿐이라, 여러 도시의 개별 예매율이 필요한 이 필드를 채울 원본이
+없었다. `data.ts`에 `getFeaturedShows(slug)`(A탭 투어 궤도와 같은 featured 공연 집합 재사용,
+Task 4에서 이미 이 집합을 `cities[]`로 쓰고 있어 "표기 도시" 개념이 화면마다 달라지지 않음)를
+추가하고, `toMetricsView`에 `featuredShows: ShowStatusRow[]`와 `today: Date`를 3·4번째 인자로
+더했다. `avgBookingRate.note`의 "차트는 주요 N개 도시 표기" 문구도 이 배열의 길이로 계산한다
+(1차의 하드코딩된 N을 그대로 재현하려 하지 않음 — §11 완료 기준은 "1차와 같은 모양"이지 숫자
+일치가 아니므로)
 
 ---
 
