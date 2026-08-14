@@ -78,7 +78,7 @@ function hashCode(str) {
 
 function addDays(date, days) {
   const d = new Date(date);
-  d.setDate(d.getDate() + days);
+  d.setUTCDate(d.getUTCDate() + days);
   return d;
 }
 
@@ -155,6 +155,31 @@ async function upsertTracks(artist, artistId) {
   assertNoError(error, `tracks upsert (${artist.slug})`);
 }
 
+// 도시 배열의 원래 순서(=featured 우선, 그중에서도 항상 서울이 0번)로 날짜·venue를 정하면
+// "다음 공연"이 전 아티스트에서 항상 같은 도시·같은 venue가 된다. artist+도시 해시로 순위를 다시
+// 매겨 날짜를, 별도 해시로 venue 접미사를 골라 배열 위치와의 우연한 결합을 끊는다.
+function rankCitiesByHash(artist, cities) {
+  return [...cities]
+    .map((city) => ({ city, key: hashCode(artist.slug + city.code) }))
+    .sort((a, b) => a.key - b.key)
+    .map(({ city }) => city);
+}
+
+// 전체 공연이 개별적으로 단조 비감소면 아티스트 합계도 절대 감소할 수 없다(합의 단조성).
+// 1차 목업과 metricsView 테스트 둘 다 감소(▼) 사례를 전제하므로, 일부 아티스트를 결정론적으로
+// "냉각기"로 지정해 그 아티스트 공연 대부분이 최근 1주일 새 소폭 환불성 하락을 겪게 한다.
+function isCoolingArtist(artist) {
+  return hashCode(`${artist.slug}::cooling`) % 4 === 0; // slug 해시라 재시드해도 항상 같은 아티스트
+}
+
+// 공연별로 확률적(해시 % N)으로 골랐더니 공연 수가 적은 아티스트(lumen 5개)는 표본이 작아
+// 기대 비율(~80%)에서 크게 벗어나 절반도 안 덮이고, 성장폭(30~60%)이 하락폭(3~8%)보다 커서
+// 아티스트 합계가 여전히 양수로 남았다. 냉각기 아티스트는 공연 수와 무관하게 전부 하락시켜
+// 합계가 항상 음수가 되도록 한다 — 하락폭 자체는 공연마다 해시로 다르게 유지한다.
+function isDipShow(_artist, _show, cooling) {
+  return cooling;
+}
+
 // shows는 upsert가 아니라 삭제 후 재생성 (결정 2 — show_date가 유니크 키의 일부라 실행마다 새 행이 됨).
 // ticket_sales는 FK cascade로 함께 지워지므로 별도 삭제가 필요 없다.
 async function recreateShowsAndSales(artist, artistId, today) {
@@ -163,42 +188,65 @@ async function recreateShowsAndSales(artist, artistId, today) {
 
   const cities = buildCityList(artist);
   const n = cities.length;
-  const showRows = cities.map((city, i) => ({
+  const ranked = rankCitiesByHash(artist, cities);
+  const showRows = ranked.map((city, rank) => ({
     artist_id: artistId,
     city_code: city.code,
     city_name: city.name,
     country: city.country,
-    venue: `${city.name} ${VENUE_SUFFIXES[i % VENUE_SUFFIXES.length]}`,
-    show_date: toDateString(addDays(today, Math.round(((i + 1) * 180) / (n + 1)))),
-    capacity: Math.max(2000, 20000 - i * 700),
+    venue: `${city.name} ${VENUE_SUFFIXES[hashCode(`${artist.slug}:${city.code}::venue`) % VENUE_SUFFIXES.length]}`,
+    show_date: toDateString(addDays(today, Math.round(((rank + 1) * 180) / (n + 1)))),
+    capacity: Math.max(2000, 20000 - rank * 700),
     featured: city.featured,
   }));
 
   const { data: shows, error: insError } = await supabase.from("shows").insert(showRows).select("id, city_code, capacity");
   assertNoError(insError, `shows insert (${artist.slug})`);
 
+  const cooling = isCoolingArtist(artist);
   const salesRows = [];
   for (const show of shows) {
-    // 결정론적 최종 예매율 0.55~0.95, 14일에 걸쳐 단조 증가하는 판매량을 만든다.
+    // 결정론적 최종 예매율 0.55~0.95
     const rate = 0.55 + (0.4 * (hashCode(artist.slug + show.city_code) % 100)) / 100;
-    const finalSold = Math.round(show.capacity * Math.min(rate, 0.98));
-    const startSold = Math.round(finalSold * 0.45);
-    let prevSold = 0;
-    for (let d = 0; d < 14; d++) {
-      const raw = Math.round(startSold + ((finalSold - startSold) * d) / 13);
-      const sold = Math.max(raw, prevSold);
-      prevSold = sold;
-      salesRows.push({
-        show_id: show.id,
-        recorded_on: toDateString(addDays(today, d - 13)),
-        sold,
-      });
+    const peakSold = Math.round(show.capacity * Math.min(rate, 0.98));
+    // 시작 비율을 고정값(0.45)으로 두면 모든 공연의 램프 '모양'이 같아져서, 14일 선형 보간에서
+    // day13/day6 비율이 공연·아티스트와 무관하게 항상 같은 상수가 된다(그래서 전 아티스트가
+    // 똑같이 "+42.1%"로 나왔었다). 공연마다 다른 시작 비율을 줘서 증가 폭 자체가 달라지게 한다.
+    const startRatio = 0.3 + (hashCode(`${artist.slug}:${show.city_code}::startratio`) % 30) / 100;
+    const startSold = Math.round(peakSold * startRatio);
+
+    if (!isDipShow(artist, show, cooling)) {
+      // 14일 내내 단조 비감소 — 개막을 앞두고 꾸준히 팔리는 일반적인 경우
+      let prevSold = 0;
+      for (let d = 0; d < 14; d++) {
+        const raw = Math.round(startSold + ((peakSold - startSold) * d) / 13);
+        const sold = Math.max(raw, prevSold);
+        prevSold = sold;
+        salesRows.push({ show_id: show.id, recorded_on: toDateString(addDays(today, d - 13)), sold });
+      }
+    } else {
+      // 환불 시나리오 — 1주차는 peak까지 증가, 2주차는 소폭 하락. sold_prev(7일 전=day6)가
+      // sold(오늘=day13)보다 커져서 이 공연은 실제로 감소한다.
+      const dipAmount = Math.round(peakSold * (0.03 + (hashCode(`${artist.slug}:${show.city_code}::dipsize`) % 6) / 100));
+      let prevSold = 0;
+      for (let d = 0; d < 7; d++) {
+        const raw = Math.round(startSold + ((peakSold - startSold) * d) / 6);
+        const sold = Math.max(raw, prevSold);
+        prevSold = sold;
+        salesRows.push({ show_id: show.id, recorded_on: toDateString(addDays(today, d - 13)), sold });
+      }
+      for (let d = 7; d < 14; d++) {
+        const sold = Math.round(peakSold - (dipAmount * (d - 6)) / 7);
+        salesRows.push({ show_id: show.id, recorded_on: toDateString(addDays(today, d - 13)), sold });
+      }
     }
   }
   const { error: salesError } = await supabase.from("ticket_sales").insert(salesRows);
   assertNoError(salesError, `ticket_sales insert (${artist.slug})`);
 
-  console.log(`shows/ticket_sales: ${artist.slug} — ${shows.length}개 공연, ${salesRows.length}행 스냅샷`);
+  console.log(
+    `shows/ticket_sales: ${artist.slug} — ${shows.length}개 공연, ${salesRows.length}행 스냅샷${cooling ? " (냉각기)" : ""}`
+  );
 }
 
 async function uploadGallery(artist, artistId) {
@@ -257,8 +305,10 @@ async function upsertAccount(email, password, appMetadata) {
 
 async function main() {
   const artistsJson = JSON.parse(readFileSync("src/data/artists.json", "utf-8"));
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // 로컬 자정(setHours)을 만든 뒤 toDateString의 toISOString()으로 UTC 변환하면, UTC+지역
+  // (KST 등)에서는 그 순간 UTC로는 아직 전날이라 모든 날짜가 하루 밀린다. UTC 자정으로 바로 잡는다.
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   const idBySlug = await upsertArtists(artistsJson);
 
