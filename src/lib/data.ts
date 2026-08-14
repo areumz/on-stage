@@ -134,3 +134,12 @@ export async function getMetrics(slug: string): Promise<Metrics | undefined> {
   const [nextShow, featuredShows] = await Promise.all([getNextShow(slug), getFeaturedShows(slug)]);
   return toMetricsView(metrics, nextShow, featuredShows, new Date());
 }
+
+// 헤더/사이드바에 표시할 역할 라벨. app_metadata.role이 "owner"면 관리자, 그 외(공유 데모 계정 포함)는 게스트
+export async function getStaffRoleLabel(): Promise<"관리자" | "게스트"> {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.app_metadata?.role === "owner" ? "관리자" : "게스트";
+}

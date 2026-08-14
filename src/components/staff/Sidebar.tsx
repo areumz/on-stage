@@ -11,7 +11,7 @@ const MENU = [
   { label: "티켓 현황", href: "/staff/tickets" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ roleLabel }: { roleLabel: string }) {
   const pathname = usePathname();
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-surface-2">
@@ -20,7 +20,7 @@ export default function Sidebar() {
           <span className="h-6 w-6 rounded-md bg-brand" />
           <span className="font-bold text-gray-900">STAGE.ONE</span>
         </div>
-        <p className="mt-1 text-xs text-gray-500">관계자 전용</p>
+        <p className="mt-1 text-xs text-gray-500">관계자 전용 · {roleLabel}</p>
       </div>
       <nav aria-label="관계자 메뉴" className="mt-2 flex flex-col">
         {MENU.map((m) => {
