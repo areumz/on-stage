@@ -435,37 +435,137 @@ CLI로 push한다. 프로젝트를 둘로 나누면 일시정지 대상만 둘�
 
 ## 5. 무대 연출 툴 고도화 (로드맵 2번)
 
-`StageState`를 확장한다.
+### 5.1 StageState 확장 + 필드별 병합
+
+`spots`는 배열이 아니라 기존 코드와 같은 이름 있는 키(`left`/`center`/`right`)를 유지한 채 각 값을
+boolean에서 조명 파라미터 객체로 확장한다. 카메라 키는 `angle`에서 `camera`로 바꾼다 — 스팟에도
+`angle`(조명 콘 각도)이 생기면서 이름이 겹치기 때문이다.
 
 ```ts
-type StageState = {
-  color: string;                                   // 고정 팔레트 → 자유 선택
-  spots: { on: boolean; intensity: number; angle: number; penumbra: number }[];  // ×3
+export type SpotState = { on: boolean; intensity: number; angle: number; penumbra: number };
+
+export type StageState = {
+  color: string;                                              // 고정 팔레트 → 자유 선택
+  spots: { left: SpotState; center: SpotState; right: SpotState };
   camera: "front" | "audience" | "top";
-  smoke: { density: number; color: string };       // 신규
+  smoke: { density: number; color: string };                  // 신규
 };
 ```
 
-1차 `StageControls`에는 슬라이더가 하나도 없다(앱 전체에 `type="range"`가 0개). `StageScene`의 `Spot`에
-하드코딩돼 있던 `intensity={300} angle={0.45} penumbra={0.6}`을 그대로 슬라이더로 노출하는 것이
-세밀 조명 조절의 실체다.
+기본값(`defaultStageState`)은 현재와 동일하게 `left`/`center` on, `right` off, `camera: "front"`를
+유지하고, 각 스팟의 조명 파라미터는 지금 `StageScene`에 하드코딩된 값(`intensity: 300, angle: 0.45,
+penumbra: 0.6`)을 그대로 옮긴다. `smoke`는 `{ density: 0, color: "#ffffff" }`로 시작해 기본은 꺼진 상태다.
 
-**스모그는 three.js 기본 `fog` + drei `<Cloud>`로 구현하고 직접 쓰는 셰이더는 0줄이다.**
-1차에서 91줄 커스텀 파티클 셰이더를 16줄 drei `Sparkles`로 교체한 이력이 있다(README 참조).
-같은 판단을 반복한다.
+**선행 작업**: `parseStageState`는 지금 전부-아니면-전무 방식(`isStageState` 가드 하나가 통과 못 하면
+저장값 전체 폐기)이라 필드를 하나만 추가해도 사용자가 defaults로 되돌아간다. 필드별 폴백 병합으로
+바꾼다 — 각 필드가 있고 타입이 맞으면 그 값을, 아니면 fallback의 값을 쓰는 규칙을 최상위(`color` /
+`spots` / `camera` / `smoke`)뿐 아니라 `spots.left` / `center` / `right` 내부 4개 필드, `smoke` 내부
+2개 필드까지 재귀적으로 적용한다. **이건 TDD 대상이다.**
 
-**선행 작업**: `parseStageState`가 전부-아니면-전무 방식이라 필드를 하나만 추가해도 저장된 상태가
-전부 무효화되고 사용자가 defaults로 되돌아간다. **필드별 폴백 병합 방식으로 먼저 고쳐야 하며,
-이건 TDD 대상이다.** 새 필드가 없는 구버전 저장값이 나머지 필드를 유지한 채 로드되는지 테스트한다.
+병합 로직은 두 함수로 나눈다. `mergeStageState(value: unknown, fallback: StageState): StageState`가
+위 규칙을 적용하고, `parseStageState(raw: string | null, fallback): StageState`는 localStorage
+문자열을 `JSON.parse`한 뒤 `mergeStageState`에 위임하는 얇은 래퍼로 남는다(JSON이 깨지면 fallback).
+분리하는 이유는 `mergeStageState` 자체를 5.3의 프리셋 로드(이미 파싱된 Supabase JSONB 객체)에도
+그대로 재사용하기 위해서다 — 파싱 경로가 둘이어도 병합 규칙은 하나.
 
-프리셋은 두 층으로 나눈다.
+**1차 저장값과의 호환은 별도 코드 없이 이 규칙만으로 해결된다.** 1차의 `spots.left`는
+`true`(boolean)라 `mergeSpot`이 "객체가 아님" 판정을 내려 그 자리 전체를 기본값으로 채운다. `camera`
+키 자체가 없던 것도 마찬가지로 기본값으로 떨어진다. `color`는 유효한 문자열 그대로라 자연스럽게
+유지된다. **즉 1차 사용자는 조명 on/off와 카메라 앵글은 기본값으로 리셋되지만 색상은 유지된다 —
+이건 브레인스토밍에서 합의된 동작이지 버그가 아니다.** (대안이었던 "boolean→on 변환 전용 로직
+추가"는 이번 한 번만 쓰고 버릴 코드라 기각)
 
-| 층 | 저장소 | 동작 |
-|---|---|---|
-| 작업 중 상태 | localStorage (`stage-state:${slug}`) | 조작할 때마다 자동. 1차의 `useSyncExternalStore` 스토어 그대로 |
-| 명명된 프리셋 | Supabase `stage_presets` | 사용자가 이름 붙여 명시적으로 저장/불러오기 |
+TDD 대상 테스트 케이스:
 
-기존 `src/lib/hooks.ts`를 건드리지 않고 프리셋 API만 얹는 게 가장 짧은 경로다.
+| 케이스 | 기대 동작 |
+|---|---|
+| 저장값이 `null` | fallback 그대로 |
+| JSON 깨짐 | fallback 그대로 |
+| 1차 저장값(`spots.left: true`, `angle` 키) | `color` 유지, `spots`/`camera`는 기본값 |
+| `smoke` 필드가 없는(v2 초기) 저장값 | 나머지 필드 유지, `smoke`만 기본값 |
+| `spots.left`에 `on`만 있고 나머지 3개 필드 없음 | `on`은 유지, `intensity`/`angle`/`penumbra`는 기본값 |
+| `camera`가 열거값 밖의 문자열 | 기본값(`front`)으로 |
+
+### 5.2 프리셋 — 두 층 저장과 API 계약
+
+| 층 | 저장소 | 동작 | 코드 |
+|---|---|---|---|
+| 작업 중 상태 | localStorage (`stage-state:${slug}`) | 조작할 때마다 자동 | 기존 `src/lib/hooks.ts` 그대로, 손대지 않음 |
+| 명명된 프리셋 | Supabase `stage_presets` | 이름 붙여 명시적으로 저장/불러오기 | 신규 `/api/stage-presets` |
+
+`stage_presets` 테이블과 소유 스코프 RLS(`user_id = auth.uid()`)는 4장에서 이미 만들어져 있다 —
+**이 장에서 마이그레이션은 추가하지 않는다.** 필요한 건 API 라우트와 UI뿐이다.
+
+API 계약 (`src/app/api/stage-presets/`):
+
+| 메서드 · 경로 | 요청 | 응답 | 비고 |
+|---|---|---|---|
+| `GET /api/stage-presets?artist=<slug>` | — | `200 { presets: { id, name, state }[] }` | RLS가 `user_id`로 자동 필터, 라우트는 `artist_id`만 추가로 거른다(`getArtistId` 재사용, 4.6과 동일 패턴) |
+| `POST /api/stage-presets` | `{ artistSlug, name, state, overwrite?: boolean }` | `201 { id }` / 이름 중복인데 `overwrite` 없으면 `409 { error: "duplicate" }` | `overwrite: true`면 `upsert(..., { onConflict: "user_id,artist_id,name" })`, 아니면 `insert` |
+| `DELETE /api/stage-presets/[id]` | — | `204` / `403`(RLS가 막아 0행 삭제됨) | 소유자 재확인 없음 — RLS가 게이트. `gallery/[id]/route.ts`와 동일 패턴 |
+
+모든 라우트는 `user_id`를 클라이언트 입력이 아니라 세션(`user.id`)에서 채운다(`gallery` POST의
+`created_by`와 동일 원칙 — 클라이언트가 보낸 값을 신뢰하지 않는다).
+
+덮어쓰기 흐름: 클라이언트가 먼저 `overwrite` 없이 `POST` → `409`를 받으면 "이미 있는 이름입니다.
+덮어쓸까요?" `confirm()` → 확인 시 `overwrite: true`로 재요청. 이름이 겹치지 않으면 한 번에 끝난다.
+
+### 5.3 UI — 슬라이더 · 색상 · 프리셋 패널
+
+1차 `StageControls`에는 슬라이더가 하나도 없다(앱 전체에 `type="range"`가 0개). `StageScene`의
+`Spot`에 하드코딩돼 있던 `intensity={300} angle={0.45} penumbra={0.6}`을 스팟별
+`state.spots.{left,center,right}.{intensity,angle,penumbra}`로 바꾸고 각각 `<input type="range">`로
+노출하는 것이 세밀 조명 조절의 실체다.
+
+컨트롤 개수가 3(스팟) × 4(on/intensity/angle/penumbra) + 카메라 3버튼 + 스모그 2 + 색상 2방식 +
+프리셋 패널까지 늘어나므로 `StageControls.tsx` 하나에 다 넣지 않고 쪼갠다.
+
+| 파일 | 역할 |
+|---|---|
+| `StageControls.tsx` | 레이아웃 orchestrator. 색상(아티스트 스와치 + `<input type="color">` 자유 선택 병용), 카메라 3버튼 유지 |
+| `SpotControls.tsx` (신규) | 스팟 1개당 on/off 스위치 + intensity/angle/penumbra 슬라이더 3개. `left`/`center`/`right` 3번 렌더 |
+| `SmokeControls.tsx` (신규) | density 슬라이더 + `<input type="color">`(스모그 색상, 조명 색과 별개) |
+| `PresetPanel.tsx` (신규) | 이름 입력 + 저장 버튼, 프리셋 목록(불러오기/삭제) |
+
+색상 선택은 기존 아티스트 스와치 버튼을 빠른 선택용으로 유지하고 그 옆에 네이티브
+`<input type="color">`를 추가해 자유 선택을 병용한다 — 별도 색상 피커 라이브러리는 쓰지 않는다.
+
+슬라이더 범위(한 곳의 상수로 관리, 필요시 조정):
+
+| 필드 | range | step | 기본값 |
+|---|---|---|---|
+| `intensity` | 0–1000 | 10 | 300 |
+| `angle` | 0.1–1.0 | 0.05 | 0.45 |
+| `penumbra` | 0–1 | 0.05 | 0.6 |
+| `smoke.density` | 0–1 | 0.05 | 0 |
+
+`PresetPanel` 동작:
+1. 마운트 시 `GET /api/stage-presets?artist=<slug>` → 목록을 이름으로 표시
+2. 이름 클릭 → 받아온 `state`를 `mergeStageState`로 안전하게 병합해 씬에 반영 **+**
+   `writeStageState`로 localStorage 작업 중 상태에도 반영(불러온 프리셋이 새 작업 기준점이 되도록,
+   5.2의 2층 구조를 유지)
+3. 이름 입력 후 저장 버튼 → 5.2의 덮어쓰기 흐름
+4. 각 항목 옆 삭제 버튼 → `DELETE`, `GalleryManager.tsx`의 `confirm()` 패턴 재사용
+
+### 5.4 스모그
+
+three.js 기본 `fog`(scene 레벨, `smoke.density`가 조밀도·`smoke.color`가 색) + drei `<Cloud>`(입자감)로
+구현한다. **직접 쓰는 셰이더는 0줄이다.** 1차에서 91줄 커스텀 파티클 셰이더를 16줄 drei `Sparkles`로
+교체한 이력이 있다(README 참조) — 같은 판단을 반복한다. `density`가 0이면 시각적으로 완전히 꺼진
+것처럼 보이도록 한다(fog 생략 또는 `<Cloud>` opacity 0).
+
+### 5.5 변경 파일
+
+| 파일 | 작업 |
+|---|---|
+| `src/lib/stageState.ts` | 타입 확장, `mergeStageState`/`parseStageState` 재작성 (5.1) — TDD |
+| `src/lib/stageState.test.ts` | 5.1 표의 케이스로 갱신 |
+| `src/components/three/StageScene.tsx` | `Spot`이 스팟별 intensity/angle/penumbra를 받음, `CameraRig`가 `state.camera` 참조, fog + `<Cloud>` 추가 |
+| `src/components/staff/StageControls.tsx` | 색상 자유 선택 추가, `SpotControls`/`SmokeControls`/`PresetPanel` 조합으로 재구성 |
+| `src/components/staff/SpotControls.tsx` · `SmokeControls.tsx` · `PresetPanel.tsx` | 신규 |
+| `src/app/api/stage-presets/route.ts` | 신규 — `GET`/`POST` |
+| `src/app/api/stage-presets/[id]/route.ts` | 신규 — `DELETE` |
+| `supabase/migrations/*.sql` | 변경 없음 — 4장에서 이미 완료 |
 
 ---
 
@@ -610,8 +710,11 @@ vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import�
 ### 5장 · 무대 연출 툴
 
 - [ ] 새 필드가 없는 구버전 저장 상태를 로드해도 기존 필드가 유지된다 (병합 폴백)
+- [ ] 1차 저장값(`spots.left: true` 같은 boolean, `angle` 키)을 로드하면 `color`는 유지되고
+      `spots`/`camera`만 기본값으로 리셋된다 (5.1에서 합의된 동작, 버그 아님)
 - [ ] 슬라이더 조작이 R3F 씬에 실시간 반영된다 (시각 검증)
 - [ ] 프리셋을 저장한 뒤 로그아웃 → 재로그인해도 남아 있다
+- [ ] 프리셋 이름이 겹치면 확인 없이 덮어써지지 않는다 (409 → confirm → overwrite)
 - [ ] 직접 작성한 셰이더 코드가 0줄이다
 
 ### 6장 · 반응형
