@@ -1,8 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const supabase = await createServerSupabase();
+  const [{ id }, supabase] = await Promise.all([params, createServerSupabase()]);
   const {
     data: { user },
   } = await supabase.auth.getUser();

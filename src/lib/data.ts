@@ -56,9 +56,7 @@ function toArtist(row: ArtistJoinRow, supabase: SupabaseClient): Artist {
       countries: new Set(row.shows.map((s) => s.country)).size,
       tracks: row.stat_tracks,
     },
-    cities: row.shows
-      .filter((s) => s.featured)
-      .map((s) => ({ code: s.city_code, name: s.city_name, date: s.show_date })),
+    cities: row.shows.flatMap((s) => (s.featured ? [{ code: s.city_code, name: s.city_name, date: s.show_date }] : [])),
     tracks: row.tracks.map((t) => ({
       no: t.no,
       title: t.title,
