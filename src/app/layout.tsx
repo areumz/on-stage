@@ -22,6 +22,9 @@ const HYDRATION_GUARD_SCRIPT = `(function () {
   function showFallback() {
     if (window.__appHydrated || shown) return;
     shown = true;
+    // 원인이 둘 다일 수 있다 — 진짜 구형 브라우저(파싱 자체 불가)거나, 배포 직후 CDN에 새
+    // 청크가 덜 퍼져 첫 로드만 실패하는 일시적 상황(새로고침하면 대개 해결). 새로고침을 먼저
+    // 권하고, 그래도 안 되면 브라우저를 바꾸라고 안내
     var el = document.createElement("div");
     el.id = "browser-support-banner";
     el.setAttribute("style",
@@ -29,8 +32,18 @@ const HYDRATION_GUARD_SCRIPT = `(function () {
       "background:#1a1533;color:#fff;padding:14px 20px;" +
       "font-family:-apple-system,BlinkMacSystemFont,sans-serif;" +
       "font-size:14px;text-align:center;line-height:1.5;");
-    el.textContent = "이 브라우저에서는 일부 콘텐츠가 정상적으로 표시되지 않을 수 있습니다. " +
-      "Chrome 최신 버전 또는 Safari 16.4 이상에서 다시 시도해주세요.";
+    var msg = document.createElement("span");
+    msg.textContent = "일부 콘텐츠가 정상적으로 표시되지 않았습니다. 새로고침해보시고, " +
+      "계속되면 Chrome 최신 버전 또는 Safari 16.4 이상을 이용해주세요.";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "새로고침";
+    btn.setAttribute("style",
+      "margin-left:12px;padding:4px 12px;border-radius:6px;border:1px solid #fff;" +
+      "background:transparent;color:#fff;font-size:13px;cursor:pointer;");
+    btn.onclick = function () { window.location.reload(); };
+    el.appendChild(msg);
+    el.appendChild(btn);
     if (document.body) document.body.insertBefore(el, document.body.firstChild);
   }
   window.addEventListener("error", showFallback);
