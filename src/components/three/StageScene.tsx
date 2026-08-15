@@ -1,7 +1,7 @@
 "use client";
 
 import { useThree } from "@react-three/fiber";
-import { OrbitControls, SpotLight } from "@react-three/drei";
+import { Cloud, Clouds, OrbitControls, SpotLight } from "@react-three/drei";
 import { useEffect } from "react";
 import Scene3D from "@/components/three/Scene3D";
 import type { SpotState, StageState } from "@/lib/stageState";
@@ -19,6 +19,21 @@ function CameraRig({ cameraAngle }: { cameraAngle: StageState["camera"] }) {
     camera.lookAt(0, 1.5, 0);
   }, [cameraAngle, camera]);
   return null;
+}
+
+// density === 0이면 씬 그래프에 아예 안 올림 — opacity 0으로만 두면 예산을 쓰면서 남아 있음
+// smoke.density(0~1, UI 슬라이더 스케일)를 그대로 넣으면 FogExp2·Cloud 둘 다 이 씬 규모(연단
+// 8×0.8×4, 카메라 9~14 거리)에 비해 과하게 짙어져 무대가 하얗게 덮임 — 씬에 맞는 범위로 눌러줌
+function Smoke({ smoke }: { smoke: StageState["smoke"] }) {
+  if (smoke.density === 0) return null;
+  return (
+    <>
+      <fogExp2 attach="fog" args={[smoke.color, smoke.density * 0.1]} />
+      <Clouds texture="/textures/cloud.png">
+        <Cloud position={[0, 1, 2]} bounds={[4, 1.2, 1.5]} volume={3} opacity={smoke.density * 0.6} color={smoke.color} speed={0.2} />
+      </Clouds>
+    </>
+  );
 }
 
 function Spot({ x, color, spot }: { x: number; color: string; spot: SpotState }) {
@@ -57,6 +72,7 @@ export default function StageScene({ state, controls = true }: { state: StageSta
         <boxGeometry args={[9, 5.5, 0.3]} />
         <meshStandardMaterial color="#13102a" />
       </mesh>
+      <Smoke smoke={state.smoke} />
       <Spot x={-3} color={state.color} spot={state.spots.left} />
       <Spot x={0} color={state.color} spot={state.spots.center} />
       <Spot x={3} color={state.color} spot={state.spots.right} />
