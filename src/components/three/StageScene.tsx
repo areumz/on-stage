@@ -1,8 +1,9 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { OrbitControls, SpotLight } from "@react-three/drei";
 import { useEffect } from "react";
+import Scene3D from "@/components/three/Scene3D";
 import type { StageState } from "@/lib/stageState";
 
 const CAMERA_PRESETS: Record<StageState["angle"], [number, number, number]> = {
@@ -38,7 +39,7 @@ function Spot({ x, color, on }: { x: number; color: string; on: boolean }) {
 
 export default function StageScene({ state, controls = true }: { state: StageState; controls?: boolean }) {
   return (
-    <Canvas shadows camera={{ position: CAMERA_PRESETS.front, fov: 50 }}>
+    <Scene3D shadows camera={{ position: CAMERA_PRESETS.front, fov: 50 }}>
       <CameraRig angle={state.angle} />
       <ambientLight intensity={0.15} />
       {/* 바닥 */}
@@ -60,6 +61,6 @@ export default function StageScene({ state, controls = true }: { state: StageSta
       <Spot x={0} color={state.color} on={state.spots.center} />
       <Spot x={3} color={state.color} on={state.spots.right} />
       {controls && <OrbitControls makeDefault target={[0, 1.5, 0]} />}
-    </Canvas>
+    </Scene3D>
   );
 }

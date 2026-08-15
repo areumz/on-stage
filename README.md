@@ -20,6 +20,18 @@ A dual-perspective platform for a fictional entertainment label — the stage fa
 
 ---
 
+## 브라우저 지원 / Browser Support
+
+최신 Chrome을 기준으로 개발·검증했습니다. Three.js·Next.js 16 빌드 산출물이
+ES2022 문법을 포함해, **Safari 16.4 미만**에서는 자바스크립트 번들이 파싱
+단계에서 실패해 페이지가 정상 동작하지 않습니다. 이 경우 안내 문구가 표시됩니다.
+
+Developed and verified against the latest Chrome. The build output from Three.js and Next.js 16
+includes ES2022 syntax, so on **Safari versions below 16.4** the JavaScript bundle fails to parse
+and the page won't work normally. In that case, a notice is shown instead.
+
+---
+
 ## 소개 / Introduction
 
 **STAGE.ONE**은 가상의 엔터테인먼트 레이블을 배경으로, 하나의 플랫폼을 두 개의 시점으로 구현한 인터랙티브 웹 프로젝트입니다. 화면 상단의 A/B 탭으로 두 세계를 오갈 수 있습니다.
@@ -170,13 +182,17 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 - 백엔드 서버 분리 없음
 - B탭 사이드바 5개 메뉴 중 대시보드·아티스트(갤러리 관리)만 실 화면, 나머지(투어 일정/티켓 현황)는 Coming soon
 - 무대 연출 툴은 조명 프리셋·on/off·카메라 앵글 전환만 지원 (스모그, 세밀 조명 조절, 프리셋 저장 없음)
+- **권장 브라우저: Chrome 최신, Safari 16.4+.** 그 외 환경(구형 Safari 등 WebGL 미지원·구형 브라우저)에서는
+  3D 콘텐츠 대신 안내 메시지가 표시됩니다 — 화면이 비어 보이는 대신 실패했다는 걸 알리는 용도입니다
 
 The list below covers what's still missing. Of these, the auth approach (phase 2 roadmap item 1) is
 done; the rest remain on the roadmap. No sign-up or password reset (Supabase Auth email/password
 login only, accounts are seed-created), no i18n, no mobile responsiveness (desktop-only), no real
 payments/booking, no separate backend, and in the B tab only the dashboard and artists (gallery
 management) screens are real — the rest are "coming soon" — while the stage tool covers only
-lighting presets, on/off toggles, and camera-angle presets.
+lighting presets, on/off toggles, and camera-angle presets. **Recommended browsers: latest Chrome,
+Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content is replaced with a
+message instead of silently rendering blank.
 
 ### 2차 로드맵 / Phase 2 Roadmap
 

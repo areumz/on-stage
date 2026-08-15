@@ -1,8 +1,9 @@
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import Scene3D from "@/components/three/Scene3D";
 
 const vertex = /* glsl */ `
 varying vec2 vUv;
@@ -47,8 +48,8 @@ function GlowPlane({ color }: { color: string }) {
 
 export default function HeroBackground({ color }: { color: string }) {
   return (
-    <Canvas className="absolute inset-0" camera={{ position: [0, 0, 1] }}>
+    <Scene3D className="absolute inset-0" camera={{ position: [0, 0, 1] }}>
       <GlowPlane color={color} />
-    </Canvas>
+    </Scene3D>
   );
 }

@@ -602,8 +602,8 @@ vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import�
 - [x] 데모 계정으로 `artists` / `shows` UPDATE를 시도하면 막히고, 오너 계정으로는 통과한다
 - [x] B탭에서 이미지를 업로드하면 A탭 갤러리에 반영되고, 같은 계정으로 되돌려 지울 수 있다
 - [x] 대시보드 d-day가 오늘 날짜 기준으로 계산된다 (박제된 값이 아니다)
-- [ ] `npm test`가 CI에서 돌고 통과한다 — **미확인**: 브랜치가 아직 원격에 push된 적이 없어
-      `.github/workflows/test.yml`이 한 번도 실행되지 않았다. push 후 재확인 필요
+- [x] `npm test`가 CI에서 돌고 통과한다 — PR #10 기준 GitHub Actions `test` 워크플로우 통과 확인
+      (https://github.com/areumz/on-stage/actions/runs/31866943418)
 - [ ] Vercel 배포 URL에서 A탭·B탭 전체 플로우가 1차와 동일하게 동작한다 — **미확인**: 배포된 적
       없음. Vercel에 `SUPABASE_URL`·`SUPABASE_ANON_KEY` 환경변수 등록 + 배포 후 재확인 필요
 

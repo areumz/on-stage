@@ -1,9 +1,9 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useMemo, useState } from "react";
 import { ringPoints } from "@/lib/geometry";
+import Scene3D from "@/components/three/Scene3D";
 import type { Artist, City } from "@/lib/types";
 
 function CityNode({ city, color, index, count, theta, onSelect }: {
@@ -36,7 +36,7 @@ export default function TourOrbit({ artist, progress, onSelect }: {
   const rings = useMemo(() => [1.5, 2.1].map(ringPoints), []);
   const theta = progress * Math.PI * 1.5;
   return (
-    <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
+    <Scene3D camera={{ position: [0, 0, 6], fov: 50 }}>
       <group rotation={[0, 0, theta]}>
         {rings.map((pts, i) => (
           <Line key={i} points={pts} color="#3a2f5e" lineWidth={1} />
@@ -49,6 +49,6 @@ export default function TourOrbit({ artist, progress, onSelect }: {
       <Text position={[0, 0, 0.01]} fontSize={0.42} color="#ffffff" anchorX="center" anchorY="middle">
         {String(artist.tour.year)}
       </Text>
-    </Canvas>
+    </Scene3D>
   );
 }

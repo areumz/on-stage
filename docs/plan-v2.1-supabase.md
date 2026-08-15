@@ -941,6 +941,50 @@ DB 행 삭제(RLS)이므로 권한이 없으면 Storage를 건드리기 전에 �
 등록)·Step 2(배포 URL 확인)를 진행할 수 없다. push·PR은 사용자가 "supabase 장의 작업이 모두
 끝나면 그 때" 직접 하기로 한 상태라(Task 6 시작 시 확인), 이 지점에서 멈추고 보고한다.
 
+**사용자 발견 — Safari 15.6 SyntaxError (2026-08-15, push·PR·Vercel 배포 이후)**
+
+push·PR 생성 후 Vercel 프리뷰가 뜨자, 사용자가 실제 Safari 15.6(macOS Monterey)으로 접속해보고
+`SyntaxError: Unexpected token '{'`를 발견해 리포트함. 계획에도 §11 완료 기준에도 없던,
+배포된 실물을 직접 확인하는 과정에서만 드러난 문제였다.
+
+**원인 조사**: `three`(0.185.1)의 실제 번들 진입점(`three.module.js` → `three.core.js`)에
+ES2022 `static {}` 블록이 6곳 있고, Next는 `node_modules`를 기본적으로 트랜스파일하지 않아
+그대로 새어 들어감. `transpilePackages: ["three", "@react-three/fiber", "@react-three/drei"]`를
+추가했지만, 실제 빌드 산출물을 열어 확인해보니 **여전히 static 블록이 남아 있었다** — Next 16의
+기본 컴파일 타깃 자체가 이미 "Safari 16.4+"라, 컴파일러가 "타깃엔 이미 있는 문법이니 낮출 필요
+없음"이라 판단하기 때문. 더 나아가 Next.js **자체의 핵심 라우팅 코드**(`AppRouterContext`, 모든
+페이지가 로드하는 필수 코드)에도 같은 static 블록이 있어, **3D와 무관하게 앱 번들 자체가 파싱
+단계에서 실패**한다는 걸 확인함. 즉 `transpilePackages`는 Safari 16.4+ 사용자에게는 여전히
+저비용 안전망이지만, Safari 15.6의 이 증상 자체는 못 고친다(browserslist를 낮추지 않는 한
+근본적으로 불가능 — 사용자가 이번엔 낮추지 않기로 결정).
+
+**대응**: 사용자가 Safari 15.6 지원 범위 확장은 하지 않되 "무표시로 조용히 깨지는 것"만 고치기로
+결정. 두 계층으로 대응:
+1. `src/components/three/Scene3D.tsx` (신규) — R3F `Canvas`를 대체하는 안전판. WebGL 사전 체크
+   (`canvas.getContext`) + React 에러 바운더리로, **리액트가 정상 실행 중인데 3D만 실패하는**
+   경우(WebGL 비활성화, 셰이더 런타임 에러 등)에 안내 문구로 대체. 5개 3D 씬
+   (`OrbitScene`·`HeroBackground`·`TourOrbit`·`StageScene`·`GalleryHaze`) 전부 적용하되,
+   순수 장식용인 `GalleryHaze`(사진 뒤 파티클층)만 `fallback={null}`로 조용히 생략 — 실패해도
+   실제 사진엔 지장이 없어서 문구를 띄우면 오히려 더 혼란스러움
+2. `src/app/layout.tsx` + `src/components/common/HydrationSignal.tsx` (신규) — **Safari 15.6의
+   실제 증상**(리액트 자체가 못 켜짐)에 대한 대응. Next 번들보다 먼저 실행되는 순수 ES5 인라인
+   스크립트를 `<head>` 맨 앞에 심어 전역 `error` 이벤트를 감시하다가, `HydrationSignal`이 보내는
+   "정상 hydration" 신호가 오기 전에 에러가 나면 리액트와 무관하게 DOM에 직접 안내 배너를 삽입.
+   리액트 컴포넌트(에러 바운더리 포함)는 리액트가 못 켜지면 애초에 실행되지 않으므로 이 계층이
+   유일하게 작동하는 안전망임
+
+**검증**: 정상 경로(에러 없음)에서 배너가 안 뜨는지, 실제로 빌드된 JS 청크 하나를 의도적으로
+손상시켜(SyntaxError 유발) hydration이 막히는 상황을 재현했을 때 배너가 뜨고 SSR 셸(헤더 등
+정적 텍스트)은 그대로 보이는지 Playwright로 확인 — 사용자가 원래 캡처한 화면(구 프로덕션
+사이트에서 "0 artists"로 멈춰 있던 것)과 정확히 같은 패턴이 재현됐다. 이후 **사용자가 실제
+Safari 15.6 기기로 재배포된 프리뷰에 접속해 배너가 정상적으로 뜨는 것을 직접 확인함.**
+(과정 중 첫 검증 스크립트가 `document.body.textContent`로 배너 존재를 확인했다가 오탐이
+났다 — 배너 메시지 문자열이 Next의 RSC 하이드레이션 페이로드(`<script>` 태그 안의 JSON)에도
+그대로 박혀 있어 `textContent`가 이를 함께 주워버림. 배너 div에 `id`를 붙여 정확히 짚도록
+고쳐서 재확인.)
+
+README "브라우저 지원" 섹션에 권장 브라우저와 이 동작을 명시함.
+
 ---
 
 ## 계획 검증 노트 (Self-Review)
