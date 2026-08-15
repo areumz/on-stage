@@ -172,14 +172,6 @@ function isCoolingArtist(artist) {
   return hashCode(`${artist.slug}::cooling`) % 4 === 0; // slug 해시라 재시드해도 항상 같은 아티스트
 }
 
-// 공연별로 확률적(해시 % N)으로 골랐더니 공연 수가 적은 아티스트(lumen 5개)는 표본이 작아
-// 기대 비율(~80%)에서 크게 벗어나 절반도 안 덮이고, 성장폭(30~60%)이 하락폭(3~8%)보다 커서
-// 아티스트 합계가 여전히 양수로 남았다. 냉각기 아티스트는 공연 수와 무관하게 전부 하락시켜
-// 합계가 항상 음수가 되도록 한다 — 하락폭 자체는 공연마다 해시로 다르게 유지한다.
-function isDipShow(_artist, _show, cooling) {
-  return cooling;
-}
-
 // shows는 upsert가 아니라 삭제 후 재생성 (결정 2 — show_date가 유니크 키의 일부라 실행마다 새 행이 됨).
 // ticket_sales는 FK cascade로 함께 지워지므로 별도 삭제가 필요 없다.
 async function recreateShowsAndSales(artist, artistId, today) {
@@ -215,7 +207,11 @@ async function recreateShowsAndSales(artist, artistId, today) {
     const startRatio = 0.3 + (hashCode(`${artist.slug}:${show.city_code}::startratio`) % 30) / 100;
     const startSold = Math.round(peakSold * startRatio);
 
-    if (!isDipShow(artist, show, cooling)) {
+    // 공연별로 확률적(해시 % N)으로 골랐더니 공연 수가 적은 아티스트(lumen 5개)는 표본이 작아
+    // 기대 비율(~80%)에서 크게 벗어나 절반도 안 덮이고, 성장폭(30~60%)이 하락폭(3~8%)보다 커서
+    // 아티스트 합계가 여전히 양수로 남았다. 냉각기 아티스트는 공연 수와 무관하게 전부 하락시켜
+    // 합계가 항상 음수가 되도록 한다 — 하락폭 자체는 공연마다 해시로 다르게 유지한다.
+    if (!cooling) {
       // 14일 내내 단조 비감소 — 개막을 앞두고 꾸준히 팔리는 일반적인 경우
       let prevSold = 0;
       for (let d = 0; d < 14; d++) {

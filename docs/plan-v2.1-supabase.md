@@ -892,10 +892,12 @@ DB 행 삭제(RLS)이므로 권한이 없으면 Storage를 건드리기 전에 �
 - [ ] **Step 1: Vercel 환경변수 등록** — `SUPABASE_URL` · `SUPABASE_ANON_KEY`만.
       **`SUPABASE_SERVICE_ROLE_KEY`는 등록하지 않는다** (§4.7 — 시드 전용)
 - [ ] **Step 2: 배포 후 §11 완료 기준 10개 확인** — 배포 URL에서
-- [ ] **Step 3: `npm run seed` 재현성 최종 확인** — 원격에 두 번 실행 후 행 수 비교
-- [ ] **Step 4: README 갱신** — 데모 계정, 기술 스택에 Supabase 추가, 2차 로드맵 1번 완료 표시
-- [ ] **Step 5: `docs/design-v2.md` 11장 4장 체크박스 채우기**
-- [ ] **Step 6: 검증 노트 최종 확인** — Task 1~7이 전부 채워져 있는지
+- [x] **Step 3: `npm run seed` 재현성 최종 확인** — 원격에 두 번 실행 후 행 수 비교
+- [x] **Step 3.5(계획 외, 사용자 요청으로 추가): 자체 리뷰 + ponytail-review** — Task 1~7 전체 diff
+      대상. 발견 즉시 반영
+- [x] **Step 4: README 갱신** — 데모 계정, 기술 스택에 Supabase 추가, 2차 로드맵 1번 완료 표시
+- [x] **Step 5: `docs/design-v2.md` 11장 4장 체크박스 채우기**
+- [x] **Step 6: 검증 노트 최종 확인** — Task 1~7이 전부 채워져 있는지
 - [ ] **Step 7: 보고 후 멈춘다** — PR 생성은 `finishing-a-development-branch`로
 
 **완료조건:**
@@ -905,7 +907,39 @@ DB 행 삭제(RLS)이므로 권한이 없으면 Storage를 건드리기 전에 �
 - `docs/plan-v2.1-supabase.md`의 Task 1~7 검증 노트가 전부 채워져 있다
 - react-doctor CI 통과 (error 레벨 0) + `npm test` CI 통과
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트** (Step 1·2는 배포 대기 중 — 아래 "블로커" 참조):
+- **Step 3 재현성**: `npm run seed`를 2회 더 연속 실행(둘 다 종료 코드 0), 실행 전후 테이블별
+  행 수 동일 확인 — artists 6 / tracks 19 / shows 49 / ticket_sales 686 / gallery_images 36 /
+  storage 객체 36
+- **Step 3.5 리뷰**: 자체 리뷰에서 §11 미검증 항목 하나를 발견 — "데모는 `artists`/`shows`
+  UPDATE가 막히고 오너는 통과"를 지금까지 한 번도 직접 테스트하지 않았다. PostgREST에 두 계정
+  JWT로 직접 PATCH 요청을 보내 확인(데모: `[]` 0행, 오너: 성공). **주의**: 이 과정에서 실제
+  `shows` 행의 `capacity`를 테스트값으로 덮어썼다가 시드 재실행으로 복구했다 — 운 좋게 시드가
+  결정론적이라 복구됐을 뿐 안전한 방법은 아니었다. 앞으로 로드맵 4번(CRUD 화면)에서 같은 종류의
+  쓰기 검증이 반복될 텐데, 그때는 테스트 전용 레코드를 쓰거나 원래 값을 먼저 기록해두는 방식으로
+  진행할 것 (사용자 피드백으로 메모리에 기록함).
+  ponytail-review로 Task 1~7 전체 diff를 훑어 3건 발견·수정: `scripts/seed.mjs`의
+  `isDipShow` 함수가 인자 하나만 그대로 반환하는 불필요한 래퍼였던 것(삭제, 호출부에 인라인),
+  `src/lib/data.ts`에서 갤러리 사진→화면 모양 변환 로직이 두 곳에 중복돼 있던 것(`toGalleryPhoto`
+  헬퍼로 통합), `ArtistMetricsRow.country_count` 필드가 테스트 픽스처 말고는 어디서도 안 읽히던
+  것(삭제). 수정 후 `npm test`(20개)·`npm run build`·브라우저 스모크 테스트(A탭 갤러리, B탭
+  로그인+갤러리 관리) 재확인, 전부 정상
+- **Step 4 README**: 데모 계정을 `demo@onstage.local`/`demo1234`로 갱신(1차의 `admin`/`1234`는
+  이제 존재하지 않는 계정이라 반드시 고쳐야 했음), 기술 스택 표에 Supabase(Auth·DB·Storage) 행
+  추가, 2차 로드맵 1번에 체크 표시 + 완료 내용 요약. 로컬 실행 안내에 `.env.local` 설정과
+  `npm run seed` 단계도 추가함(없으면 앱이 아예 안 뜬다는 걸 안내가 빠뜨리고 있었음)
+- **Step 5 design-v2.md**: §11 "4장 · Supabase 전환" 10개 중 로컬에서 검증 가능한 8개
+  전부 재확인 후 체크(RLS 6개 테이블, `@/data/` import 0건, `NEXT_PUBLIC_` 0건, 시드
+  재현성, 시드 이미지 삭제 차단, 역할 스코프 쓰기 권한, 갤러리 업로드·삭제 왕복, dday 정확성).
+  나머지 2개(CI 통과, Vercel 배포)는 미체크 — 아래 블로커 참조
+- **Step 6**: Task 1~7 검증 노트 전부 채워져 있음을 재확인 (플레이스홀더 검색 결과 Task 8
+  자신의 것 하나만 남아 있었음)
+
+**블로커 — Step 1·2, §11 마지막 2개 항목**: 이 브랜치(`feat/supabase`)가 아직 원격(GitHub)에
+한 번도 push된 적이 없다. 그래서 (a) `.github/workflows/test.yml`이 한 번도 실행되지 않았고
+(§11 "npm test가 CI에서 돌고 통과한다" 미확인), (b) Vercel에 배포된 적이 없어 Step 1(환경변수
+등록)·Step 2(배포 URL 확인)를 진행할 수 없다. push·PR은 사용자가 "supabase 장의 작업이 모두
+끝나면 그 때" 직접 하기로 한 상태라(Task 6 시작 시 확인), 이 지점에서 멈추고 보고한다.
 
 ---
 

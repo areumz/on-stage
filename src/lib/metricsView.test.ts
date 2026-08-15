@@ -8,7 +8,6 @@ const baseMetrics: ArtistMetricsRow = {
   total_tickets_prev: 800,
   avg_booking_rate: 0.865,
   city_count: 10,
-  country_count: 5,
 };
 
 const show = (overrides: Partial<ShowStatusRow>): ShowStatusRow => ({

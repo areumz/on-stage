@@ -587,23 +587,25 @@ vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import�
 
 ### 4장 · Supabase 전환
 
-- [ ] **6개 테이블 전부 RLS가 활성화돼 있다.** 아래 쿼리의 `relrowsecurity`가 모두 `t`여야 한다.
+- [x] **6개 테이블 전부 RLS가 활성화돼 있다.** 아래 쿼리의 `relrowsecurity`가 모두 `t`여야 한다.
       정책이 있어도 이게 `f`면 전부 무시되므로, 정책 존재 여부와 별개로 반드시 확인한다
       ```sql
       select relname, relrowsecurity from pg_class
       where relname in ('artists','tracks','shows','ticket_sales','gallery_images','stage_presets');
       ```
-- [ ] `src/data/*.json`을 import하는 앱 코드가 0개 (시드 스크립트만 읽는다)
-- [ ] `NEXT_PUBLIC_` 접두사 환경변수가 0개 — 브라우저 번들에 Supabase 키가 없다
-- [ ] `scripts/seed.mjs`를 두 번 연속 실행해도 모든 테이블의 행 수가 같고, **두 번째 실행이 종료 코드
+- [x] `src/data/*.json`을 import하는 앱 코드가 0개 (시드 스크립트만 읽는다)
+- [x] `NEXT_PUBLIC_` 접두사 환경변수가 0개 — 브라우저 번들에 Supabase 키가 없다
+- [x] `scripts/seed.mjs`를 두 번 연속 실행해도 모든 테이블의 행 수가 같고, **두 번째 실행이 종료 코드
       0으로 끝난다.** 행 수만 보면 마지막 단계(계정 생성)에서 죽은 것을 놓친다 — 앞 단계는 이미
       반영된 뒤이기 때문이다
-- [ ] 데모 계정으로 시드 갤러리 이미지 삭제를 시도하면 RLS에 막힌다
-- [ ] 데모 계정으로 `artists` / `shows` UPDATE를 시도하면 막히고, 오너 계정으로는 통과한다
-- [ ] B탭에서 이미지를 업로드하면 A탭 갤러리에 반영되고, 같은 계정으로 되돌려 지울 수 있다
-- [ ] 대시보드 d-day가 오늘 날짜 기준으로 계산된다 (박제된 값이 아니다)
-- [ ] `npm test`가 CI에서 돌고 통과한다
-- [ ] Vercel 배포 URL에서 A탭·B탭 전체 플로우가 1차와 동일하게 동작한다
+- [x] 데모 계정으로 시드 갤러리 이미지 삭제를 시도하면 RLS에 막힌다
+- [x] 데모 계정으로 `artists` / `shows` UPDATE를 시도하면 막히고, 오너 계정으로는 통과한다
+- [x] B탭에서 이미지를 업로드하면 A탭 갤러리에 반영되고, 같은 계정으로 되돌려 지울 수 있다
+- [x] 대시보드 d-day가 오늘 날짜 기준으로 계산된다 (박제된 값이 아니다)
+- [ ] `npm test`가 CI에서 돌고 통과한다 — **미확인**: 브랜치가 아직 원격에 push된 적이 없어
+      `.github/workflows/test.yml`이 한 번도 실행되지 않았다. push 후 재확인 필요
+- [ ] Vercel 배포 URL에서 A탭·B탭 전체 플로우가 1차와 동일하게 동작한다 — **미확인**: 배포된 적
+      없음. Vercel에 `SUPABASE_URL`·`SUPABASE_ANON_KEY` 환경변수 등록 + 배포 후 재확인 필요
 
 ### 5장 · 무대 연출 툴
 

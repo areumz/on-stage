@@ -62,7 +62,6 @@ export type ArtistMetricsRow = {
   total_tickets_prev: number | null;
   avg_booking_rate: number; // 0~1
   city_count: number;
-  country_count: number;
 };
 
 export type ShowStatusRow = {

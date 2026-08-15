@@ -30,6 +30,15 @@ function orderedArtistQuery(supabase: SupabaseClient) {
     .order("sort_order", { referencedTable: "gallery_images" });
 }
 
+function toGalleryPhoto(g: GalleryImageRow, supabase: SupabaseClient) {
+  return {
+    src: supabase.storage.from("gallery").getPublicUrl(g.storage_path).data.publicUrl,
+    creator: g.creator ?? "",
+    license: g.license ?? "",
+    origin: g.origin ?? "",
+  };
+}
+
 function toArtist(row: ArtistJoinRow, supabase: SupabaseClient): Artist {
   return {
     slug: row.slug,
@@ -56,12 +65,7 @@ function toArtist(row: ArtistJoinRow, supabase: SupabaseClient): Artist {
       duration: t.duration,
       cover: { from: t.cover_from, to: t.cover_to },
     })),
-    gallery: row.gallery_images.map((g) => ({
-      src: supabase.storage.from("gallery").getPublicUrl(g.storage_path).data.publicUrl,
-      creator: g.creator ?? "",
-      license: g.license ?? "",
-      origin: g.origin ?? "",
-    })),
+    gallery: row.gallery_images.map((g) => toGalleryPhoto(g, supabase)),
   };
 }
 
@@ -156,11 +160,5 @@ export async function getGalleryImages(slug: string): Promise<GalleryListItem[]>
     .eq("artist_id", artistId)
     .order("sort_order", { ascending: true });
   if (error) throw new Error(`getGalleryImages: ${error.message}`);
-  return (data as GalleryImageRow[]).map((g) => ({
-    id: g.id,
-    src: supabase.storage.from("gallery").getPublicUrl(g.storage_path).data.publicUrl,
-    creator: g.creator ?? "",
-    license: g.license ?? "",
-    origin: g.origin ?? "",
-  }));
+  return (data as GalleryImageRow[]).map((g) => ({ id: g.id, ...toGalleryPhoto(g, supabase) }));
 }
