@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import TabToggle from "@/components/common/TabToggle";
 import ArtistSelect from "@/components/staff/ArtistSelect";
 import StageStudio from "@/components/staff/StageStudio";
-import { DEFAULT_METRICS_SLUG, getArtist, getArtists, getMetrics } from "@/lib/data";
+import { DEFAULT_METRICS_SLUG, getArtist, getArtists, getMetrics, getStaffRoleLabel } from "@/lib/data";
 
 export default async function StagePage({
   searchParams,
@@ -12,9 +12,12 @@ export default async function StagePage({
 }) {
   const raw = (await searchParams).artist;
   const slug = typeof raw === "string" ? raw : DEFAULT_METRICS_SLUG;
-  const artists = getArtists();
-  const artist = getArtist(slug);
-  const metrics = getMetrics(slug);
+  const [artists, artist, metrics, roleLabel] = await Promise.all([
+    getArtists(),
+    getArtist(slug),
+    getMetrics(slug),
+    getStaffRoleLabel(),
+  ]);
   if (!artist || !metrics) notFound();
 
   return (
@@ -31,6 +34,7 @@ export default async function StagePage({
             <span className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white/80">
               {metrics.nextShow.venue} 셋업
             </span>
+            <span className="text-xs text-white/50">{roleLabel}</span>
             <TabToggle dark />
           </div>
         </div>

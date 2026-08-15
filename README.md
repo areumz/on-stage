@@ -20,6 +20,18 @@ A dual-perspective platform for a fictional entertainment label — the stage fa
 
 ---
 
+## 브라우저 지원 / Browser Support
+
+최신 Chrome을 기준으로 개발·검증했습니다. Three.js·Next.js 16 빌드 산출물이
+ES2022 문법을 포함해, **Safari 16.4 미만**에서는 자바스크립트 번들이 파싱
+단계에서 실패해 페이지가 정상 동작하지 않습니다. 이 경우 안내 문구가 표시됩니다.
+
+Developed and verified against the latest Chrome. The build output from Three.js and Next.js 16
+includes ES2022 syntax, so on **Safari versions below 16.4** the JavaScript bundle fails to parse
+and the page won't work normally. In that case, a notice is shown instead.
+
+---
+
 ## 소개 / Introduction
 
 **STAGE.ONE**은 가상의 엔터테인먼트 레이블을 배경으로, 하나의 플랫폼을 두 개의 시점으로 구현한 인터랙티브 웹 프로젝트입니다. 화면 상단의 A/B 탭으로 두 세계를 오갈 수 있습니다.
@@ -44,30 +56,51 @@ STAGE.ONE reimagines a single label platform through two lenses, switched via an
 | Styling | Tailwind CSS v4 |
 | 3D | React Three Fiber + drei (Three.js) |
 | Chart | Recharts |
-| 데이터 (1차) | mock JSON + Next.js API Routes |
+| Auth · DB · Storage | Supabase (`@supabase/supabase-js`, `@supabase/ssr`) — Postgres + RLS, 이미지 업로드는 서명 URL |
+| API | Next.js API Routes (Supabase 쿼리를 감싸는 얇은 레이어) |
 | 테스트 | Vitest (로직 레이어 전용) |
 | 배포 | Vercel |
 | Node | v22 (`.nvmrc`) |
 
-The stack: Next.js 16 (App Router) with strict TypeScript, Tailwind CSS v4, React Three Fiber + drei for all 3D scenes, Recharts for the staff dashboard, and mock JSON served through Next.js API Routes for data (phase 1). Logic-layer code is covered by Vitest; the app targets Node 22 and deploys to Vercel.
+The stack: Next.js 16 (App Router) with strict TypeScript, Tailwind CSS v4, React Three Fiber + drei for all 3D scenes, and Recharts for the staff dashboard. Auth, the database, and image storage run on Supabase (Postgres with row-level security; uploads go through signed URLs so the browser never sees a Supabase key), with Next.js API Routes as a thin layer in front of it. Logic-layer code is covered by Vitest; the app targets Node 22 and deploys to Vercel.
 
 ---
 
 ## 로컬 실행 / Local Development
 
-Node 22가 필요합니다(`.nvmrc` 참고). 아래 순서로 실행합니다.
+배포된 데모(위 링크)로 대부분의 기능을 확인할 수 있습니다. 로컬에서 직접 돌려보시려면
+Node 22와 본인의 Supabase 프로젝트가 필요합니다.
 
 ```bash
 git clone https://github.com/areumz/on-stage.git
 cd on-stage
 nvm use
 npm install
-npm run dev
 ```
 
-이후 [http://localhost:3000](http://localhost:3000)에서 확인할 수 있습니다.
+1. [supabase.com](https://supabase.com)에서 무료 프로젝트를 만들고, Project Settings → API에서
+   URL·anon key·service role key를 확인합니다
+2. `.env.example`을 `.env.local`로 복사해 값을 채웁니다
+3. `npx supabase link`로 프로젝트를 연결하고 `npx supabase db push`로 스키마를 적용합니다
+4. `npm run seed`로 아티스트·공연·갤러리·데모 계정을 시딩합니다
+5. `npm run dev`로 실행 후 [http://localhost:3000](http://localhost:3000) 확인
 
-Requires Node 22 (see `.nvmrc`). Clone the repo, run `nvm use`, then `npm install` and `npm run dev`, and open [http://localhost:3000](http://localhost:3000).
+Most functionality is visible in the deployed demo (link above). To run it locally, you'll need
+Node 22 and your own Supabase project.
+
+```bash
+git clone https://github.com/areumz/on-stage.git
+cd on-stage
+nvm use
+npm install
+```
+
+1. Create a free project at [supabase.com](https://supabase.com), then grab the URL, anon key, and
+   service role key from Project Settings → API
+2. Copy `.env.example` to `.env.local` and fill in the values
+3. Link the project with `npx supabase link` and apply the schema with `npx supabase db push`
+4. Seed artists, shows, gallery images, and the demo account with `npm run seed`
+5. Run `npm run dev` and open [http://localhost:3000](http://localhost:3000)
 
 ---
 
@@ -75,12 +108,17 @@ Requires Node 22 (see `.nvmrc`). Clone the repo, run `nvm use`, then `npm instal
 
 B탭(`/staff/login`)은 로그인이 필요합니다. 아래 데모 계정으로 접속할 수 있습니다.
 
-- **ID**: `admin`
-- **Password**: `1234`
+- **Email**: `demo@onstage.local`
+- **Password**: `demo1234`
 
-1차 범위에서는 하드코딩된 계정으로 인증하며, 2차에서 Supabase Auth로 교체할 계획입니다.
+이 계정은 관리자(오너) 권한이 없는 일반 계정입니다. 아티스트 정보·투어 일정 수정은 막혀 있고,
+갤러리 이미지는 직접 올린 것만 지울 수 있습니다(시드로 들어간 원본 이미지는 삭제 시도해도 차단됨).
+2차부터 인증·DB·이미지 저장 전부 [Supabase](https://supabase.com)로 전환되었습니다.
 
-The B tab (`/staff/login`) requires authentication. Use `admin` / `1234` to sign in. This is a hardcoded demo account for phase 1 — planned to be replaced by Supabase Auth in phase 2.
+The B tab (`/staff/login`) requires authentication. Use `demo@onstage.local` / `demo1234` to sign in.
+This is a shared guest account with no admin (owner) role — editing artist/tour data is blocked, and
+gallery deletion only works on images the account itself uploaded (seeded originals are protected).
+As of phase 2, auth, the database, and image storage all run on [Supabase](https://supabase.com).
 
 ---
 
@@ -135,30 +173,45 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 
 ## 알려진 제한사항 / Known Limitations
 
-1차 범위는 다음을 의도적으로 포함하지 않습니다.
+아래는 아직 없는 것들입니다. 이 중 인증 방식(2차 로드맵 1번)은 완료되었고, 나머지는 이후 로드맵 항목입니다.
 
-- 완전한 회원가입/비밀번호 재설정 없는 하드코딩 로그인 (`admin` / `1234`)
+- 회원가입/비밀번호 재설정 기능 없음 (Supabase Auth의 이메일·비밀번호 로그인만 지원, 계정은 시드로만 생성)
 - 다국어(i18n) 미지원
 - 모바일 반응형 미지원 (데스크톱 기준)
 - 실제 결제/예매 기능 없음
 - 백엔드 서버 분리 없음
-- B탭 사이드바 5개 메뉴 중 대시보드만 실 화면, 나머지(투어 일정/아티스트/티켓 현황)는 Coming soon
+- B탭 사이드바 5개 메뉴 중 대시보드·아티스트(갤러리 관리)만 실 화면, 나머지(투어 일정/티켓 현황)는 Coming soon
 - 무대 연출 툴은 조명 프리셋·on/off·카메라 앵글 전환만 지원 (스모그, 세밀 조명 조절, 프리셋 저장 없음)
+- **권장 브라우저: Chrome 최신, Safari 16.4+.** 그 외 환경(구형 Safari 등 WebGL 미지원·구형 브라우저)에서는
+  3D 콘텐츠 대신 안내 메시지가 표시됩니다 — 화면이 비어 보이는 대신 실패했다는 걸 알리는 용도입니다
 
-Phase 1 deliberately excludes: a full auth system (login is hardcoded), i18n, mobile responsiveness (desktop-only), real payments/booking, and a separate backend. In the B tab, only the dashboard menu is a real screen — the rest are "coming soon" — and the stage tool covers only lighting presets, on/off toggles, and camera-angle presets.
+The list below covers what's still missing. Of these, the auth approach (phase 2 roadmap item 1) is
+done; the rest remain on the roadmap. No sign-up or password reset (Supabase Auth email/password
+login only, accounts are seed-created), no i18n, no mobile responsiveness (desktop-only), no real
+payments/booking, no separate backend, and in the B tab only the dashboard and artists (gallery
+management) screens are real — the rest are "coming soon" — while the stage tool covers only
+lighting presets, on/off toggles, and camera-angle presets. **Recommended browsers: latest Chrome,
+Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content is replaced with a
+message instead of silently rendering blank.
 
 ### 2차 로드맵 / Phase 2 Roadmap
 
-- Supabase Auth + DB로 전환 (하드코딩 로그인 제거)
-- 무대 연출 툴 고도화 (스모그·파티클, 세밀 조명 조절, 프리셋 저장)
-- 반응형 대응
-- B탭 사이드바 잔여 메뉴 실 화면 구현
-- 셰이더 심화 (아티스트별 차별화 확대)
-- 갤러리 이미지 정교화 (일부 아티스트는 AI 생성 이미지 등으로 교체 검토)
+- [x] **Supabase Auth + DB로 전환** (하드코딩 로그인 제거) — Auth·Postgres·Storage로 이전, RLS로 쓰기 권한 통제,
+      B탭에서 갤러리 이미지 업로드·삭제 가능. 자세한 내용은 [docs/plan-v2.1-supabase.md](docs/plan-v2.1-supabase.md) 참고
+- [ ] 무대 연출 툴 고도화 (스모그·파티클, 세밀 조명 조절, 프리셋 저장)
+- [ ] 반응형 대응
+- [ ] B탭 사이드바 잔여 메뉴 실 화면 구현
+- [ ] 셰이더 심화 (아티스트별 차별화 확대)
+- [ ] 갤러리 이미지 정교화 (일부 아티스트는 AI 생성 이미지 등으로 교체 검토)
 
-자세한 배경은 [docs/design.md](docs/design.md) 8장을 참고하세요.
+자세한 배경은 [docs/design-v2.md](docs/design-v2.md)를 참고하세요.
 
-Planned for phase 2: switching to Supabase Auth + DB, richer stage-tool controls (smoke/particles, fine lighting adjustment, saved presets), responsive layouts, filling out the remaining staff sidebar screens, deeper per-artist shader variation, and refined gallery imagery. See section 8 of [docs/design.md](docs/design.md) for details.
+Phase 2 progress: **Supabase Auth + DB migration is done** — auth, Postgres, and storage now run on
+Supabase, row-level security governs every write path, and staff can upload/delete gallery images
+from the B tab. See [docs/plan-v2.1-supabase.md](docs/plan-v2.1-supabase.md) for the implementation
+log. Remaining: richer stage-tool controls (smoke/particles, fine lighting adjustment, saved
+presets), responsive layouts, filling out the remaining staff sidebar screens, deeper per-artist
+shader variation, and refined gallery imagery. See [docs/design-v2.md](docs/design-v2.md) for details.
 
 ---
 

@@ -9,7 +9,7 @@ import { getArtist } from "@/lib/data";
 
 export default async function ArtistPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const artist = getArtist(slug);
+  const artist = await getArtist(slug);
   if (!artist) notFound();
 
   return (

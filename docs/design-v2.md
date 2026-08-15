@@ -140,7 +140,9 @@ create table ticket_sales (
 create table gallery_images (
   id           uuid primary key default gen_random_uuid(),
   artist_id    uuid not null references artists on delete cascade,
-  storage_path text not null,
+  -- unique: 하나의 Storage 객체를 두 행이 가리키는 상태는 어떤 경로로 생기든 버그다.
+  -- 시드 upsert의 충돌 기준이자, 삭제(행 → 객체)가 1:1임을 보장하는 근거이기도 하다.
+  storage_path text not null unique,
   creator      text,
   license      text,                     -- 'CC0 1.0' | 'CC BY 2.0' | 'AI' | 업로드 시 입력
   origin       text,
@@ -379,8 +381,12 @@ CLI로 push한다. 프로젝트를 둘로 나누면 일시정지 대상만 둘�
 
 1. `src/data/artists.json` → `artists` upsert (셰이더 파라미터는 slug별 고정 매핑)
 2. `tracks` upsert
-3. `shows` 생성 — 기존 `cities` 4개는 `featured = true`, 나머지는 `stats.cities` 개수만큼 결정론적 생성.
-   공연 날짜는 **향후 6개월에 분포**시켜 d-day가 쉽게 낡지 않게 한다
+3. `shows` **삭제 후 재생성** — 기존 `cities` 4개는 `featured = true`, 나머지는 `stats.cities` 개수만큼
+   결정론적 생성. 공연 날짜는 **실행 시각 기준 향후 6개월에 분포**시켜 d-day가 낡지 않게 한다.
+   이 테이블만 upsert가 아니라 삭제 후 재삽입인 이유는, 날짜가 유니크 키 `(artist_id, city_code, show_date)`의
+   일부라서 실행 시각이 바뀌면 갱신이 아니라 새 행이 되기 때문이다. `ticket_sales`는 FK cascade로 함께 지워진다.
+   **즉 시드는 `shows`·`ticket_sales`에 한해 파괴적이다** — 로드맵 4번에서 `/staff/tours` 편집 UI가 생기면
+   재검토 대상이다
 4. `ticket_sales` 14일치 스냅샷 생성 (전 아티스트 합계 2천 행 안팎 — 무료 티어 500MB에 무관)
 5. `public/gallery/*.jpg` 36장을 service role로 Storage 업로드 + `gallery_images` 행(`created_by = NULL`)
 6. 데모 계정과 오너 계정 생성 (4.4)
@@ -581,21 +587,25 @@ vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import�
 
 ### 4장 · Supabase 전환
 
-- [ ] **6개 테이블 전부 RLS가 활성화돼 있다.** 아래 쿼리의 `relrowsecurity`가 모두 `t`여야 한다.
+- [x] **6개 테이블 전부 RLS가 활성화돼 있다.** 아래 쿼리의 `relrowsecurity`가 모두 `t`여야 한다.
       정책이 있어도 이게 `f`면 전부 무시되므로, 정책 존재 여부와 별개로 반드시 확인한다
       ```sql
       select relname, relrowsecurity from pg_class
       where relname in ('artists','tracks','shows','ticket_sales','gallery_images','stage_presets');
       ```
-- [ ] `src/data/*.json`을 import하는 앱 코드가 0개 (시드 스크립트만 읽는다)
-- [ ] `NEXT_PUBLIC_` 접두사 환경변수가 0개 — 브라우저 번들에 Supabase 키가 없다
-- [ ] `scripts/seed.mjs`를 두 번 연속 실행해도 모든 테이블의 행 수가 같다 (멱등)
-- [ ] 데모 계정으로 시드 갤러리 이미지 삭제를 시도하면 RLS에 막힌다
-- [ ] 데모 계정으로 `artists` / `shows` UPDATE를 시도하면 막히고, 오너 계정으로는 통과한다
-- [ ] B탭에서 이미지를 업로드하면 A탭 갤러리에 반영되고, 같은 계정으로 되돌려 지울 수 있다
-- [ ] 대시보드 d-day가 오늘 날짜 기준으로 계산된다 (박제된 값이 아니다)
-- [ ] `npm test`가 CI에서 돌고 통과한다
-- [ ] Vercel 배포 URL에서 A탭·B탭 전체 플로우가 1차와 동일하게 동작한다
+- [x] `src/data/*.json`을 import하는 앱 코드가 0개 (시드 스크립트만 읽는다)
+- [x] `NEXT_PUBLIC_` 접두사 환경변수가 0개 — 브라우저 번들에 Supabase 키가 없다
+- [x] `scripts/seed.mjs`를 두 번 연속 실행해도 모든 테이블의 행 수가 같고, **두 번째 실행이 종료 코드
+      0으로 끝난다.** 행 수만 보면 마지막 단계(계정 생성)에서 죽은 것을 놓친다 — 앞 단계는 이미
+      반영된 뒤이기 때문이다
+- [x] 데모 계정으로 시드 갤러리 이미지 삭제를 시도하면 RLS에 막힌다
+- [x] 데모 계정으로 `artists` / `shows` UPDATE를 시도하면 막히고, 오너 계정으로는 통과한다
+- [x] B탭에서 이미지를 업로드하면 A탭 갤러리에 반영되고, 같은 계정으로 되돌려 지울 수 있다
+- [x] 대시보드 d-day가 오늘 날짜 기준으로 계산된다 (박제된 값이 아니다)
+- [x] `npm test`가 CI에서 돌고 통과한다 — PR #10 기준 GitHub Actions `test` 워크플로우 통과 확인
+      (https://github.com/areumz/on-stage/actions/runs/31866943418)
+- [ ] Vercel 배포 URL에서 A탭·B탭 전체 플로우가 1차와 동일하게 동작한다 — **미확인**: 배포된 적
+      없음. Vercel에 `SUPABASE_URL`·`SUPABASE_ANON_KEY` 환경변수 등록 + 배포 후 재확인 필요
 
 ### 5장 · 무대 연출 툴
 

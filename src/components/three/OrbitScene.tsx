@@ -1,11 +1,12 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import type { Group } from "three";
 import { ringPoints } from "@/lib/geometry";
+import Scene3D from "@/components/three/Scene3D";
 import type { Artist } from "@/lib/types";
 
 const RING_RADII = [1.4, 2.3, 3.2];
@@ -72,8 +73,8 @@ function Orbits({ artists }: { artists: Artist[] }) {
 
 export default function OrbitScene({ artists }: { artists: Artist[] }) {
   return (
-    <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
+    <Scene3D camera={{ position: [0, 0, 8], fov: 50 }}>
       <Orbits artists={artists} />
-    </Canvas>
+    </Scene3D>
   );
 }

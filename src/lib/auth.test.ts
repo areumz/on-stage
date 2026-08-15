@@ -1,15 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateCredentials, staffRedirectPath } from "./auth";
-
-describe("validateCredentials", () => {
-  it("accepts the demo account", () => {
-    expect(validateCredentials("admin", "1234")).toBe(true);
-  });
-  it("rejects wrong credentials", () => {
-    expect(validateCredentials("admin", "wrong")).toBe(false);
-    expect(validateCredentials("", "")).toBe(false);
-  });
-});
+import { staffRedirectPath } from "./auth";
 
 describe("staffRedirectPath", () => {
   it("passes non-staff paths through", () => {
