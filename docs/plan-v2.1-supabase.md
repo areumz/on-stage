@@ -809,19 +809,19 @@ DB 행 삭제(RLS)이므로 권한이 없으면 Storage를 건드리기 전에 �
 > **Task 7에서 실제로 확인할 것.** 채우지 않는다면 행은 지워지는데 파일은 안 지워지는 비대칭이
 > 생기고, 아래 완료조건의 "Storage에 객체가 존재하지 않는다"가 그걸 잡아낸다.
 
-- [ ] **Step 1: `/api/gallery/upload-url` 작성** — 인증 확인 → 타입·크기 검사 → 경로 생성 → 서명
-- [ ] **Step 2: `/api/gallery` POST 작성** — `created_by = 세션 uid`
-- [ ] **Step 3: `/api/gallery/[id]` DELETE 작성** — **DB 행과 Storage 객체를 둘 다 지운다.**
+- [x] **Step 1: `/api/gallery/upload-url` 작성** — 인증 확인 → 타입·크기 검사 → 경로 생성 → 서명
+- [x] **Step 2: `/api/gallery` POST 작성** — `created_by = 세션 uid`
+- [x] **Step 3: `/api/gallery/[id]` DELETE 작성** — **DB 행과 Storage 객체를 둘 다 지운다.**
       `delete().select('storage_path')`로 삭제된 행의 경로를 받아 `storage.from('gallery').remove([path])`
       호출. 반환 행이 0이면 RLS가 막은 것이므로 Storage를 건드리지 말고 403 (위 "삭제는 두 곳을
       지워야 한다" 참조)
-- [ ] **Step 4: `data.ts`에 갤러리 목록 조회 추가**
-- [ ] **Step 5: `/staff/artists` 갤러리 섹션 구현** — 아티스트별 목록 + 업로드 + 삭제.
+- [x] **Step 4: `data.ts`에 갤러리 목록 조회 추가**
+- [x] **Step 5: `/staff/artists` 갤러리 섹션 구현** — 아티스트별 목록 + 업로드 + 삭제.
       B탭 라이트 팔레트 유지
-- [ ] **Step 6: 시각 검증 (브라우저)** — **사람 확인 지점.** 데모 계정으로 ① 업로드 → A탭 갤러리에
+- [x] **Step 6: 시각 검증 (브라우저)** — **사람 확인 지점.** 데모 계정으로 ① 업로드 → A탭 갤러리에
       반영 ② 방금 올린 것 삭제 성공 ③ **시드 이미지 삭제 시도 → 차단** ④ 허용되지 않는 파일 타입
       거부 ⑤ 미로그인 상태로 API 직접 호출 시 401
-- [ ] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - 위 5개 시나리오가 전부 동작한다 (§11 완료 기준의 업로드·RLS 항목)
@@ -835,7 +835,40 @@ DB 행 삭제(RLS)이므로 권한이 없으면 Storage를 건드리기 전에 �
 - `grep -rn "SERVICE_ROLE" src/` 결과가 0건이다 (§4.5 — 런타임 경로에서 service role 금지)
 - `npm test` · `npm run build` 통과
 
-**검증 노트**: _(Task 완료 시 기록)_
+**검증 노트**:
+- Playwright + 시스템 Chrome, 네트워크 응답 코드까지 직접 확인(화면 변화만 보지 않음):
+  ① 업로드 → `POST /api/gallery` 201, 스태프 화면 개수 +1, A탭 아티스트 페이지에도 즉시 반영(6→7장)
+  ② 방금 올린 이미지 삭제 → `DELETE /api/gallery/[id]` 204, 개수 원복
+  ③ 시드 이미지(`created_by is null`) 삭제 시도 → 403, 인라인 에러 문구 표시, 실제로는 안 지워짐
+  ④ `contentType: "text/plain"`으로 업로드 URL 요청 → 415
+  ⑤ 로그아웃 후 `/api/gallery/upload-url` 직접 호출 → 401
+- **소유자 일치 확인** (§4.6 "Task 7에서 실제로 확인할 것"): 업로드 직후
+  `select owner from storage.objects where name = '<path>'`로 조회한 값이 데모 계정의
+  `auth.users.id`와 정확히 일치. 서명 URL 업로드가 세션 uid를 그대로 물려받는 것을 확인함
+- **Storage 원상복구 확인**: 업로드 전 버킷 객체 수 36 → 업로드 후 37 → 삭제 후 36. 삭제된 객체를
+  `name`으로 재조회하면 0행 (실제로 지워짐)
+- **막힌 삭제는 파일이 안 지워짐**: 시드 이미지(`aurora/aurora-1.jpg`) 삭제 시도(403) 후 같은 경로를
+  Storage에서 재조회하면 여전히 1행 (반대 방향 버그 — 인가 실패인데 파일만 지워지는 경우 — 없음)
+- **4.5MB 초과 업로드**: 기존 JPEG에 6MB 패딩을 덧붙인 ~6.4MB 파일로 3단계 전부 성공
+  (`PUT signedUrl` 200, `POST /api/gallery` 201) — Vercel 서버리스 함수 바디 제한은 애초에 이
+  경로를 안 타므로(파일이 브라우저→Storage로 직접 감), 로컬에서는 "우리 라우트 자체가 크기로
+  거부하지 않는다"까지만 검증되고 실제 Vercel 우회는 Task 8 배포 후 재확인 필요
+- `grep -rn "SERVICE_ROLE" src/` → 0건
+- `npm test` → 3 files, 20 tests. `npm run build` → 성공, `/api/gallery`·`/api/gallery/[id]`·
+  `/api/gallery/upload-url` 3개 라우트 등록 확인
+
+**계획에 없던 버그 두 개 (구현 중 발견, 즉시 수정)**:
+1. **새 업로드가 `sort_order` 기본값(0)이라 기존 이미지 사이에 순서 없이 끼어들었다.** 자동화
+   테스트가 "마지막 타일 = 방금 올린 것"이라고 가정했다가 엉뚱한(이미 있던) 이미지를 클릭해서
+   실패로 처음 드러났고, 실제 화면에서도 스태프가 방금 올린 사진을 찾기 어려운 문제였다.
+   `POST /api/gallery`에서 삽입 전에 해당 아티스트의 현재 최대 `sort_order`를 조회해 `+1`로
+   넣어 맨 뒤에 붙게 고쳤다.
+2. **삭제 실패 에러 메시지가 다른 아티스트로 전환해도 안 사라졌다** (사용자 리포트). `GalleryManager`가
+   `useState`로 관리하는 `error`가 `artistSlug`/`images` prop이 바뀌어도 리셋되지 않는 게 원인 —
+   부모 페이지에서 `<GalleryManager key={slug} .../>`로 바꿔 아티스트 전환 시 컴포넌트가
+   리마운트되며 로컬 상태가 함께 리셋되게 했다. 전환 전/후 각각 에러 문구 노출 여부를 확인해 재현.
+   같은 자리에서 에러 문구도 사용자 요청으로 "삭제 권한이 없습니다 (시드 이미지이거나 다른 사용자의
+   업로드)"에서 "삭제 권한이 없습니다."로 축약함
 
 ---
 

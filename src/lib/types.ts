@@ -93,6 +93,9 @@ export type GalleryPhoto = {
   origin: string; // 원본 페이지
 };
 
+// B탭 갤러리 관리 화면용 — 삭제 버튼이 id를 필요로 해서 GalleryPhoto와 분리
+export type GalleryListItem = GalleryPhoto & { id: string };
+
 export type Track = {
   no: number;
   title: string;

@@ -6,6 +6,7 @@ import type {
   ArtistMetricsRow,
   ArtistRow,
   GalleryImageRow,
+  GalleryListItem,
   Metrics,
   ShowRow,
   ShowStatusRow,
@@ -80,7 +81,7 @@ export async function getArtist(slug: string): Promise<Artist | undefined> {
 
 export const DEFAULT_METRICS_SLUG = "aurora";
 
-async function getArtistId(supabase: SupabaseClient, slug: string): Promise<string | undefined> {
+export async function getArtistId(supabase: SupabaseClient, slug: string): Promise<string | undefined> {
   const { data, error } = await supabase.from("artists").select("id").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`getArtistId: ${error.message}`);
   return data?.id;
@@ -142,4 +143,24 @@ export async function getStaffRoleLabel(): Promise<"관리자" | "게스트"> {
     data: { user },
   } = await supabase.auth.getUser();
   return user?.app_metadata?.role === "owner" ? "관리자" : "게스트";
+}
+
+// B탭 갤러리 관리 화면 목록. id를 포함해 GalleryPhoto보다 하나 더 (삭제 버튼 필요로 함).
+export async function getGalleryImages(slug: string): Promise<GalleryListItem[]> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return [];
+  const { data, error } = await supabase
+    .from("gallery_images")
+    .select("*")
+    .eq("artist_id", artistId)
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(`getGalleryImages: ${error.message}`);
+  return (data as GalleryImageRow[]).map((g) => ({
+    id: g.id,
+    src: supabase.storage.from("gallery").getPublicUrl(g.storage_path).data.publicUrl,
+    creator: g.creator ?? "",
+    license: g.license ?? "",
+    origin: g.origin ?? "",
+  }));
 }
