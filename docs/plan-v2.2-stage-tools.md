@@ -19,9 +19,7 @@ Supabase `stage_presets`(명명된 프리셋) 양쪽의 로드 경로를 같은 
 `@supabase/supabase-js` · `@supabase/ssr` / vitest (node 환경)
 
 **승인된 설계:** [`docs/design-v2.md`](./design-v2.md) **5장**. 이 계획은 그 문서를 구현 단위로
-쪼갠 것이며, 타입 정의·API 계약·병합 로직의 **단일 진실 공급원은 design-v2.md다.** 이 문서는 컴포넌트나
-route handler의 완성된 코드를 싣지 않는다 — 타입 시그니처, 파일 경로, design-v2.md 절 참조,
-완료조건 중심으로 쓴다(4장과 동일한 문서 관리 방침).
+쪼갠 것이며, 타입 정의·API 계약·병합 로직의 **단일 진실 공급원은 design-v2.md다.** 이 문서는 4장과 동일한 문서 관리 방침을 따른다.
 
 **브랜치:** `feat/stage-tools` (main에서 새로 생성, 1차 관행 `feat/<area>` 유지)
 
@@ -148,24 +146,24 @@ Task 1이 나머지 전부의 기반이다 — `StageState` 타입과 `mergeStag
 4. `mergeStageState`는 `unknown`을 받고 `JSON.parse`를 하지 않는다 — 파싱은 `parseStageState`(문자열
    전용)의 몫이다. 이 분리가 Task 5에서 Supabase JSONB(이미 파싱된 객체)를 그대로 병합할 수 있게 한다.
 
-- [ ] **Step 1: 실패하는 테스트 작성** — §5.1 표의 6개 케이스: `null` 저장값 · JSON 깨짐 · 1차
+- [x] **Step 1: 실패하는 테스트 작성** — §5.1 표의 6개 케이스: `null` 저장값 · JSON 깨짐 · 1차
       저장값(`spots.left: true`, `angle` 키) · `smoke` 필드 없는 v2 저장값 · `spots.left`가 `on`만
       있고 나머지 3개 필드 없음 · `camera`가 열거값 밖의 문자열. 각 케이스에 왜 존재하는지 한국어
       주석 한 줄(1차 관행)
-- [ ] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (옛 `parseStageState`는
+- [x] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (옛 `parseStageState`는
       필드별 병합을 하지 않으므로 새 케이스들이 기대와 다르게 나온다)
-- [ ] **Step 3: `stageState.ts` 최소 구현** — 타입 확장 + `mergeStageState`/`parseStageState` 재작성.
+- [x] **Step 3: `stageState.ts` 최소 구현** — 타입 확장 + `mergeStageState`/`parseStageState` 재작성.
       구현은 design-v2.md §5.1 그대로(이 문서에는 인라인하지 않는다)
-- [ ] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
-- [ ] **Step 5: `StageControls.tsx` 타입 정합** — 카메라 버튼의 `angle` 참조를 `camera`로,
+- [x] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
+- [x] **Step 5: `StageControls.tsx` 타입 정합** — 카메라 버튼의 `angle` 참조를 `camera`로,
       on/off 스위치의 `state.spots[key]`(boolean) 참조를 `state.spots[key].on`으로 교체.
       `onChange` 호출부도 새 필드 경로에 맞게 조정
-- [ ] **Step 6: `StageScene.tsx` 타입 정합** — `CAMERA_PRESETS`/`CameraRig`가 `StageState["camera"]`를
+- [x] **Step 6: `StageScene.tsx` 타입 정합** — `CAMERA_PRESETS`/`CameraRig`가 `StageState["camera"]`를
       참조하도록, `Spot`이 `on`/`intensity`/`angle`/`penumbra`를 하드코딩 리터럴 대신
       `state.spots.<key>`에서 받도록 변경
-- [ ] **Step 7: 시각 검증 (브라우저)** — **사람 확인 지점.** 무대 페이지가 이전과 동일하게 보이는지
+- [x] **Step 7: 시각 검증 (브라우저)** — **사람 확인 지점.** 무대 페이지가 이전과 동일하게 보이는지
       (조명 색·on/off·카메라 버튼 3개 동작 포함), 콘솔 에러가 없는지 확인. 슬라이더·스모그는 아직 없다
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - §5.1 표의 6개 테스트 케이스가 전부 통과한다
@@ -174,6 +172,46 @@ Task 1이 나머지 전부의 기반이다 — `StageState` 타입과 `mergeStag
 - `mergeStageState`에 `JSON.parse`나 `localStorage` 참조가 없다(순수성 — Task 5 재사용을 위한 전제)
 
 **검증 노트**:
+- TDD 순서대로 진행: `stageState.test.ts`를 5.1 표 기준 10개 테스트로 재작성(6개 케이스 + 전체
+  유효값 라운드트립 · 배열 케이스 등 보강) → `npx vitest run` 실행해 7개 실패 확인
+  (`mergeStageState is not a function`, `defaultStageState` 모양 불일치) → `stageState.ts` 구현 →
+  10개 전부 PASS
+- **계획에 없던 테스트 버그 하나 발견·수정**: "값이 객체가 아니면 fallback"을 `toBe`(참조 동일성)로
+  검증하려 했는데, `typeof [1,2,3] === "object"`라 배열은 필드별 병합 경로를 타 버렸다(인식되는
+  필드가 없어 결과적으로 fallback과 값은 같지만 참조가 다른 새 객체가 나옴). 구현 버그가 아니라
+  테스트 쪽이 과했던 것으로 판단해 배열 케이스만 `toEqual`로 분리(null·문자열은 `typeof` 가드에서
+  바로 반환되므로 `toBe` 유지)
+- `StageControls.tsx`: `ANGLES`→`CAMERAS` 리네임, 스위치가 `state.spots[key].on` 참조 + `onChange`가
+  `{ ...state.spots[key], on: !on }`로 해당 스팟 객체만 갱신하도록 수정, 카메라 버튼이 `state.camera`
+  참조
+- `StageScene.tsx`: `CAMERA_PRESETS`/`CameraRig` 타입을 `StageState["camera"]`로, `CameraRig`의 prop
+  이름은 `angle`이 아니라 `cameraAngle`로 지음(`useThree()`가 이미 `camera`를 구조분해하므로 이름
+  충돌 회피). `Spot`은 `on`/`intensity`/`angle`/`penumbra`를 `spot: SpotState` 하나로 받도록 변경,
+  하드코딩 리터럴(300/0.45/0.6) 제거
+- `npm test` → 3 files, 23 tests 전부 pass. `npm run build` → 성공(TypeScript 통과, 라우트 목록 이전과
+  동일)
+- 시각 검증(Playwright + 시스템 Chrome, 포트 3001 — 3000번 사용자 서버는 안 건드림): 데모 계정 로그인
+  후 `/staff/stage?artist=aurora` 진입, 스위치 3개가 초기값대로 `Left: true / Center: true /
+  Right: false`로 렌더, 카메라 버튼 3개·색상 스와치 6개 정상 표시. "객석 뷰" 클릭 → 카메라 이동,
+  Right 스팟 스위치 클릭 → 조명 켜짐, 콘솔/페이지 에러 0건. 슬라이더(`type="range"`)는 계획대로
+  아직 0개
+- **범위 밖 이슈 하나 관찰·조사(이 Task와 무관, 손대지 않음)**: 로그인 직후 `/staff/dashboard`로
+  이동하면 가끔 `getArtistId: JWT issued at future`로 500이 뜬다. Task 4(프리셋 API)가 로그인 세션에
+  의존하므로 원인을 짚고 넘어감:
+  - 로컬 시스템 클럭(`date -u`)이 외부 서버(구글) 응답 헤더·Supabase 프로젝트 응답 헤더와 1초 이내로
+    일치 — 로컬 클럭 문제 아님
+  - `/api/login`으로 직접 받은 세션 쿠키의 access token을 디코드해 `iat`를 확인 — 현재 시각보다
+    11초 **과거**로 정상. 발급 시점의 토큰 자체는 문제없음
+  - `npx supabase db query --linked "select now()..."`로 원격 Postgres 자체의 시각도 확인 —
+    CLI 왕복 시간 범위 안에 정확히 들어와 정상
+  - **재현성 확인**: 동일한 로그인→대시보드 요청을 5회 연속 실행 → 5회 전부 200(정상). 즉 결정론적
+    코드 버그가 아니라 간헐적 레이스에 가깝다
+  - 결론: `proxy.ts`/`server.ts`의 세션 처리 로직은 표준 패턴을 따르고 있고 로컬·DB 클럭 모두
+    정상이므로 이 저장소 코드의 문제는 아니다. 최초 관찰 시점이 dev 서버에서 `/staff/dashboard`
+    라우트를 처음 컴파일(Turbopack 콜드 컴파일)하던 요청이었다는 공통점이 있어 그 지연 중 발생한
+    타이밍 이슈이거나, Supabase 인프라 내부(Auth↔Postgres) 클럭 지터일 가능성이 있다 — 어느 쪽이든
+    앱 코드로 고칠 수 있는 지점이 아니다. 재현율이 낮고(5/5 성공) 세션 자체는 정상 동작하므로
+    Task 4를 막지 않는다고 판단, 별도 조치 없이 다음 Task로 진행
 
 ---
 
