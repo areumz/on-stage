@@ -1,5 +1,6 @@
 "use client";
 
+import PresetPanel from "@/components/staff/PresetPanel";
 import SmokeControls from "@/components/staff/SmokeControls";
 import SpotControls from "@/components/staff/SpotControls";
 import type { StageState } from "@/lib/stageState";
@@ -17,8 +18,9 @@ const CAMERAS = [
   ["top", "탑 뷰 (Top)"],
 ] as const;
 
-export default function StageControls({ artists, state, onChange }: {
+export default function StageControls({ artists, artistSlug, state, onChange }: {
   artists: Artist[];
+  artistSlug: string;
   state: StageState;
   onChange: (s: StageState) => void;
 }) {
@@ -83,6 +85,13 @@ export default function StageControls({ artists, state, onChange }: {
         <p className="text-sm text-white/50">스모그</p>
         <div className="mt-3">
           <SmokeControls smoke={state.smoke} onChange={(next) => onChange({ ...state, smoke: next })} />
+        </div>
+      </section>
+
+      <section>
+        <p className="text-sm text-white/50">프리셋</p>
+        <div className="mt-3">
+          <PresetPanel artistSlug={artistSlug} state={state} onChange={onChange} />
         </div>
       </section>
     </aside>

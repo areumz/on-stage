@@ -556,7 +556,7 @@ contexts"로 기존 렌더링 캔버스가 강제로 밀려나는 것 — 이게
 - [x] **Step 4: API 수동 검증** (curl 또는 브라우저 devtools, 로그인 세션 사용) — GET 빈 배열 →
       POST 성공 201 → 같은 이름 POST 재요청 409 → `overwrite: true` 재요청 200대 성공 → DELETE 204 →
       존재하지 않는/타인 id DELETE 403
-- [x] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 5: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - Step 4의 수동 시나리오 전부가 기대한 상태 코드를 반환한다
@@ -614,17 +614,17 @@ contexts"로 기존 렌더링 캔버스가 강제로 밀려나는 것 — 이게
    제거한다(서버 컴포넌트가 아니므로 `router.refresh()`가 아니라 `PresetPanel`의 로컬 상태를 직접
    갱신한다).
 
-- [ ] **Step 1: `PresetPanel.tsx` 골격** — 마운트 시 `GET` 호출, 로딩/에러 상태
+- [x] **Step 1: `PresetPanel.tsx` 골격** — 마운트 시 `GET` 호출, 로딩/에러 상태
       (`GalleryManager.tsx` 패턴 참고)
-- [ ] **Step 2: 목록 렌더** — 이름 + 색상 스와치 + 삭제 버튼
-- [ ] **Step 3: 이름 클릭 → 불러오기** — `mergeStageState` 병합 + `writeStageState` + `onChange`
-- [ ] **Step 4: 이름 입력 필드 + 저장 버튼** — POST, `409`면 `confirm()` → `overwrite: true` 재요청
-- [ ] **Step 5: 삭제 버튼** — `confirm()` → `DELETE` → 목록에서 로컬 제거
-- [ ] **Step 6: `StageControls.tsx`에 `PresetPanel` 합성** — `artistSlug`는 현재 선택된 아티스트 slug
-- [ ] **Step 7: 시각 검증 (브라우저)** — **사람 확인 지점.** 저장 → 목록에 나타남 → 불러오기 → 씬
+- [x] **Step 2: 목록 렌더** — 이름 + 색상 스와치 + 삭제 버튼
+- [x] **Step 3: 이름 클릭 → 불러오기** — `mergeStageState` 병합 + `writeStageState` + `onChange`
+- [x] **Step 4: 이름 입력 필드 + 저장 버튼** — POST, `409`면 `confirm()` → `overwrite: true` 재요청
+- [x] **Step 5: 삭제 버튼** — `confirm()` → `DELETE` → 목록에서 로컬 제거
+- [x] **Step 6: `StageControls.tsx`에 `PresetPanel` 합성** — `artistSlug`는 현재 선택된 아티스트 slug
+- [x] **Step 7: 시각 검증 (브라우저)** — **사람 확인 지점.** 저장 → 목록에 나타남 → 불러오기 → 씬
       반영, 이름 겹칠 때 confirm → 덮어쓰기, 삭제 동작, **로그아웃 후 재로그인해도 프리셋이 남아
       있는지**(§11 완료 기준) 확인
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 8: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - §11 완료 기준: "프리셋을 저장한 뒤 로그아웃 → 재로그인해도 남아 있다" 충족
@@ -633,6 +633,37 @@ contexts"로 기존 렌더링 캔버스가 강제로 밀려나는 것 — 이게
 - `npm run build` 통과
 
 **검증 노트**:
+
+- `GalleryManager.tsx` 패턴을 그대로 따름 — 업로드 대신 프리셋 CRUD지만 로딩/에러 상태,
+  `confirm()` 기반 삭제, 지역 상태 직접 갱신(서버 컴포넌트가 아니라 `router.refresh()` 대신
+  `setPresets`로 로컬 갱신) 구조가 동일.
+- 저장 버튼은 항상 `overwrite: false`로 먼저 POST하고, `409`를 받으면 `confirm()` → 승인 시
+  `overwrite: true`로 재요청하는 2단계 함수(`postPreset`)로 구현. 재귀 대신 순차 `await` 두 번으로
+  단순화해 `saving` 상태 관리가 꼬이지 않게 함.
+- `StageControls`에 `artistSlug` prop을 새로 추가하고 `StageStudio.tsx`가 이미 들고 있던 `slug`를
+  그대로 전달 — 새 상태 없이 기존 값 배선만 추가.
+- 3001 포트에 프로덕션 서버(`next start`)를 띄우고 Playwright(시스템 Chrome, `channel: "chrome"`)로
+  실제 로그인 세션을 만들어 자동화 시나리오로 브라우저 검증(3000번 포트는 손대지 않음):
+  1. 저장 전 목록에 없음 확인 → 이름 입력 후 저장 → 목록에 1건 나타남
+  2. 같은 이름으로 재저장 → 브라우저 `confirm()` 다이얼로그("이미 있는 이름입니다. 덮어쓸까요?")가
+     실제로 뜸 → 수락 시 덮어쓰기 성공
+  3. 현재 씬을 카메라 `탑 뷰`로 바꾼 뒤 저장해둔 프리셋(카메라 `정면`) 클릭 → 카메라 버튼의
+     `aria-pressed`가 `정면`으로 되돌아옴 → `mergeStageState` 병합 + `onChange` 반영 확인
+  4. 삭제 버튼 클릭 → `confirm()` 다이얼로그 → 수락 → 목록에서 즉시 사라짐
+  5. **§11 재로그인 유지 확인**: 새 프리셋 저장 → 새 탭에서 다시 `/staff/login`부터 로그인 →
+     `/staff/stage?artist=aurora` 재방문 → 저장했던 프리셋이 목록에 그대로 있음 확인(Supabase
+     테이블 기반이라 세션과 무관하게 남는 것을 실제 재로그인 흐름으로 재확인)
+  - 첫 시도에서 재로그인 페이지에 `dialog` 리스너를 안 걸어 삭제 `confirm()`이 자동 취소되는 걸
+    발견(앱 버그 아님, 검증 스크립트 실수) — 리스너 추가 후 재실행해 정정.
+- 색상 스와치 스크린샷으로 육안 확인 — 프리셋 이름 왼쪽에 Aurora 조명색(`#9F77DD`)과 일치하는
+  보라색 점이 표시됨, 오른쪽엔 삭제 버튼.
+- 검증에 쓴 프리셋은 전부 타임스탬프 포함 고유 이름으로 만들고 끝에 직접 삭제 —
+  최종 `GET`으로 잔여 데이터 0건 확인.
+- `npm test`(23개) · `npm run build` 재통과.
+- **범위 외 추가 변경**: `window.confirm()`을 커스텀 `ConfirmDialog`/`useConfirm()`
+  (`src/components/staff/ConfirmDialog.tsx`, 신규)으로 교체하면서, 같은 네이티브 `confirm()`
+  패턴을 쓰던 4장의 `GalleryManager.tsx`도 같이 옮겼다 — 저장/삭제(Task 5)에 이어 삭제(4장)까지
+  이 패턴이 세 번째로 반복돼 이번에 공용 컴포넌트로 뽑는 게 맞다고 판단, 사용자 요청으로 진행.
 
 ---
 
