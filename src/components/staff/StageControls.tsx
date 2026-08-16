@@ -1,5 +1,7 @@
 "use client";
 
+import SmokeControls from "@/components/staff/SmokeControls";
+import SpotControls from "@/components/staff/SpotControls";
 import type { StageState } from "@/lib/stageState";
 import type { Artist } from "@/lib/types";
 
@@ -21,10 +23,10 @@ export default function StageControls({ artists, state, onChange }: {
   onChange: (s: StageState) => void;
 }) {
   return (
-    <aside className="flex w-72 shrink-0 flex-col gap-8 border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white">
+    <aside className="flex w-72 shrink-0 flex-col gap-8 overflow-y-auto border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white">
       <section>
         <p className="text-sm text-white/50">조명 프리셋</p>
-        <div className="mt-3 flex flex-wrap gap-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           {artists.map((a) => (
             <button
               key={a.slug}
@@ -35,31 +37,27 @@ export default function StageControls({ artists, state, onChange }: {
               style={{ backgroundColor: a.color }}
             />
           ))}
+          <input
+            type="color"
+            aria-label="조명 색상 직접 선택"
+            value={state.color}
+            onChange={(e) => onChange({ ...state, color: e.target.value })}
+            className="h-10 w-10 cursor-pointer rounded-lg border border-white/25 bg-transparent"
+          />
         </div>
       </section>
 
       <section>
-        <p className="text-sm text-white/50">조명 전원</p>
-        <div className="mt-3 flex flex-col gap-3">
-          {SPOTS.map(([key, label]) => {
-            const on = state.spots[key].on;
-            return (
-              <div key={key} className="flex items-center justify-between">
-                <span className={on ? "text-white" : "text-white/50"}>{label}</span>
-                <button
-                  role="switch"
-                  aria-checked={on}
-                  aria-label={label}
-                  onClick={() =>
-                    onChange({ ...state, spots: { ...state.spots, [key]: { ...state.spots[key], on: !on } } })
-                  }
-                  className={`h-6 w-11 rounded-full p-0.5 transition-colors ${on ? "bg-brand" : "bg-white/20"}`}
-                >
-                  <span className={`block h-5 w-5 rounded-full bg-white transition-transform ${on ? "translate-x-5" : ""}`} />
-                </button>
-              </div>
-            );
-          })}
+        <p className="text-sm text-white/50">조명 전원 · 세부 조절</p>
+        <div className="mt-3 flex flex-col gap-5">
+          {SPOTS.map(([key, label]) => (
+            <SpotControls
+              key={key}
+              label={label}
+              spot={state.spots[key]}
+              onChange={(next) => onChange({ ...state, spots: { ...state.spots, [key]: next } })}
+            />
+          ))}
         </div>
       </section>
 
@@ -78,6 +76,13 @@ export default function StageControls({ artists, state, onChange }: {
               {label}
             </button>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <p className="text-sm text-white/50">스모그</p>
+        <div className="mt-3">
+          <SmokeControls smoke={state.smoke} onChange={(next) => onChange({ ...state, smoke: next })} />
         </div>
       </section>
     </aside>
