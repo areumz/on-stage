@@ -3,12 +3,14 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useConfirm } from "@/components/staff/ConfirmDialog";
 import type { GalleryListItem } from "@/lib/types";
 
 export default function GalleryManager({ artistSlug, images }: { artistSlug: string; images: GalleryListItem[] }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
     if (!error) return;
@@ -66,7 +68,7 @@ export default function GalleryManager({ artistSlug, images }: { artistSlug: str
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
+    if (!(await confirm("이 이미지를 삭제하시겠습니까?"))) return;
     setError(null);
     const res = await fetch(`/api/gallery/${id}`, { method: "DELETE" });
     if (res.status === 204) {
@@ -107,6 +109,7 @@ export default function GalleryManager({ artistSlug, images }: { artistSlug: str
         ))}
         {images.length === 0 && <p className="col-span-4 text-sm text-gray-500">아직 업로드된 이미지가 없습니다.</p>}
       </div>
+      {dialog}
     </div>
   );
 }
