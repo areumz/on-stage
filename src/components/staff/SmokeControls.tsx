@@ -9,8 +9,9 @@ export default function SmokeControls({ smoke, onChange }: {
   smoke: StageState["smoke"];
   onChange: (next: StageState["smoke"]) => void;
 }) {
-  // 이유는 SpotControls와 동일 — 드래그 중 매 input마다 3D 씬까지 흘려보내면 webglcontextlost가 난다
-  const throttledOnChange = useThrottledChange(onChange);
+
+  // SpotControls와 동일한 이유로 스로틀링 적용
+  const throttledOnChange = useThrottledChange(smoke, onChange);
 
   return (
     <div className="flex flex-col gap-3">
@@ -23,7 +24,7 @@ export default function SmokeControls({ smoke, onChange }: {
           max={DENSITY.max}
           step={DENSITY.step}
           value={smoke.density}
-          onChange={(e) => throttledOnChange({ ...smoke, density: Number(e.target.value) })}
+          onChange={(e) => throttledOnChange({ density: Number(e.target.value) })}
           className="accent-brand"
         />
       </label>
@@ -33,7 +34,7 @@ export default function SmokeControls({ smoke, onChange }: {
           type="color"
           aria-label="스모그 색상"
           value={smoke.color}
-          onChange={(e) => onChange({ ...smoke, color: e.target.value })}
+          onChange={(e) => throttledOnChange({ color: e.target.value })}
           className="h-8 w-8 cursor-pointer rounded border border-white/25 bg-transparent"
         />
       </div>

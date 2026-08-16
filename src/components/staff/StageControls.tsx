@@ -3,6 +3,7 @@
 import PresetPanel from "@/components/staff/PresetPanel";
 import SmokeControls from "@/components/staff/SmokeControls";
 import SpotControls from "@/components/staff/SpotControls";
+import { useThrottledChange } from "@/lib/hooks";
 import type { StageState } from "@/lib/stageState";
 import type { Artist } from "@/lib/types";
 
@@ -24,6 +25,10 @@ export default function StageControls({ artists, artistSlug, state, onChange }: 
   state: StageState;
   onChange: (s: StageState) => void;
 }) {
+  // 자유 색상 피커만 스로틀 대상 — 아티스트 스와치는 클릭이라 제외. 드래그 중 계속
+  // input을 쏘는 건 range 슬라이더와 같은 부류라 같은 훅으로 묶음 (hooks.ts 주석 참고)
+  const throttledColorChange = useThrottledChange(state, onChange);
+
   return (
     <aside className="flex w-72 shrink-0 flex-col gap-8 overflow-y-auto border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white">
       <section>
@@ -43,7 +48,7 @@ export default function StageControls({ artists, artistSlug, state, onChange }: 
             type="color"
             aria-label="조명 색상 직접 선택"
             value={state.color}
-            onChange={(e) => onChange({ ...state, color: e.target.value })}
+            onChange={(e) => throttledColorChange({ color: e.target.value })}
             className="h-10 w-10 cursor-pointer rounded-lg border border-white/25 bg-transparent"
           />
         </div>

@@ -15,9 +15,10 @@ export default function SpotControls({ label, spot, onChange }: {
   spot: SpotState;
   onChange: (next: SpotState) => void;
 }) {
-  // 슬라이더 드래그는 input 이벤트를 rAF보다 훨씬 자주 쏜다 — 매번 그대로 3D 씬까지 흘려보내면
-  // <Canvas>가 재구성을 따라잡지 못해 webglcontextlost가 난다(실측). 프레임당 최대 한 번만 반영
-  const throttledOnChange = useThrottledChange(onChange);
+  // 슬라이더 드래그는 input 이벤트가 아주 잦음 — 매번 그대로 3D 씬까지 흘려보내면 <Canvas>가
+  // 재구성을 따라잡지 못해 webglcontextlost 발생 (실측, rAF 16ms 간격으로도 재현됨). 100ms
+  // (초당 최대 10번)로 눌러야 안정적 — 근거는 hooks.ts의 useThrottledChange 주석 참고
+  const throttledOnChange = useThrottledChange(spot, onChange);
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -43,7 +44,7 @@ export default function SpotControls({ label, spot, onChange }: {
             max={max}
             step={step}
             value={spot[key]}
-            onChange={(e) => throttledOnChange({ ...spot, [key]: Number(e.target.value) })}
+            onChange={(e) => throttledOnChange({ [key]: Number(e.target.value) } as Partial<SpotState>)}
             className="accent-brand"
           />
         </label>
