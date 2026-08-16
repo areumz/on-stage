@@ -181,24 +181,22 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 - 실제 결제/예매 기능 없음
 - 백엔드 서버 분리 없음
 - B탭 사이드바 5개 메뉴 중 대시보드·아티스트(갤러리 관리)만 실 화면, 나머지(투어 일정/티켓 현황)는 Coming soon
-- 무대 연출 툴은 조명 프리셋·on/off·카메라 앵글 전환만 지원 (스모그, 세밀 조명 조절, 프리셋 저장 없음)
 - **권장 브라우저: Chrome 최신, Safari 16.4+.** 그 외 환경(구형 Safari 등 WebGL 미지원·구형 브라우저)에서는
-  3D 콘텐츠 대신 안내 메시지가 표시됩니다 — 화면이 비어 보이는 대신 실패했다는 걸 알리는 용도입니다
+  3D 콘텐츠가 보이지 않을 수 있습니다
 
 The list below covers what's still missing. Of these, the auth approach (phase 2 roadmap item 1) is
 done; the rest remain on the roadmap. No sign-up or password reset (Supabase Auth email/password
 login only, accounts are seed-created), no i18n, no mobile responsiveness (desktop-only), no real
 payments/booking, no separate backend, and in the B tab only the dashboard and artists (gallery
-management) screens are real — the rest are "coming soon" — while the stage tool covers only
-lighting presets, on/off toggles, and camera-angle presets. **Recommended browsers: latest Chrome,
-Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content is replaced with a
-message instead of silently rendering blank.
+management) screens are real — the rest are "coming soon". **Recommended browsers: latest Chrome,
+Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content may not display.
 
 ### 2차 로드맵 / Phase 2 Roadmap
 
 - [x] **Supabase Auth + DB로 전환** (하드코딩 로그인 제거) — Auth·Postgres·Storage로 이전, RLS로 쓰기 권한 통제,
       B탭에서 갤러리 이미지 업로드·삭제 가능. 자세한 내용은 [docs/plan-v2.1-supabase.md](docs/plan-v2.1-supabase.md) 참고
-- [ ] 무대 연출 툴 고도화 (스모그·파티클, 세밀 조명 조절, 프리셋 저장)
+- [x] **무대 연출 툴 고도화** (스모그, 조명 밝기·조명각 슬라이더, 자유 색상 선택, 이름 붙여 저장/불러오기하는
+      프리셋) — 자세한 내용은 [docs/plan-v2.2-stage-tools.md](docs/plan-v2.2-stage-tools.md) 참고
 - [ ] 반응형 대응
 - [ ] B탭 사이드바 잔여 메뉴 실 화면 구현
 - [ ] 셰이더 심화 (아티스트별 차별화 확대)
@@ -209,9 +207,11 @@ message instead of silently rendering blank.
 Phase 2 progress: **Supabase Auth + DB migration is done** — auth, Postgres, and storage now run on
 Supabase, row-level security governs every write path, and staff can upload/delete gallery images
 from the B tab. See [docs/plan-v2.1-supabase.md](docs/plan-v2.1-supabase.md) for the implementation
-log. Remaining: richer stage-tool controls (smoke/particles, fine lighting adjustment, saved
-presets), responsive layouts, filling out the remaining staff sidebar screens, deeper per-artist
-shader variation, and refined gallery imagery. See [docs/design-v2.md](docs/design-v2.md) for details.
+log. **Stage-tool enhancements are also done** — smoke, lighting intensity/angle sliders, free color
+picking, and named presets you can save, load, and delete. See
+[docs/plan-v2.2-stage-tools.md](docs/plan-v2.2-stage-tools.md) for the implementation log. Remaining:
+responsive layouts, filling out the remaining staff sidebar screens, deeper per-artist shader
+variation, and refined gallery imagery. See [docs/design-v2.md](docs/design-v2.md) for details.
 
 ---
 

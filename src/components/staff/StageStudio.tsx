@@ -30,7 +30,7 @@ export default function StageStudio({
           DRAG TO ORBIT · SCROLL TO ZOOM
         </p>
       </div>
-      <StageControls artists={artists} state={state} onChange={handleChange} />
+      <StageControls artists={artists} artistSlug={slug} state={state} onChange={handleChange} />
     </div>
   );
 }

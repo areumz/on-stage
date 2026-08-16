@@ -1,5 +1,9 @@
 "use client";
 
+import PresetPanel from "@/components/staff/PresetPanel";
+import SmokeControls from "@/components/staff/SmokeControls";
+import SpotControls from "@/components/staff/SpotControls";
+import { useThrottledChange } from "@/lib/hooks";
 import type { StageState } from "@/lib/stageState";
 import type { Artist } from "@/lib/types";
 
@@ -9,22 +13,27 @@ const SPOTS = [
   ["right", "Right spot"],
 ] as const;
 
-const ANGLES = [
+const CAMERAS = [
   ["front", "정면 (Front)"],
   ["audience", "객석 뷰 (Audience)"],
   ["top", "탑 뷰 (Top)"],
 ] as const;
 
-export default function StageControls({ artists, state, onChange }: {
+export default function StageControls({ artists, artistSlug, state, onChange }: {
   artists: Artist[];
+  artistSlug: string;
   state: StageState;
   onChange: (s: StageState) => void;
 }) {
+  // 자유 색상 피커만 스로틀 대상 — 아티스트 스와치는 클릭이라 제외. 드래그 중 계속
+  // input을 쏘는 건 range 슬라이더와 같은 부류라 같은 훅으로 묶음 (hooks.ts 주석 참고)
+  const throttledColorChange = useThrottledChange(state, onChange);
+
   return (
-    <aside className="flex w-72 shrink-0 flex-col gap-8 border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white">
+    <aside className="flex w-72 shrink-0 flex-col gap-8 overflow-y-auto border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white">
       <section>
         <p className="text-sm text-white/50">조명 프리셋</p>
-        <div className="mt-3 flex flex-wrap gap-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           {artists.map((a) => (
             <button
               key={a.slug}
@@ -35,47 +44,59 @@ export default function StageControls({ artists, state, onChange }: {
               style={{ backgroundColor: a.color }}
             />
           ))}
+          <input
+            type="color"
+            aria-label="조명 색상 직접 선택"
+            value={state.color}
+            onChange={(e) => throttledColorChange({ color: e.target.value })}
+            className="h-10 w-10 cursor-pointer rounded-lg border border-white/25 bg-transparent"
+          />
         </div>
       </section>
 
       <section>
-        <p className="text-sm text-white/50">조명 전원</p>
-        <div className="mt-3 flex flex-col gap-3">
-          {SPOTS.map(([key, label]) => {
-            const on = state.spots[key];
-            return (
-              <div key={key} className="flex items-center justify-between">
-                <span className={on ? "text-white" : "text-white/50"}>{label}</span>
-                <button
-                  role="switch"
-                  aria-checked={on}
-                  aria-label={label}
-                  onClick={() => onChange({ ...state, spots: { ...state.spots, [key]: !on } })}
-                  className={`h-6 w-11 rounded-full p-0.5 transition-colors ${on ? "bg-brand" : "bg-white/20"}`}
-                >
-                  <span className={`block h-5 w-5 rounded-full bg-white transition-transform ${on ? "translate-x-5" : ""}`} />
-                </button>
-              </div>
-            );
-          })}
+        <p className="text-sm text-white/50">조명 전원 · 세부 조절</p>
+        <div className="mt-3 flex flex-col gap-5">
+          {SPOTS.map(([key, label]) => (
+            <SpotControls
+              key={key}
+              label={label}
+              spot={state.spots[key]}
+              onChange={(next) => onChange({ ...state, spots: { ...state.spots, [key]: next } })}
+            />
+          ))}
         </div>
       </section>
 
       <section>
         <p className="text-sm text-white/50">카메라 앵글</p>
         <div className="mt-3 flex flex-col gap-2.5">
-          {ANGLES.map(([key, label]) => (
+          {CAMERAS.map(([key, label]) => (
             <button
               key={key}
-              aria-pressed={state.angle === key}
-              onClick={() => onChange({ ...state, angle: key })}
+              aria-pressed={state.camera === key}
+              onClick={() => onChange({ ...state, camera: key })}
               className={`rounded-lg py-2.5 text-sm ${
-                state.angle === key ? "bg-brand font-medium text-white" : "border border-white/25 text-white/70 hover:border-white"
+                state.camera === key ? "bg-brand font-medium text-white" : "border border-white/25 text-white/70 hover:border-white"
               }`}
             >
               {label}
             </button>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <p className="text-sm text-white/50">스모그</p>
+        <div className="mt-3">
+          <SmokeControls smoke={state.smoke} onChange={(next) => onChange({ ...state, smoke: next })} />
+        </div>
+      </section>
+
+      <section>
+        <p className="text-sm text-white/50">프리셋</p>
+        <div className="mt-3">
+          <PresetPanel artistSlug={artistSlug} state={state} onChange={onChange} />
         </div>
       </section>
     </aside>
