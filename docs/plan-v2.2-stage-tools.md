@@ -705,7 +705,7 @@ contexts"로 기존 렌더링 캔버스가 강제로 밀려나는 것 — 이게
 - **범위 외 추가 변경**: `window.confirm()`을 커스텀 `ConfirmDialog`/`useConfirm()`
   (`src/components/staff/ConfirmDialog.tsx`, 신규)으로 교체하면서, 같은 네이티브 `confirm()`
   패턴을 쓰던 4장의 `GalleryManager.tsx`도 같이 옮겼다 — 저장/삭제(Task 5)에 이어 삭제(4장)까지
-  이 패턴이 세 번째로 반복돼 이번에 공용 컴포넌트로 뽑는 게 맞다고 판단, 사용자 요청으로 진행.
+  이 패턴이 세 번째로 반복돼 이번에 공용 컴포넌트로 뽑는 게 맞다고 판단.
 
 ---
 
