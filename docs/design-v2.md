@@ -694,10 +694,22 @@ UI는 테이블 인라인 행 편집이다 — 목록이 그대로 폼이 된다
 위/아래 버튼 + 삭제, 맨 아래 "+ 트랙 추가"). `cover_from`/`cover_to`는 `<input type="color">` 2개
 (실 커버아트가 없어 2스톱 그라디언트로 대체하는 기존 방식 그대로).
 
-**순서변경**: 위/아래 버튼 → 클릭한 행과 인접 행의 `id`+`no`를 이미 클라이언트가 들고 있으므로
-`PATCH /api/tracks/[id]`를 두 번 순차 호출해 `no`를 swap한다. 드래그 앤 드롭 라이브러리는 쓰지 않는다
-— 트랙 수가 적어(대표곡 4개 안팎) 버튼으로도 불편함이 거의 없다. `tracks`가 역할 스코프(7.1)라 오너만
-쓰는 경로이므로 소유 경계로 인한 swap 실패는 없고, 실패한다면 네트워크 문제뿐이다.
+**순서변경**: 위/아래 버튼 → 클릭한 행과 인접 행의 `id`+`no`를 이미 클라이언트가 들고 있다. 드래그 앤
+드롭 라이브러리는 쓰지 않는다 — 트랙 수가 적어(대표곡 4개 안팎) 버튼으로도 불편함이 거의 없다.
+`tracks`가 역할 스코프(7.1)라 오너만 쓰는 경로이므로 소유 경계로 인한 swap 실패는 없고, 실패한다면
+네트워크 문제뿐이다.
+
+경계 판정(맨 위 트랙의 "위로", 맨 아래 트랙의 "아래로" 비활성화)은 순수 함수로 뺀다 —
+`neighborSwap(tracks: TrackRow[], id: string, direction: "up" | "down"): [TrackRow, TrackRow] | null`
+(`no` 기준 정렬 후 인접 쌍을 찾고, 경계거나 id를 못 찾으면 `null`). `TracksManager` 컴포넌트가 버튼
+`disabled` 여부와 클릭 핸들러 양쪽에서 이 함수를 재사용한다.
+
+> 구현 에이전트 주의: **`PATCH`를 두 번 호출해 `no`를 직접 swap하지 않는다.** `unique(artist_id, no)`
+> 제약 때문에 A의 `no`를 B의 값으로 바꾸는 순간 B가 아직 그 값을 갖고 있어 `23505`가 난다(두 값이
+> 이미 둘 다 점유된 상태라 두 번의 단일 행 업데이트로는 어떤 순서로도 충돌을 피할 수 없다). 대신
+> **임시값을 경유하는 3단계**로 처리한다: ① A → 아무도 안 쓰는 임시값(`no` 컬럼이 `smallint`이므로
+> 그 최댓값 `32767`을 쓴다) ② B → A의 원래 `no` ③ A → B의 원래 `no`. 각 단계가 끝날 때마다 그
+> 값이 비므로 다음 단계가 충돌하지 않는다.
 
 > 구현 에이전트 주의: `no` 숫자 직접 입력 방식은 채택하지 않았다. 사용자가 중복값을 직접 넣으면
 > `unique(artist_id, no)` 위반으로 DB 에러가 나고, "순서 바꾸기"가 아니라 "번호 편집"으로 체감이
@@ -740,10 +752,11 @@ prop으로 내려주고, 편집·추가·삭제 버튼과 입력 필드에 `disa
 | 파일 | 작업 |
 |---|---|
 | `src/lib/data.ts` | `getShows`, `getArtistRow`, `getTracks`, `getShowStatusList` 추가, `getStaffRoleLabel` → `getStaffRole` |
+| `src/lib/trackOrder.ts` | 신규 — `neighborSwap` 순수 함수, TDD 대상 |
+| `src/app/staff/(console)/layout.tsx` | `getStaffRoleLabel()` → `getStaffRole()` 호출로 조정(`label`만 꺼내 `Sidebar`에 전달, `Sidebar.tsx` 자체는 무변경) |
 | `src/app/staff/(console)/tours/page.tsx` | stub 삭제 → 구현 |
 | `src/app/staff/(console)/artists/page.tsx` | 편집 폼 + tracks 섹션 추가 (갤러리 섹션은 유지) |
 | `src/app/staff/(console)/tickets/page.tsx` | stub 삭제 → 구현 |
-| `src/components/staff/Sidebar.tsx` | `getStaffRole()` 반환 타입 변경에 맞춰 `label` 필드 접근만 조정 |
 | `src/components/staff/ToursManager.tsx` · `ArtistEditForm.tsx` · `TracksManager.tsx` | 신규 |
 | `src/app/api/shows/route.ts` · `shows/[id]/route.ts` | 신규 |
 | `src/app/api/artists/[id]/route.ts` | 신규 |
