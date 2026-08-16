@@ -34,7 +34,10 @@ export default function PresetPanel({ artistSlug, state, onChange }: {
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/stage-presets?artist=${artistSlug}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`불러오기 실패 (${res.status})`);
+        return res.json();
+      })
       .then((body: { presets: Preset[] }) => {
         if (!cancelled) setPresets(sortedByName(body.presets ?? []));
       })
@@ -100,6 +103,7 @@ export default function PresetPanel({ artistSlug, state, onChange }: {
       <div className="flex gap-2">
         <input
           type="text"
+          aria-label="프리셋 이름"
           placeholder="프리셋 이름"
           value={name}
           onChange={(e) => setName(e.target.value)}
