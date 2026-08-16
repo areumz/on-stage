@@ -138,13 +138,14 @@ export async function getMetrics(slug: string): Promise<Metrics | undefined> {
   return toMetricsView(metrics, nextShow, featuredShows, new Date());
 }
 
-// 헤더/사이드바에 표시할 역할 라벨. app_metadata.role이 "owner"면 관리자, 그 외(공유 데모 계정 포함)는 게스트
-export async function getStaffRoleLabel(): Promise<"관리자" | "게스트"> {
+// 헤더/사이드바 라벨 + 편집 게이트용 role 판정. app_metadata.role이 "owner"면 관리자, 그 외(공유 데모 계정 포함)는 게스트
+export async function getStaffRole(): Promise<{ isOwner: boolean; label: "관리자" | "게스트" }> {
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user?.app_metadata?.role === "owner" ? "관리자" : "게스트";
+  const isOwner = user?.app_metadata?.role === "owner";
+  return { isOwner, label: isOwner ? "관리자" : "게스트" };
 }
 
 // B탭 갤러리 관리 화면 목록. id를 포함해 GalleryPhoto보다 하나 더 (삭제 버튼 필요로 함).

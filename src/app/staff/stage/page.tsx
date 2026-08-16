@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import TabToggle from "@/components/common/TabToggle";
 import ArtistSelect from "@/components/staff/ArtistSelect";
 import StageStudio from "@/components/staff/StageStudio";
-import { DEFAULT_METRICS_SLUG, getArtist, getArtists, getMetrics, getStaffRoleLabel } from "@/lib/data";
+import { DEFAULT_METRICS_SLUG, getArtist, getArtists, getMetrics, getStaffRole } from "@/lib/data";
 
 export default async function StagePage({
   searchParams,
@@ -12,11 +12,11 @@ export default async function StagePage({
 }) {
   const raw = (await searchParams).artist;
   const slug = typeof raw === "string" ? raw : DEFAULT_METRICS_SLUG;
-  const [artists, artist, metrics, roleLabel] = await Promise.all([
+  const [artists, artist, metrics, { label: roleLabel }] = await Promise.all([
     getArtists(),
     getArtist(slug),
     getMetrics(slug),
-    getStaffRoleLabel(),
+    getStaffRole(),
   ]);
   if (!artist || !metrics) notFound();
 
