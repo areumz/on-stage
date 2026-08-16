@@ -306,23 +306,216 @@ Task 1이 나머지 전부의 기반이다 — `StageState` 타입과 `mergeStag
 3. 스모그 색상(`SmokeControls`)도 같은 `<input type="color">` 패턴을 쓰되, 조명 색(`state.color`)과는
    별개의 값(`state.smoke.color`)이다 — 하나로 묶지 않는다.
 
-- [ ] **Step 1: `SpotControls.tsx` 작성** — on/off 스위치(기존 `StageControls`의 스위치 마크업 재사용) +
+- [x] **Step 1: `SpotControls.tsx` 작성** — on/off 스위치(기존 `StageControls`의 스위치 마크업 재사용) +
       intensity/angle/penumbra 슬라이더 3개
-- [ ] **Step 2: `SmokeControls.tsx` 작성** — density 슬라이더 + `<input type="color">`
-- [ ] **Step 3: `StageControls.tsx`를 orchestrator로 재구성** — 색상 섹션에 `<input type="color">` 추가
+- [x] **Step 2: `SmokeControls.tsx` 작성** — density 슬라이더 + `<input type="color">`
+- [x] **Step 3: `StageControls.tsx`를 orchestrator로 재구성** — 색상 섹션에 `<input type="color">` 추가
       (스와치 유지), `SpotControls`를 `left`/`center`/`right` 3번 렌더, `SmokeControls` 추가. 카메라
       3버튼 섹션은 그대로 둔다(Task 1에서 이미 `camera` 키로 정합됨)
-- [ ] **Step 4: 시각 검증 (브라우저)** — **사람 확인 지점.** 슬라이더 조작이 3D 씬에 실시간
+- [x] **Step 4: 시각 검증 (브라우저)** — **사람 확인 지점.** 슬라이더 조작이 3D 씬에 실시간
       반영되는지(§11 완료 기준), 스모그 슬라이더가 Task 2의 안개를 조절하는지, 색상 피커가 즉시
       반영되는지, 스와치 버튼도 여전히 동작하는지 확인
-- [ ] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - §11 완료 기준: "슬라이더 조작이 R3F 씬에 실시간 반영된다" 충족(시각 검증)
-- 앱 전체에 `type="range"`가 12개 이상 존재한다(스팟 3×3 + 스모그 1)
+- 앱 전체에 `type="range"`가 10개 존재한다(스팟 3×3 + 스모그 1) — **문서 오류 수정**: 처음 이 절을
+  쓸 때 괄호 설명("3×3+1")과 별개로 조건 문장에 "12개 이상"이라 잘못 적었다. 3×3+1은 10이고,
+  실측도 10이라 조건 문장을 10으로 바로잡는다
 - `npm run build` 통과. 새 형식적 테스트는 만들지 않는다(§9.1)
 
 **검증 노트**:
+- `SpotControls.tsx`/`SmokeControls.tsx` 신규 작성, `StageControls.tsx`는 orchestrator로 재구성
+  (조명 프리셋 → 조명 전원·세부 조절 → 카메라 앵글 → 스모그, 4개 섹션). 패널이 세로로 길어져
+  `<aside>`에 `overflow-y-auto` 추가 — `StageStudio.tsx`의 부모 컨테이너가 `overflow-hidden`이라
+  이게 없으면 아래쪽 슬라이더(카메라·스모그)가 잘려서 아예 조작 불가능했을 것
+- 슬라이더 range/step 상수는 각 컴포넌트 모듈 최상단에 배열 하나로(`SpotControls`의 `SLIDERS`,
+  `SmokeControls`의 `DENSITY`) 두고 `.map()`으로 렌더 — 스팟 3번 렌더에서 같은 배열을 재사용하므로
+  매직넘버가 여러 곳에 흩어지지 않는다
+- 시각 검증(Playwright, 포트 3001): range input 10개, switch 3개(Left/Center/Right = true/true/false,
+  Task 1과 동일한 기본값) 확인. 스모그 농도 슬라이더를 0.6으로 조작 → 안개가 눈에 띄게 짙어짐.
+  조명 색 `<input type="color">`를 초록(#22cc88)으로 변경 → 스팟라이트 색이 즉시 초록으로 바뀜.
+  아티스트 스와치 클릭도 정상 동작. 콘솔/페이지 에러 0건
+- intensity 슬라이더를 최댓값(1000)으로 옮겼을 때는 육안상 밝기 차이가 크지 않았다 — 당시엔 렌더러
+  톤매핑 한계로 판단하고 넘어갔으나, **이 진단은 틀렸다.** 실제 원인과 수정은 아래 "수정 이력" 참조
+- `npm test` → 3 files, 23 tests 전부 pass(변경 없음). `npm run build` → 성공
+
+**수정 이력 — 사용자 실사용 중 발견된 버그 두 건 (2026-08-15)**
+
+Task 3를 완료 처리한 뒤 사용자가 실제로 슬라이더를 조작하다가 (1) 스모그/조명 슬라이더를 빠르게
+움직이면 3D 씬이 흰 화면 + 깨진 아이콘과 함께 멈추는 현상과 (2) 밝기·번짐 슬라이더가 조명각과
+달리 전혀 반영되지 않는 현상을 발견해 재조사했다. 둘 다 `src/components/three/StageScene.tsx`
+(및 하나는 `src/lib/hooks.ts`)를 고쳐 해결했다.
+
+1. **슬라이더를 빠르게 드래그하면 `webglcontextlost`가 반복 발생했다** (사용자가 "흰 화면 + x_x
+   같은 이모티콘"으로 묘사 — Chrome이 GPU 컨텍스트 상실 시 캔버스에 띄우는 기본 아이콘과 일치).
+   브라우저에 `webglcontextlost`/`restored` 리스너를 직접 걸어 재현·확인했다. 처음엔 drei `Cloud`의
+   `opacity`가 슬라이더 값에 묶여 있어 내부 `useMemo`(의존성에 `opacity` 포함)가 매 틱마다 구름
+   배치를 재계산하는 게 원인이라 보고 `Cloud`의 `opacity`를 고정값(0.4)으로 바꿨는데, 재현해보니
+   스모그를 아예 안 건드리고 조명 밝기만 조작해도 **똑같이 재현됐다** — 원인이 스모그 전용이
+   아니었다. `@react-three/fiber`의 `Canvas` 구현(`node_modules/@react-three/fiber/dist/
+   react-three-fiber.esm.js`)을 직접 읽어, `camera`/`children`이 바뀔 때마다 실행되는
+   `useIsomorphicLayoutEffect`가 **의존성 배열 없이** 매 렌더마다 `configure()` + `render()`를
+   비동기로 다시 돈다는 걸 확인했다 — 슬라이더 드래그처럼 초당 수십 번 상태가 바뀌면 이 비동기
+   재구성 사이클이 겹쳐 쌓이며 GPU가 못 버티는 것으로 판단된다. **고침**: `src/lib/hooks.ts`에
+   `useThrottledChange` 훅을 추가해, 슬라이더의 `onChange`가 3D 씬(과 localStorage 커밋)까지
+   흘러가는 빈도를 100ms(초당 10커밋)로 제한했다. `<input>` 자체는 여전히 React 상태로 controlled라
+   드래그 중 화면에 보이는 슬라이더 움직임 자체는 그대로 매끄럽다 — 3D 씬 반영만 살짝 늦춰진다.
+   rAF(16ms) 간격으로도 재현됐고, 실측으로 30~50ms는 간헐적, 80~100ms에서 안정적으로 사라지는 걸
+   반복 확인해 100ms로 정했다(이 환경의 가상 GPU가 실제 사용자 기기보다 약할 수 있어 다소 보수적으로
+   잡음). `SpotControls.tsx`/`SmokeControls.tsx`의 슬라이더 `onChange`에 적용
+2. **밝기(intensity)·번짐(penumbra) 슬라이더가 시각적으로 전혀 반영되지 않았다** (조명각만 정상).
+   drei `SpotLight`(`node_modules/@react-three/drei/core/SpotLight.js`) 소스를 직접 읽어 원인을
+   찾았다 — 화면에 보이는 보라색 빛줄기는 `SpotLight`가 내부적으로 그리는 `VolumetricMesh`인데,
+   이 컴포넌트는 `angle`/`attenuation`/`anglePower`/`opacity`/`color`/`distance`만 props로 받고
+   **`intensity`와 `penumbra`는 아예 받지 않는다.** `intensity=0`과 `intensity=1000`을 스크린샷으로
+   비교해 픽셀 단위로 동일함을 확인해 실증했다. `intensity`는 실제 `THREE.SpotLight`(바닥·연단을
+   비추는 진짜 광원)에는 정상 전달되고 있었지만, 눈에 띄는 빛줄기 모양에는 반영되지 않아 "슬라이더가
+   안 먹는다"로 보였던 것. **고침**: `<SpotLight>`에 `opacity={spot.intensity / 1000}`을 추가해
+   intensity를 빛줄기의 가시적 밝기에도 매핑했다 — 재검증 스크린샷에서 0일 때 빛줄기가 거의 안
+   보이고 1000일 때 뚜렷하게 밝아지는 걸 확인. **penumbra는 고치지 않았다** — `VolumetricMesh`에
+   대응하는 파라미터가 없어, 새 셰이더를 직접 쓰지 않는 한(§5.4/§11의 "직접 작성한 셰이더 0줄"
+   제약과 충돌) 빛줄기 모양에 반영할 방법이 없다. `penumbra`는 여전히 실제 광원의 조도 경계
+   부드러움에는 정상 적용되지만, 그 효과가 빛줄기보다 훨씬 은은해 체감하기 어렵다 — 알려진 한계로
+   남겨둔다
+3. (참고, 데이터 버그 아님) 사용자가 "조명을 조절하니 안개도 바뀐다"고 관찰한 건 실제로는
+   `state.smoke`가 조명 조작으로 변경된 게 아니라(localStorage로 직접 확인, 값 불변), drei `Cloud`가
+   `MeshLambertMaterial` 기반이라 씬의 스팟라이트 색·밝기를 실제로 받아 그 빛으로 물드는 정상
+   렌더링이었다 — 바닥·연단이 조명 색에 물드는 것과 같은 원리
+
+**재검증**: 두 수정 반영 후 `npm test`(23개 pass)·`npm run build` 재통과. `webglcontextlost` 리스너를
+건 상태로 스모그만 조작(원래 재현 조건)·조명 밝기만 조작(스모그 무관 확인) 각각 재현 시도 → 둘 다
+이벤트 0건. intensity 0→1000 전후 스크린샷에서 빛줄기 밝기 차이 육안 확인
+
+**추가 조사 — 실제 마우스 드래그 경로에서는 여전히 간헐적으로 재현됨**: 합성 dispatch(51회, 자연스러운
+간격)로는 100ms 쓰로틀 후 재현이 안 됐지만, `page.mouse.move()`로 슬라이더 위를 200스텝 촘촘하게 실제
+드래그하면 100ms 쓰로틀 후에도 가끔(수 회 중 1회꼴) 재현됐다. 원인을 좁히려고 그림자(`shadows`/
+`castShadow`/`receiveShadow`)를 전부 꺼서 재시도 — 프레임마다 반복 출력되던
+`THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated` 경고는 사라졌지만(그림자 렌더가 매
+프레임 부하를 만드는 건 사실) **크래시 자체는 그림자를 꺼도 재현돼**, 그림자가 근본 원인은 아니라고
+판단해 원복했다(diff 없음). 남은 가설은 `@react-three/fiber`의 `<Canvas>`가 `camera`/`children` prop이
+바뀔 때마다 의존성 배열 없는 `useIsomorphicLayoutEffect`에서 비동기 `configure()+render()`를 다시
+도는 구조 자체(위 1번 항목)이며, 완전히 없애려면 슬라이더처럼 자주 바뀌는 값을 React state가 아니라
+ref + `useFrame`으로 R3F 트리 안에서 직접 갱신하는 아키텍처 변경이 필요해 보인다 — 이건 Task 3(슬라이더
+UI) 범위를 넘어서는 더 큰 리팩터라 이번엔 손대지 않았다. **사용자가 실제 브라우저에서 재확인한
+결과 이 시점 이후로는 크래시가 재현되지 않았다** — 100ms 쓰로틀만으로 실사용 시나리오에서는 충분한
+것으로 보이며, 남은 재현 조건(합성 200스텝 드래그)은 실제 사람이 만들기 어려운 극단적 패턴이라
+당장 추가 조치는 하지 않는다. 재발 시 위 ref/useFrame 리팩터를 다음 단계로 고려한다
+
+**진짜 원인을 찾음 — A탭까지 번진 이유 (2026-08-16)**
+
+사용자가 "1차 배포 내내 이 문제가 전혀 없었고, 2차부터 생겼다. 같은 기기인데 기기 탓은 말이 안 된다"고
+정확히 지적해 원점부터 다시 조사했다. `git worktree`로 1차 마지막 커밋(`979c1a6`, Supabase 착수 직전)을
+별도 디렉터리에 체크아웃해 **완전히 동일한 기기·브라우저·스크롤 테스트**로 직접 A/B 비교했다.
+
+- 1차 실제 코드: 동일 테스트(스크롤 왕복 3라운드, 120회) → **`webglcontextlost` 관련 경고 0건**
+- 2차(A탭 코드는 이 세션 시작 전 상태로 완전 복구된 상태) 같은 테스트 → 20건 이상, 매번 재현
+
+같은 기기·브라우저에서 코드만 다른데 결과가 이렇게 갈리므로, 기기 문제가 아니라 **2차에서 실제로
+바뀐 코드**가 원인인 게 100% 확정됐다. `three`/`@react-three/fiber`/`@react-three/drei` 버전은
+1차·2차 `package-lock.json`에서 완전히 동일함을 확인해 의존성 업데이트도 배제, `next.config.ts`의
+`transpilePackages` 제거·`layout.tsx`의 `HYDRATION_GUARD_SCRIPT` 제거도 각각 별도로 테스트했지만
+둘 다 무관했다(경고 그대로 재현).
+
+**실제 원인**: `src/components/three/Scene3D.tsx` 자체가 2차(1차 이후, 이 계획 이전)에 새로 추가된
+파일이다 — 1차엔 `HeroBackground`/`OrbitScene`/`TourOrbit`/`GalleryHaze`가 전부 `<Canvas>`를
+직접 썼다. 이 Scene3D 안의 `useHasWebGL()`이:
+
+```ts
+function hasWebGL(): boolean {
+  const canvas = document.createElement("canvas");
+  return !!(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+}
+useSyncExternalStore(noopSubscribe, hasWebGL, () => true);
+```
+
+`useSyncExternalStore`는 구독 변경 감지를 위해 **`getSnapshot`을 매 렌더마다 호출한다.** 캐싱 없이
+`hasWebGL`을 그대로 넘겨서, Scene3D를 쓰는 컴포넌트가 리렌더될 때마다(스크롤 이벤트로 계속
+리렌더되는 `TourSection`의 `useSectionScroll` 등) **버려지는 임시 `<canvas>`와 WebGL 컨텍스트를
+계속 새로 만들고 있었다.** `document.createElement`를 가로채 실측: 스크롤 20회 만에 여분의 캔버스
+생성 5회(이미 렌더링용 3개가 만들어진 뒤인데도). 눈에 보이는 캔버스 3개보다 실제로 요청되는
+컨텍스트가 훨씬 많아지고, 브라우저의 동시 WebGL 컨텍스트 한도를 쉽게 넘겨 "Too many active WebGL
+contexts"로 기존 렌더링 캔버스가 강제로 밀려나는 것 — 이게 이 세션 내내 쫓던 A탭 크래시의 실제
+원인이었다. B탭 슬라이더 문제(위 1~8번)의 여러 완화책이 부분적으로만 효과 있었던 것도 이 근본
+원인을 안 건드렸기 때문으로 설명된다.
+
+**고침**: WebGL 가용 여부는 세션 중 안 바뀌므로 모듈 스코프 변수에 결과를 캐싱해 실제 `canvas`
+생성·`getContext` 호출은 앱 전체에서 딱 한 번만 일어나게 했다. `useSyncExternalStore` 자체(SSR
+안전성 확보 목적)는 그대로 유지 — `getSnapshot`이 매 렌더 호출되는 건 똑같지만 이제 캐시된 값만
+반환한다.
+
+**재검증**: 1차와 똑같은 조건(스크롤 왕복 3라운드, 120회)을 A탭에서 3회 반복 → **3회 전부
+여분 캔버스 생성 0건, webgl 경고 0건** — 1차와 동일한 결과로 수렴함을 확인. B탭도 재확인:
+실제 마우스로 밝기 슬라이더 200스텝 드래그 → 경고 0건(이전엔 이것도 가끔 남아 있었는데 근본
+원인이 사라지며 같이 해소됨), 강제 컨텍스트 손실 시 문구도 정상 표시. `npm test`(23개)·
+`npm run build` 재통과
+
+**추가 버그 두 건 (사용자 실사용 중 발견, 같은 날)**
+
+4. **`penumbra` 슬라이더 제거.** 3번 항목에서 이미 확인했듯 drei `SpotLight`의 시각적 빛줄기
+   (`VolumetricMesh`)는 `penumbra`를 받지 않아 슬라이더를 움직여도 화면이 안 바뀐다. intensity처럼
+   우회 매핑할 대응 파라미터도 `VolumetricMesh`에 없다. "움직여도 안 바뀌는 슬라이더"가 사용자를
+   더 혼란스럽게 한다고 판단해 `SpotControls.tsx`의 `SLIDERS`에서 `penumbra` 항목을 제거했다.
+   `SpotState` 타입과 기본값(0.6)은 그대로 둔다 — 실제 `THREE.SpotLight`에는 여전히 적용되고,
+   Task 4~5의 프리셋 저장/불러오기도 이 필드를 그대로 오간다. UI에서만 뺐다
+5. **스모그 농도를 올리면 연단·배경뿐 아니라 바닥까지 지평선까지 순백으로 뒤덮였다.** 바닥
+   (`planeGeometry`)이 30×30이라 카메라에서 먼 가장자리는 다른 오브젝트보다 훨씬 멀고,
+   `fogExp2`(지수 안개)는 거리 제곱에 비례해 짙어지므로 그 먼 가장자리부터 순백으로 사라져
+   "스모그"가 아니라 "바닥이 없어지는" 것처럼 보였다(사용자가 스크린샷으로 제보). **고침**: 바닥
+   머티리얼에 `fog={false}`를 줘서 바닥만 안개 계산에서 제외했다(연단·배경 패널은 그대로 안개를
+   받는다 — 스모그가 그 주변을 감싸는 느낌은 유지). 겸사겸사 `fogExp2` density 배율도
+   `smoke.density * 0.1`에서 `* 0.06`으로 낮춰 최대 농도에서도 연단·배경이 완전히 하얗게
+   덮이지 않도록 했다. 재검증 스크린샷(density=1, 최대)에서 바닥은 원래 색 유지, 연단·배경은
+   완전히 안 보일 정도는 아닌 채로 스모그에 감싸인 모습 확인
+6. **농도를 올려도 "화면이 밝아지기만 하지 연기가 짙어지는 느낌이 안 든다"는 후속 피드백.** 5번
+   수정 이후 fog는 정상 반응했지만(연단·배경이 어두운 색→밝게 씻김), 정작 눈에 띄는 구름 뭉치
+   크기·농도는 1번 수정 때 고정값(0.4)으로 박아둔 `Cloud`의 `opacity` 때문에 슬라이더와 무관하게
+   그대로였다 — 그래서 "연기가 진해진다"가 아니라 "그냥 밝아진다"로 읽혔다. **재검토**: 1번 수정
+   당시엔 `useThrottledChange`가 아직 없어서 opacity를 슬라이더에 직접 묶으면 초당 수십 번
+   재계산이 몰렸지만, 지금은 `SmokeControls`의 `onChange` 자체가 이미 100ms로 눌려 있어
+   opacity 갱신도 그 이하 빈도로만 일어난다. `Cloud`의 `opacity`를 다시
+   `smoke.density * 0.6`으로 연결하고, 가장 가혹했던 재현 조건(실제 마우스로 스모그 슬라이더
+   200스텝 드래그)을 3회 반복 재시도 → **3회 전부 `webglcontextlost` 0건.** density
+   0.2/0.4/0.6/0.8 스크린샷 비교로 구름이 옅은 안개→뚜렷한 뭉치로 단계적으로 짙어지는 것도 확인
+7. **크래시가 나도 브라우저 기본 "깨진 아이콘" 대신 안내 문구를 띄워 달라는 요청.**
+   `webglcontextlost`는 JS 에러를 던지지 않는 캔버스 DOM 이벤트라 기존 `SceneErrorBoundary`(React
+   렌더 에러 전용)로는 못 잡는다. `src/components/three/Scene3D.tsx`에 전용 훅(`useCanvasContextLoss`)을
+   추가해 캔버스에 `webglcontextlost`/`webglcontextrestored` 리스너를 직접 걸었다.
+   **`preventDefault()`를 반드시 호출해야 한다** — 안 부르면 브라우저가 컨텍스트를 영구히 죽은
+   채로 두고 `webglcontextrestored`가 아예 안 온다. 잃은 동안은 캔버스를 감싸는 새 `relative` 래퍼
+   위에 `absolute` 오버레이로 "일시적으로 3D 콘텐츠를 표시할 수 없습니다. 잠시 후 다시
+   시도해주세요"를 띄운다 — 아예 못 쓰는 경우의 `DefaultFallback` 문구와는 성격이 달라 재사용하지
+   않고 별도 컴포넌트(`ContextLostOverlay`)로 분리했다. `Scene3D`는 5개 3D 씬
+   (`OrbitScene`·`HeroBackground`·`TourOrbit`·`StageScene`·`GalleryHaze`) 전부가 공유하는 컴포넌트라,
+   새로 감싼 `relative h-full w-full` 래퍼가 기존 레이아웃(특히 `HeroBackground`의
+   `className="absolute inset-0"`)을 깨지 않는지 홈 화면(A탭) 스크린샷으로 별도 확인했다.
+   재검증: `WEBGL_lose_context` 익스텐션으로 강제 재현 → 오버레이 문구 정상 표시 →
+   `restoreContext()` → 오버레이 사라지고 씬 정상 렌더 복구, 홈 화면 3D 요소 전부 시각적으로
+   이전과 동일
+8. **A탭(아티스트 페이지)에서 스크롤할 때마다 7번 오버레이가 뜨고, 심할 땐 8~9초씩 복구가
+   안 됐다.** 브라우저 콘솔에 `WARNING: Too many active WebGL contexts. Oldest context will be
+   lost.`가 직접 찍히는 걸 확인 — Chrome이 동시에 열 수 있는 WebGL 컨텍스트 개수에 하드 리밋이
+   있고, 넘기면 가장 오래된 걸 강제로 죽인다. 원인 두 가지를 분리해서 확인했다:
+   - **R3F `<Canvas>`는 기본적으로 스크롤할 때마다 컨테이너 크기를 다시 잰다**
+     (`react-use-measure`의 `scroll: true`). 그 재측정이 슬라이더 드래그 때와 같은 종류의
+     `<Canvas>` 재구성을 다시 유발한다. `Scene3D.tsx`의 `<Canvas>`에
+     `resize={{ scroll: false }}`를 기본값으로 추가해 껐다(개별 호출부가 직접 `resize`를
+     넘기면 그쪽이 우선). 스크롤 30회 반복 재현 시도 3회 → 전부 이벤트 0건으로 확인됨
+   - **아티스트 페이지 하나에 캔버스가 처음부터 3개(히어로+투어+갤러리) 동시에 켜져 있었다.**
+     아직 스크롤도 안 한 아래쪽 섹션이 로드 즉시 컨텍스트를 켤 이유가 없어, `src/lib/hooks.ts`에
+     `useInView` 훅을 추가해 `TourSection.tsx`/`GallerySection.tsx`가 실제로 화면에 들어올 때만
+     `TourOrbit`/`GalleryHaze`를 마운트하도록 바꿨다. 한 번 보인 뒤엔 다시 스크롤해서 벗어나도
+     언마운트하지 않는다 — 반복 마운트/언마운트가 컨텍스트를 더 자주 만들고 없애 문제를 오히려
+     키우기 때문. 재검증: 로드 직후 canvas 2개(히어로 + `rootMargin` 여유로 미리 뜬 투어),
+     갤러리까지 스크롤해야 3개, 다시 위로 스크롤해도 3개 유지(언마운트 안 됨) 확인
+   - **완전히 해소되지는 않았다.** 두 원인을 고친 뒤에도 이 테스트 환경에서는 격렬한 스크롤(3라운드
+     반복) 시 `Too many active WebGL contexts` 경고가 간헐적으로 남았다 — 다만 매번
+     lost→restored로 스스로 복구됐고(오버레이가 뜨더라도 결국 사라짐, 영구 고장 아님) 이전보다
+     빈도가 줄었다. 남은 원인은 이 정도 규모의 페이지에서 실제로 유효한 동시 WebGL 컨텍스트 한도가
+     테스트 환경(가상 GPU로 추정)에서 유난히 낮을 가능성 — 사용자에게 다른 탭·창을 모두 닫고
+     재현되는지 확인을 요청함(GPU 컨텍스트 예산이 브라우저 프로세스 전체에서 공유되는 경우가 있어,
+     이 페이지만의 문제가 아닐 수 있음). 실제 사용자 기기(일반 GPU 하드웨어)에서는 이 한도가
+     훨씬 넉넉해 재현 빈도가 낮을 것으로 예상하나 확답은 못함 — 재발 시 추가 조사 필요
 
 ---
 
