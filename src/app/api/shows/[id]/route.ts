@@ -26,6 +26,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (Object.keys(patch).length === 0) return Response.json({ error: "bad request" }, { status: 400 });
 
+  // 날짜나 도시가 바뀌는 경우에만 충돌을 재확인한다 — POST와 동일한 규칙(같은 도시면 막고 "회차 추가는
+  // 문의", 다른 도시면 무조건 막음). capacity 등 다른 필드만 바뀌는 흔한 경우는 조회를 건너뛴다.
+  if ("show_date" in patch || "city_code" in patch) {
+    const { data: current } = await supabase.from("shows").select("artist_id, city_code, show_date").eq("id", id).maybeSingle();
+    if (current) {
+      const finalDate = (patch.show_date as string | undefined) ?? current.show_date;
+      const finalCity = (patch.city_code as string | undefined) ?? current.city_code;
+      const { data: sameDateShows } = await supabase
+        .from("shows")
+        .select("city_code")
+        .eq("artist_id", current.artist_id)
+        .eq("show_date", finalDate)
+        .neq("id", id);
+      if (sameDateShows && sameDateShows.length > 0) {
+        const sameCity = sameDateShows.some((s) => s.city_code === finalCity);
+        return Response.json({ error: sameCity ? "duplicate" : "date_conflict" }, { status: 409 });
+      }
+    }
+  }
+
   const { data, error } = await supabase.from("shows").update(patch).eq("id", id).select("id");
   if (error) {
     if (error.code === "23505") return Response.json({ error: "duplicate" }, { status: 409 });

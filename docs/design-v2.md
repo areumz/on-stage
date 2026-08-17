@@ -668,9 +668,19 @@ UI는 테이블 인라인 행 편집이다 — 목록이 그대로 폼이 된다
 
 | 메서드·경로 | 요청 | 응답 |
 |---|---|---|
-| `POST /api/shows` | `{ artistSlug, cityCode, cityName, country, venue, showDate, capacity, featured? }` | `201 { id }` / 중복(`unique(artist_id,city_code,show_date)`, 23505) → `409 { error: "duplicate" }` |
-| `PATCH /api/shows/[id]` | 수정할 필드만 부분 전송 | `200 {}` / RLS 0행 → `403` |
+| `POST /api/shows` | `{ artistSlug, cityCode, cityName, country, venue, showDate, capacity, featured? }` | `201 { id }` / 같은 날짜·도시 이미 존재 → `409 { error: "duplicate" }` / 같은 날짜·다른 도시 이미 존재 → `409 { error: "date_conflict" }` |
+| `PATCH /api/shows/[id]` | 수정할 필드만 부분 전송 | `200 {}` / RLS 0행 → `403` / (날짜·도시 변경 시) 위와 동일한 `409` 두 종류 |
 | `DELETE /api/shows/[id]` | — | `204` / 0행 → `403` (`gallery/[id]/route.ts`와 동일 패턴 — 소유자 재확인 없이 RLS에 위임) |
+
+**같은 날짜 충돌 판정**: 한 아티스트가 같은 날짜에 같은 도시 공연을 또 만들려 하면(회차 추가) 이
+화면에서는 막고 "회차 추가는 문의"로 안내한다 — DB의 `unique(artist_id,city_code,show_date)` 제약이
+그대로 이걸 막아준다. 그런데 이 제약은 **다른 도시**면 같은 날짜라도 통과시킨다 — 한 아티스트가
+같은 날 서울과 LA에 동시에 있는 것 같은, 물리적으로 불가능한 조합이 생겨도 DB는 모른다. 그래서
+API가 insert/update 전에 "같은 artist_id + 같은 show_date" 행이 있는지 먼저 조회해서, 있고 도시가
+다르면 `date_conflict`로 막는다. DB 제약은 그대로 두고(마이그레이션 없음), 이 조건부 규칙만
+애플리케이션 레벨에서 체크한다 — 단순 `UNIQUE`로는 "다른 행이 있는데 도시만 다르면 막는다"를
+표현할 수 없어서다. 트리거로 DB에 넣는 대안도 있었으나, 이 프로젝트에 트리거가 하나도 없는
+상태에서 규칙 하나 때문에 새로 들이는 건 과하다고 판단해 기각했다.
 
 ### 7.3 `/staff/artists` — 편집 폼 + `tracks` CRUD + 기존 갤러리
 

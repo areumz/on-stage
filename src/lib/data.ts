@@ -162,6 +162,23 @@ export async function getShows(slug: string): Promise<ShowRow[]> {
   return data ?? [];
 }
 
+// /staff/tours 폼의 위치 선택 드롭다운용. 아티스트 구분 없이 전체 shows에서 (도시코드, 도시명, 국가,
+// 베뉴) 조합 기준으로 중복 제거한 목록 — 오타 방지가 목적이라 이미 한 번이라도 쓰인 조합만 노출한다.
+// 같은 도시라도 베뉴가 다르면(아티스트마다 해시로 다른 베뉴가 나옴) 별개 옵션으로 남긴다.
+// supabase-js에 다중 컬럼 DISTINCT가 없어 전체를 읽어와 JS에서 직접 중복 제거한다.
+export async function getKnownLocations(): Promise<{ cityCode: string; cityName: string; country: string; venue: string }[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("shows").select("city_code, city_name, country, venue").order("city_code");
+  if (error) throw new Error(`getKnownLocations: ${error.message}`);
+  const seen = new Map(
+    (data ?? []).map((row) => [
+      `${row.city_code}::${row.venue}`,
+      { cityCode: row.city_code, cityName: row.city_name, country: row.country, venue: row.venue },
+    ]),
+  );
+  return [...seen.values()];
+}
+
 // B탭 갤러리 관리 화면 목록. id를 포함해 GalleryPhoto보다 하나 더 (삭제 버튼 필요로 함).
 export async function getGalleryImages(slug: string): Promise<GalleryListItem[]> {
   const supabase = await createServerSupabase();

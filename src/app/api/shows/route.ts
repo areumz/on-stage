@@ -21,6 +21,17 @@ export async function POST(request: Request) {
   const artistId = await getArtistId(supabase, artistSlug);
   if (!artistId) return Response.json({ error: "artist not found" }, { status: 404 });
 
+  // 같은 아티스트가 같은 날짜에 이미 공연이 있는지 먼저 확인
+  const { data: sameDateShows } = await supabase
+    .from("shows")
+    .select("city_code")
+    .eq("artist_id", artistId)
+    .eq("show_date", showDate);
+  if (sameDateShows && sameDateShows.length > 0) {
+    const sameCity = sameDateShows.some((s) => s.city_code === cityCode);
+    return Response.json({ error: sameCity ? "duplicate" : "date_conflict" }, { status: 409 });
+  }
+
   const { data, error } = await supabase
     .from("shows")
     .insert({
