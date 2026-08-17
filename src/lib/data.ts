@@ -148,6 +148,20 @@ export async function getStaffRole(): Promise<{ isOwner: boolean; label: "관리
   return { isOwner, label: isOwner ? "관리자" : "게스트" };
 }
 
+// B탭 투어 일정 관리 화면 목록. getGalleryImages와 동일 패턴(원본 행 그대로, 화면용 타입 변환 없음).
+export async function getShows(slug: string): Promise<ShowRow[]> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return [];
+  const { data, error } = await supabase
+    .from("shows")
+    .select("*")
+    .eq("artist_id", artistId)
+    .order("show_date", { ascending: true });
+  if (error) throw new Error(`getShows: ${error.message}`);
+  return data ?? [];
+}
+
 // B탭 갤러리 관리 화면 목록. id를 포함해 GalleryPhoto보다 하나 더 (삭제 버튼 필요로 함).
 export async function getGalleryImages(slug: string): Promise<GalleryListItem[]> {
   const supabase = await createServerSupabase();
