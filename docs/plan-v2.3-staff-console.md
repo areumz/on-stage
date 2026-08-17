@@ -539,6 +539,40 @@ Task 4 완료 후 직접 화면 테스트하며 나온 후속 수정 사항들.
 
 ---
 
+### 계획 밖 추가 (Task 7 검증 중 발견)
+
+**아티스트 목록 순서 버그**: `getArtists()`가 쓰는 `orderedArtistQuery`가 `tracks`/`shows`/
+`gallery_images` 하위 관계만 정렬하고 `artists` 테이블 자체엔 정렬 기준이 없었다. Postgres는 정렬
+없이 스캔 순서를 보장하지 않아서, Task 5의 PATCH API 검증(aurora 행을 여러 번 UPDATE)이 물리적
+스캔 순서를 흔들어 `ArtistSelect`에서 AURORA가 맨 뒤로 밀리는 게 눈에 띄었다. `orbit`/`angle`/`size`는
+A탭 궤도 배치용이라 목록 순서와 안 맞고 `created_at`은 시드가 배치 insert라 6개 다 같은 값 — 정렬에
+쓸 기존 컬럼이 없었다. `src/data/artists.json` 원본 배열 순서(aurora·velvet·nova·halo·lumen·echo)를
+진실 공급원으로 삼아 `getArtists()`에서 반환 직전에 자바스크립트로 정렬하는 `byArtistDisplayOrder`를
+추가했다(`src/lib/data.ts`) — 마이그레이션 없이 DB 스캔 순서와 무관하게 항상 같은 순서를 보장한다.
+
+**투어 배지 "N cities" 박제 버그**: `tour_badge`에 `"● World Tour 2026 · 24 cities"`처럼 도시수가
+문자열로 그대로 저장돼 있었다 — 계산되는 게 아니라 시드 시점 값이 박제된 것. 실제 공연 수가
+그 뒤로 바뀌면서(이 세션의 검증 작업 포함) 저장된 "24 cities"와 실제 26개가 어긋난 걸 사용자가
+A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 발견했다. `TourSection.tsx`는
+이미 배지에서 도시수 부분을 잘라내고 자체적으로 실시간 계산해 붙이고 있어 문제가 없었다 — 히어로
+쪽만 저장된 문자열을 그대로 노출하고 있었다.
+
+- 사용자가 처음 요청한 방향은 "투어 배지 편집 필드를 배지 텍스트만으로 자르고, 도시수 표기
+  여부를 아티스트별 체크박스(on/off)로 두기"였으나, 이는 `artists`에 새 boolean 컬럼이 필요해
+  §7 계획의 "마이그레이션 추가 안 함" 제약과 충돌 — 확인 결과 **마이그레이션 없이 항상 실시간
+  표시**하는 쪽으로 범위를 좁혀 확정
+- DB의 `tour_badge` 6개 전부에서 `/\s*·\s*\d+\s*cities\s*$/` 패턴을 정리해 배지 텍스트만 남김
+  (예: `"● World Tour 2026 · 24 cities"` → `"● World Tour 2026"`)
+- 처음엔 히어로 배지에 `{artist.tour.badge} · {artist.stats.cities} cities`로 실시간 도시수를 다시
+  붙였으나, 사용자가 같은 아티스트 페이지 안에서 히어로 통계 블록("cities: 26")·`TourSection.tsx`의
+  자체 표기("4 Cities", featured 도시 기준)와 숫자가 세 군데로 갈라지는 걸 지적 — **배지에는 도시수를
+  아예 안 붙이는 쪽으로 되돌림**(`{artist.tour.badge}`만). 통계 블록이 전체 공연 수를, 투어 섹션이
+  궤도에 찍히는 featured 도시 수를 이미 각자 정확히 표시하고 있어 배지에 셋째 숫자를 더할 필요가 없었음
+- curl로 aurora·halo 배지가 깨끗한 텍스트만 렌더하는지, `TourSection.tsx`의 자체 도시수 표기는
+  무변경 회귀 없는지 확인
+
+---
+
 ### Task 8: `/staff/tickets` — 조회 전용
 
 **Files:**

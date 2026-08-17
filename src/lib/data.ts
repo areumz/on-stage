@@ -15,6 +15,15 @@ import type {
 
 const ARTIST_SELECT = "*, tracks(*), shows(*), gallery_images(*)";
 
+// artists 테이블 자체에는 정렬 기준 컬럼이 없음(orbit/angle/size는 A탭 궤도 배치용이라 목록 순서와
+// 안 맞음, created_at은 시드가 배치 insert라 전부 같은 값). src/data/artists.json 원본 배열 순서를
+// 진실 공급원으로 삼아 정렬 — DB 스캔 순서에 기대면 UPDATE 등으로 물리적 순서가 바뀔 때마다 목록이 흔들릴 수 있음.
+const ARTIST_DISPLAY_ORDER = ["aurora", "velvet", "nova", "halo", "lumen", "echo"];
+
+function byArtistDisplayOrder<T extends { slug: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => ARTIST_DISPLAY_ORDER.indexOf(a.slug) - ARTIST_DISPLAY_ORDER.indexOf(b.slug));
+}
+
 type ArtistJoinRow = ArtistRow & {
   tracks: TrackRow[];
   shows: ShowRow[];
@@ -71,7 +80,7 @@ export async function getArtists(): Promise<Artist[]> {
   const supabase = await createServerSupabase();
   const { data, error } = await orderedArtistQuery(supabase);
   if (error) throw new Error(`getArtists: ${error.message}`);
-  return (data as ArtistJoinRow[]).map((row) => toArtist(row, supabase));
+  return byArtistDisplayOrder(data as ArtistJoinRow[]).map((row) => toArtist(row, supabase));
 }
 
 export async function getArtist(slug: string): Promise<Artist | undefined> {
