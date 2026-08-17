@@ -81,6 +81,15 @@ export async function getArtist(slug: string): Promise<Artist | undefined> {
   return data ? toArtist(data as ArtistJoinRow, supabase) : undefined;
 }
 
+// B탭 아티스트 편집 폼용. getArtist는 화면용 Artist 타입으로 변환하며 셰이더 파라미터 등
+// 원본 컬럼을 버리므로, 편집 폼은 원본 행을 그대로 쓰는 이 함수를 쓴다(§7.3).
+export async function getArtistRow(slug: string): Promise<ArtistRow | undefined> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("artists").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(`getArtistRow: ${error.message}`);
+  return data ?? undefined;
+}
+
 export const DEFAULT_METRICS_SLUG = "aurora";
 
 export async function getArtistId(supabase: SupabaseClient, slug: string): Promise<string | undefined> {
