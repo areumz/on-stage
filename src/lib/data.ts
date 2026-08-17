@@ -157,6 +157,16 @@ export async function getStaffRole(): Promise<{ isOwner: boolean; label: "관리
   return { isOwner, label: isOwner ? "관리자" : "게스트" };
 }
 
+// B탭 트랙 관리 화면 목록. getGalleryImages와 동일 패턴(원본 행 그대로, 화면용 타입 변환 없음).
+export async function getTracks(slug: string): Promise<TrackRow[]> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return [];
+  const { data, error } = await supabase.from("tracks").select("*").eq("artist_id", artistId).order("no", { ascending: true });
+  if (error) throw new Error(`getTracks: ${error.message}`);
+  return data ?? [];
+}
+
 // B탭 투어 일정 관리 화면 목록. getGalleryImages와 동일 패턴(원본 행 그대로, 화면용 타입 변환 없음).
 export async function getShows(slug: string): Promise<ShowRow[]> {
   const supabase = await createServerSupabase();
