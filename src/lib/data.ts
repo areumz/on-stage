@@ -149,6 +149,20 @@ export async function getFeaturedShows(slug: string): Promise<ShowStatusRow[]> {
   return data ?? [];
 }
 
+// B탭 티켓 현황 화면(조회 전용). getFeaturedShows에서 featured 필터만 뺀 버전 — 전체 공연을 보여준다.
+export async function getShowStatusList(slug: string): Promise<ShowStatusRow[]> {
+  const supabase = await createServerSupabase();
+  const artistId = await getArtistId(supabase, slug);
+  if (!artistId) return [];
+  const { data, error } = await supabase
+    .from("show_status")
+    .select("*")
+    .eq("artist_id", artistId)
+    .order("show_date", { ascending: true });
+  if (error) throw new Error(`getShowStatusList: ${error.message}`);
+  return data ?? [];
+}
+
 export async function getMetrics(slug: string): Promise<Metrics | undefined> {
   const metrics = await getArtistMetrics(slug);
   if (!metrics) return undefined;
