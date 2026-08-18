@@ -137,7 +137,7 @@ export default function TracksManager({
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface-2">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-gray-200 text-xs text-gray-500">
+        <thead className="border-b border-gray-200 bg-gray-200 text-xs font-semibold text-gray-700">
           <tr>
             <th className="px-4 py-3">#</th>
             <th className="px-4 py-3">제목</th>

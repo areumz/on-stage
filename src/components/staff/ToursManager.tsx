@@ -381,7 +381,7 @@ export default function ToursManager({
     <div>
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface-2">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-200 text-xs text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-200 text-xs font-semibold text-gray-700">
             <tr>
               <th className="px-4 py-3">
                 <button
@@ -394,7 +394,7 @@ export default function ToursManager({
                       ? "날짜 내림차순으로 정렬"
                       : "날짜 오름차순으로 정렬"
                   }
-                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900"
+                  className="flex items-center gap-1 hover:text-gray-900"
                 >
                   날짜 <span aria-hidden>{sortDir === "asc" ? "▲" : "▼"}</span>
                 </button>
