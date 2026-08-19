@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
+import { useAutoDismiss } from "@/lib/hooks";
 import { neighborSwap } from "@/lib/trackOrder";
 import type { TrackRow } from "@/lib/types";
 
@@ -50,17 +51,8 @@ export default function TracksManager({
   const [success, setSuccess] = useState(false);
   const { confirm, dialog } = useConfirm();
 
-  useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(null), 3000);
-    return () => clearTimeout(timer);
-  }, [error]);
-
-  useEffect(() => {
-    if (!success) return;
-    const timer = setTimeout(() => setSuccess(false), 3000);
-    return () => clearTimeout(timer);
-  }, [success]);
+  useAutoDismiss(error, setError, null);
+  useAutoDismiss(success, setSuccess, false);
 
   const sorted = [...tracks].sort((a, b) => a.no - b.no);
   const editTitle = isOwner ? undefined : "관리자만 편집할 수 있습니다";
@@ -71,6 +63,10 @@ export default function TracksManager({
   }
 
   async function saveEdit(id: string) {
+    if (!draft.title.trim() || !draft.duration.trim()) {
+      setError("제목과 길이는 비워둘 수 없습니다.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setSuccess(false);
@@ -106,8 +102,10 @@ export default function TracksManager({
 
   async function handleDelete(id: string) {
     if (!(await confirm("이 트랙을 삭제하시겠습니까?"))) return;
+    setBusy(true);
     setError(null);
     const res = await fetch(`/api/tracks/${id}`, { method: "DELETE" });
+    setBusy(false);
     if (res.status === 204) {
       router.refresh();
       return;
@@ -115,23 +113,39 @@ export default function TracksManager({
     setError(res.status === 403 ? "삭제 권한이 없습니다." : `삭제 실패 (${res.status})`);
   }
 
+  // unique(artist_id, no) 제약 때문에 두 값을 직접 교환할 수 없어 임시값을 경유하는 3단계로
+  // 처리한다(design-v2.md §7.3). 중간 단계가 실패하면 이미 바뀐 값을 되돌린다 —
+  // 되돌리기까지 실패하면(연속 네트워크 장애 등) 그 사실을 알리고 새로고침으로 확인하게 한다.
   async function handleReorder(track: TrackRow, direction: "up" | "down") {
     const pair = neighborSwap(sorted, track.id, direction);
     if (!pair) return;
     const [a, b] = pair;
     setBusy(true);
     setError(null);
-    // unique(artist_id, no) 제약 때문에 두 값을 직접 교환할 수 없어 임시값을 경유하는
-    // 3단계로 처리한다(design-v2.md §7.3).
-    const r1 = await patchTrack(a.id, { no: REORDER_TEMP_NO });
-    const r2 = r1.ok ? await patchTrack(b.id, { no: a.no }) : r1;
-    const r3 = r2.ok ? await patchTrack(a.id, { no: b.no }) : r2;
-    setBusy(false);
-    if (!r3.ok) {
-      setError(await errorMessageFor(r3));
-      return;
+    try {
+      const r1 = await patchTrack(a.id, { no: REORDER_TEMP_NO });
+      if (!r1.ok) {
+        setError(await errorMessageFor(r1));
+        return;
+      }
+      const r2 = await patchTrack(b.id, { no: a.no });
+      if (!r2.ok) {
+        const undone = (await patchTrack(a.id, { no: a.no })).ok;
+        setError(undone ? await errorMessageFor(r2) : "순서 변경도 복구도 실패했습니다. 새로고침 후 확인해주세요.");
+        return;
+      }
+      const r3 = await patchTrack(a.id, { no: b.no });
+      if (!r3.ok) {
+        const undone = (await patchTrack(b.id, { no: b.no })).ok && (await patchTrack(a.id, { no: a.no })).ok;
+        setError(undone ? await errorMessageFor(r3) : "순서 변경도 복구도 실패했습니다. 새로고침 후 확인해주세요.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("네트워크 오류로 순서 변경에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    router.refresh();
   }
 
   return (
@@ -234,7 +248,7 @@ export default function TracksManager({
                     </button>
                     <button
                       type="button"
-                      disabled={!isOwner}
+                      disabled={!isOwner || busy}
                       title={editTitle}
                       onClick={() => handleDelete(t.id)}
                       className="ml-2 text-red-500 disabled:opacity-30"

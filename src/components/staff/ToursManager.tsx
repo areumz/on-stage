@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
+import { useAutoDismiss } from "@/lib/hooks";
 import type { ShowRow } from "@/lib/types";
 
 type KnownLocation = {
@@ -157,13 +158,11 @@ export default function ToursManager({
   const [addPicker, setAddPicker] = useState<FieldPicker>(SELECT_ALL);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const { confirm, dialog } = useConfirm();
 
-  useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(null), 3000);
-    return () => clearTimeout(timer);
-  }, [error]);
+  useAutoDismiss(error, setError, null);
+  useAutoDismiss(success, setSuccess, false);
 
   const sorted = [...shows].sort((a, b) =>
     sortDir === "asc"
@@ -187,6 +186,7 @@ export default function ToursManager({
   async function saveEdit(id: string) {
     setBusy(true);
     setError(null);
+    setSuccess(false);
     const res = await fetch(`/api/shows/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -198,6 +198,7 @@ export default function ToursManager({
       return;
     }
     setEditingId(null);
+    setSuccess(true);
     router.refresh();
   }
 
@@ -232,8 +233,10 @@ export default function ToursManager({
 
   async function handleDelete(id: string) {
     if (!(await confirm("이 공연을 삭제하시겠습니까?"))) return;
+    setBusy(true);
     setError(null);
     const res = await fetch(`/api/shows/${id}`, { method: "DELETE" });
+    setBusy(false);
     if (res.status === 204) {
       router.refresh();
       return;
@@ -455,7 +458,7 @@ export default function ToursManager({
                       </button>
                       <button
                         type="button"
-                        disabled={!isOwner}
+                        disabled={!isOwner || busy}
                         title={editTitle}
                         onClick={() => handleDelete(s.id)}
                         className="ml-2 text-red-500 disabled:opacity-30"
@@ -507,6 +510,7 @@ export default function ToursManager({
         </table>
       </div>
       {error && <p className="px-4 py-2 text-sm text-red-500">{error}</p>}
+      {success && <p className="px-4 py-2 text-sm text-emerald-700">정상적으로 저장되었습니다.</p>}
       {dialog}
     </div>
   );

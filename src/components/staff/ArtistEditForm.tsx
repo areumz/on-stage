@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAutoDismiss } from "@/lib/hooks";
 import type { ArtistRow } from "@/lib/types";
 
 type ShaderPattern = "wave" | "ripple" | "grain";
@@ -45,17 +46,8 @@ export default function ArtistEditForm({ artist, isOwner }: { artist: ArtistRow;
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(null), 3000);
-    return () => clearTimeout(timer);
-  }, [error]);
-
-  useEffect(() => {
-    if (!success) return;
-    const timer = setTimeout(() => setSuccess(false), 3000);
-    return () => clearTimeout(timer);
-  }, [success]);
+  useAutoDismiss(error, setError, null);
+  useAutoDismiss(success, setSuccess, false);
 
   async function handleSave() {
     setSaving(true);

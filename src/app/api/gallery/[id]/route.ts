@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { forbiddenIfNoRows } from "@/lib/routeHelpers";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const [{ id }, supabase] = await Promise.all([params, createServerSupabase()]);
@@ -12,11 +13,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const { data, error } = await supabase.from("gallery_images").delete().eq("id", id).select("storage_path");
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // RLS가 막은 DELETE는 예외가 아니라 0행 삭제로 돌아온다. 그대로 204를 주면 시드 이미지를
-  // 지우려던 시도가 성공한 것처럼 보이므로, 0행이면 403으로 답한다.
-  if (!data || data.length === 0) {
-    return Response.json({ error: "forbidden" }, { status: 403 });
-  }
+  const forbidden = forbiddenIfNoRows(data);
+  if (forbidden) return forbidden;
 
   const { error: removeError } = await supabase.storage.from("gallery").remove([data[0].storage_path]);
   if (removeError) return Response.json({ error: removeError.message }, { status: 500 });

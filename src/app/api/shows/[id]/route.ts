@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { forbiddenIfNoRows } from "@/lib/routeHelpers";
 
 const FIELD_MAP: Record<string, string> = {
   cityCode: "city_code",
@@ -26,6 +27,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (Object.keys(patch).length === 0) return Response.json({ error: "bad request" }, { status: 400 });
 
+  // POST와 동일한 기준 — capacity가 바뀌는 요청이면 유한한 양수인지 확인한다. 이게 없으면
+  // 0/음수/빈 값이 DB의 capacity > 0 제약에 걸려 정제 안 된 500으로 노출된다.
+  if ("capacity" in patch && (!Number.isFinite(patch.capacity) || (patch.capacity as number) <= 0)) {
+    return Response.json({ error: "bad request" }, { status: 400 });
+  }
+
   // 날짜나 도시가 바뀌는 경우에만 충돌을 재확인한다 — POST와 동일한 규칙(같은 도시면 막고 "회차 추가는
   // 문의", 다른 도시면 무조건 막음). capacity 등 다른 필드만 바뀌는 흔한 경우는 조회를 건너뛴다.
   if ("show_date" in patch || "city_code" in patch) {
@@ -51,9 +58,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (error.code === "23505") return Response.json({ error: "duplicate" }, { status: 409 });
     return Response.json({ error: error.message }, { status: 500 });
   }
-  // RLS가 막은 UPDATE는 예외가 아니라 0행 수정으로 돌아온다 — 그대로 200을 주면 권한 없는
-  // 시도가 성공한 것처럼 보이므로 0행이면 403으로 답한다 (gallery/[id]/route.ts와 동일 패턴)
-  if (!data || data.length === 0) return Response.json({ error: "forbidden" }, { status: 403 });
+  const forbidden = forbiddenIfNoRows(data);
+  if (forbidden) return forbidden;
 
   return Response.json({}, { status: 200 });
 }
@@ -68,7 +74,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   // 소유자 재확인은 하지 않음 — RLS(역할 스코프)가 이미 검사
   const { data, error } = await supabase.from("shows").delete().eq("id", id).select("id");
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  if (!data || data.length === 0) return Response.json({ error: "forbidden" }, { status: 403 });
+  const forbidden = forbiddenIfNoRows(data);
+  if (forbidden) return forbidden;
 
   return new Response(null, { status: 204 });
 }

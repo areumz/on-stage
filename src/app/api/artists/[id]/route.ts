@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { forbiddenIfNoRows } from "@/lib/routeHelpers";
 
 const FIELD_MAP: Record<string, string> = {
   color: "color",
@@ -35,11 +36,25 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (Object.keys(patch).length === 0) return Response.json({ error: "bad request" }, { status: 400 });
 
+  // 숫자 필드는 최소한 유한한 값이어야 한다(문자열 등을 Number()로 캐스팅하면 NaN이 그대로
+  // 저장될 수 있음). shader_falloff/shader_speed는 폼의 min/max가 나타내는 범위(각각 0~1, 0 이상)를
+  // 서버에서도 강제한다 — <form> 제출이 아니라 버튼 onClick이라 브라우저의 min/max 검증이 안 걸린다.
+  // NUMERIC_KEYS는 camelCase 요청 키라 patch(snake_case 컬럼)가 아니라 FIELD_MAP으로 컬럼명을 구한다.
+  for (const key of NUMERIC_KEYS) {
+    const column = FIELD_MAP[key];
+    if (column in patch && !Number.isFinite(patch[column])) return Response.json({ error: "bad request" }, { status: 400 });
+  }
+  if ("shader_falloff" in patch && ((patch.shader_falloff as number) < 0 || (patch.shader_falloff as number) > 1)) {
+    return Response.json({ error: "bad request" }, { status: 400 });
+  }
+  if ("shader_speed" in patch && (patch.shader_speed as number) < 0) {
+    return Response.json({ error: "bad request" }, { status: 400 });
+  }
+
   const { data, error } = await supabase.from("artists").update(patch).eq("id", id).select("id");
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  // RLS가 막은 UPDATE는 예외가 아니라 0행 수정으로 돌아온다 — 그대로 200을 주면 권한 없는
-  // 시도가 성공한 것처럼 보이므로 0행이면 403으로 답한다 (gallery/[id]/route.ts와 동일 패턴)
-  if (!data || data.length === 0) return Response.json({ error: "forbidden" }, { status: 403 });
+  const forbidden = forbiddenIfNoRows(data);
+  if (forbidden) return forbidden;
 
   return Response.json({}, { status: 200 });
 }
