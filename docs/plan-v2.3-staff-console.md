@@ -620,22 +620,68 @@ A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 �
 **왜**: §11 7장 완료 기준 7개 항목과 Task 1~8 개별 완료조건을 한 번 더 모아 확인하고, §9.2("각
 항목의 계획 요약과 검증 노트를 공개 문서로 남긴다")를 README에 반영한다.
 
-- [ ] **Step 1: §11 7장 체크리스트 7개 항목 전체 재확인** — 사이드바 5개 전부 실 화면·stub 없음 /
+- [x] **Step 1: §11 7장 체크리스트 7개 항목 전체 재확인** — 사이드바 5개 전부 실 화면·stub 없음 /
       `/staff/stage` 브레드크럼 유지 / 데모 계정 세 화면 읽기 전용(버튼 비활성 + API 직접 호출도
       403) / 오너의 tours 변경이 tickets·A탭 featured에 반영 / 셰이더 파라미터 저장(반영은 8장 몫)
       확인 / 트랙 순서변경 유지 / tracks·shows 데모 계정 쓰기 시도 403
-- [ ] **Step 2: `npm test` · `npm run build` 최종 통과 확인**
-- [ ] **Step 3: `docs/design-v2.md` §11 7장 체크박스를 `[x]`로 갱신**
-- [ ] **Step 4: `README.md` 갱신** — "2차 로드맵" 항목(194행 부근)에 `[x]` +
+- [x] **Step 2: `npm test` · `npm run build` 최종 통과 확인**
+- [x] **Step 3: `docs/design-v2.md` §11 7장 체크박스를 `[x]`로 갱신**
+- [x] **Step 4: `README.md` 갱신** — "2차 로드맵" 항목(194행 부근)에 `[x]` +
       `docs/plan-v2.3-staff-console.md` 링크 추가(`plan-v2.1-supabase.md`/`plan-v2.2-stage-tools.md`
       항목과 같은 형식), "알려진 제한사항"에 B탭 잔여 메뉴가 stub이라는 문구가 있으면 실제 지원
       범위로 갱신하거나 제거, 영문 대응 문단(Known Limitations·Phase 2 progress)도 함께 갱신
-- [ ] **Step 5: 검증** — 최종 보고 후 멈춘다
+- [x] **Step 5: 검증** — 최종 보고 후 멈춘다
 
 **완료조건:**
 - §11 7장 체크박스 7개 전부 확인 완료
 - README 국문·영문 모두 갱신되고 서로 내용이 어긋나지 않는다
 - `npm test` · `npm run build` 통과
+
+**검증 노트 (Step 1~3)**:
+- 7개 항목 중 5개(stub 없음·데모 3화면 읽기전용·셰이더 파라미터 저장·트랙 순서변경 유지·
+  tracks/shows 데모 쓰기 차단)는 Task 3~8 각각에서 이미 개별 확인된 내용을 재확인
+- 이번에 새로 교차 확인한 2개: `/staff/stage` 브레드크럼(코드 미변경 상태에서 살아있는지 재확인 —
+  사이드바 없음·`← 대시보드` 링크 정상), tours→tickets·A탭 featured 반영(`featured: true` 공연을
+  신규 생성 → `/staff/tickets`와 A탭 아티스트 페이지 featured 도시 목록 양쪽에 실시간 반영 확인 →
+  테스트 데이터 삭제로 정리)
+- `npm test` 29개 전부 통과, `npm run build` 통과(라우트 전체 정상 생성)
+
+### 계획 밖 추가: Task 9 Step 3 이후 자체 리뷰(code-review + ponytail) 반영
+
+Step 3 완료 시점에 7장 전체 diff로 자체 코드리뷰와 ponytail 리뷰를 돌려 발견한 항목을 사용자
+지시대로 선별 반영. 고친 것과 의도적으로 미룬 것을 구분해 기록한다.
+
+**반영함:**
+- `TracksManager`의 순서변경(임시값 3단계 swap) 도중 실패 시 부분 반영 상태로 남는 문제 —
+  try/catch/finally + 최선 노력 롤백 추가
+- `ToursManager`/`TracksManager` 삭제 버튼에 진행 중 상태 가드 없어 중복 클릭 시 중복 요청 가능
+  — `busy` 상태로 비활성화
+- `PATCH /api/shows/[id]`·`PATCH /api/tracks/[id]`·`PATCH /api/artists/[id]`에 POST와 동등한
+  서버측 검증 누락 — capacity 양수, title/duration 비어있지 않음, 숫자 필드 유한값 + shader
+  범위(falloff 0~1, speed 0 이상) 각각 추가
+- `byArtistDisplayOrder`의 `indexOf` 뺄셈 정렬이 목록에 없는 slug(-1)를 맨 앞으로 보내는 버그 —
+  랭크 함수로 교체해 맨 뒤로 가도록 수정
+- `ToursManager`에 저장 성공 메시지 상태가 아예 없던 것(`ArtistEditForm`/`TracksManager` 대비
+  누락) — `useAutoDismiss` 공유 훅을 새로 만들어 4개 컴포넌트(`GalleryManager` 포함) 전체에 적용,
+  `ToursManager`도 함께 맞춤
+- API 라우트 7곳(`artists/[id]` PATCH, `shows/[id]` PATCH/DELETE, `tracks/[id]` PATCH/DELETE,
+  `gallery/[id]` DELETE, `stage-presets/[id]` DELETE)에 중복돼 있던 "RLS가 막은 쓰기 = 0행 →
+  403" 판정을 `src/lib/routeHelpers.ts`의 `forbiddenIfNoRows`로 통합
+
+**의도적으로 미룸 (노트만 남김, 지금 코드 변경 없음):**
+- `errorMessageFor`류 에러 메시지 매핑이 `ToursManager`/`TracksManager`/`ArtistEditForm`에 3중
+  중복 — 각 컴포넌트가 다루는 상태 코드 조합이 달라(409 유무 등) 통합 시 분기가 더 늘 수 있어 보류
+- `toDraft`/`EMPTY_DRAFT` 초기화 보일러플레이트가 3개 매니저 컴포넌트에 반복 — 필드 shape이
+  전부 달라 제네릭화하면 오히려 타입이 흐려질 것으로 판단해 보류
+- `artists/[id]/route.ts`의 `FIELD_MAP` 기반 patch 빌드 루프가 `shows`/`tracks` 라우트와
+  구조적으로 동일 반복 — 3곳 다 필드 목록과 숫자 캐스팅 대상이 달라 공용화 이득이 적어 보류
+- 효율성 항목 4건 — `ToursManager`가 draft의 모든 필드 변경마다 날짜충돌 재확인 API를 호출(날짜/
+  도시 변경시만 필요), `getArtistId`가 여러 `getX` 함수에서 매번 재조회됨, `getShows`가 페이지별로
+  중복 호출됨, `getKnownLocations`가 매 요청마다 전체 `shows` 테이블을 스캔 — 전부 현재 데이터
+  규모(데모용 소량)에서는 체감 차이가 없어 스킵. 트래픽/데이터가 늘면 우선순위 재검토
+- ponytail 지적: `ToursManager`의 `FieldPicker`/`SELECT_ALL`/`MANUAL_ALL`이 지금은 구현체가
+  하나뿐이라 yagni로 볼 수 있음 — 도시/국가/베뉴 3필드가 실제로 동일한 좁혀가기 로직을 쓰고 있어
+  당장 인라인화해도 중복이 재발할 가능성이 높다고 판단해 보류
 
 ---
 
