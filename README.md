@@ -180,15 +180,13 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 - 모바일 반응형 미지원 (데스크톱 기준)
 - 실제 결제/예매 기능 없음
 - 백엔드 서버 분리 없음
-- B탭 사이드바 5개 메뉴 중 대시보드·아티스트(갤러리 관리)만 실 화면, 나머지(투어 일정/티켓 현황)는 Coming soon
 - **권장 브라우저: Chrome 최신, Safari 16.4+.** 그 외 환경(구형 Safari 등 WebGL 미지원·구형 브라우저)에서는
   3D 콘텐츠가 보이지 않을 수 있습니다
 
 The list below covers what's still missing. Of these, the auth approach (phase 2 roadmap item 1) is
 done; the rest remain on the roadmap. No sign-up or password reset (Supabase Auth email/password
 login only, accounts are seed-created), no i18n, no mobile responsiveness (desktop-only), no real
-payments/booking, no separate backend, and in the B tab only the dashboard and artists (gallery
-management) screens are real — the rest are "coming soon". **Recommended browsers: latest Chrome,
+payments/booking, no separate backend. **Recommended browsers: latest Chrome,
 Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content may not display.
 
 ### 2차 로드맵 / Phase 2 Roadmap
@@ -197,8 +195,9 @@ Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content
       B탭에서 갤러리 이미지 업로드·삭제 가능. 자세한 내용은 [docs/plan-v2.1-supabase.md](docs/plan-v2.1-supabase.md) 참고
 - [x] **무대 연출 툴 고도화** (스모그, 조명 밝기·조명각 슬라이더, 자유 색상 선택, 이름 붙여 저장/불러오기하는
       프리셋) — 자세한 내용은 [docs/plan-v2.2-stage-tools.md](docs/plan-v2.2-stage-tools.md) 참고
+- [x] **B탭 사이드바 잔여 메뉴 실 화면 구현** (투어 일정 관리, 아티스트 편집+트랙 관리, 티켓 현황 조회) —
+      오너 계정만 쓰기 가능, 데모 계정은 읽기 전용. 자세한 내용은 [docs/plan-v2.3-staff-console.md](docs/plan-v2.3-staff-console.md) 참고
 - [ ] 반응형 대응
-- [ ] B탭 사이드바 잔여 메뉴 실 화면 구현
 - [ ] 셰이더 심화 (아티스트별 차별화 확대)
 - [ ] 갤러리 이미지 정교화 (일부 아티스트는 AI 생성 이미지 등으로 교체 검토)
 
@@ -209,9 +208,12 @@ Supabase, row-level security governs every write path, and staff can upload/dele
 from the B tab. See [docs/plan-v2.1-supabase.md](docs/plan-v2.1-supabase.md) for the implementation
 log. **Stage-tool enhancements are also done** — smoke, lighting intensity/angle sliders, free color
 picking, and named presets you can save, load, and delete. See
-[docs/plan-v2.2-stage-tools.md](docs/plan-v2.2-stage-tools.md) for the implementation log. Remaining:
-responsive layouts, filling out the remaining staff sidebar screens, deeper per-artist shader
-variation, and refined gallery imagery. See [docs/design-v2.md](docs/design-v2.md) for details.
+[docs/plan-v2.2-stage-tools.md](docs/plan-v2.2-stage-tools.md) for the implementation log. **The
+staff console is also done** — tour schedule management, artist profile + track editing, and a
+read-only ticket status view, all gated to owner-only writes with demo accounts read-only. See
+[docs/plan-v2.3-staff-console.md](docs/plan-v2.3-staff-console.md) for the implementation log.
+Remaining: responsive layouts, deeper per-artist shader variation, and refined gallery imagery. See
+[docs/design-v2.md](docs/design-v2.md) for details.
 
 ---
 

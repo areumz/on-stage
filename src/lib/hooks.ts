@@ -62,6 +62,17 @@ export function useStageStateSnapshot(slug: string): string | null {
 // 조명각 드래그) 나중 호출이 그 stale 값으로 전체 객체를 다시 만들어 먼저 바뀐 필드를 덮어써 사라지는
 // 버그가 실사용에서 재현됐다. 대기 구간의 시작 시점 `current`를 커밋 시점까지 고정해두고, 그 위에
 // 패치들을 누적 병합해 커밋하면 어떤 순서로 필드를 만져도 서로 지우지 않는다.
+// 저장 성공/실패 메시지를 일정 시간 뒤 자동으로 지운다. setValue는 useState의 setter라 항상
+// 안정된 참조이므로 effect가 value 변화에만 반응해도 안전하다(원래 각 컴포넌트에 흩어져 있던
+// `useEffect(() => { if (!x) return; setTimeout(() => setX(empty), 3000); ... }, [x])`를 하나로 모음).
+export function useAutoDismiss<T>(value: T, setValue: (v: T) => void, emptyValue: T, ms = 3000): void {
+  useEffect(() => {
+    if (value === emptyValue) return;
+    const timer = setTimeout(() => setValue(emptyValue), ms);
+    return () => clearTimeout(timer);
+  }, [value, setValue, emptyValue, ms]);
+}
+
 export function useThrottledChange<T extends object>(current: T, onChange: (value: T) => void): (patch: Partial<T>) => void {
   const pending = useRef<Partial<T>>({});
   const scheduled = useRef(false);

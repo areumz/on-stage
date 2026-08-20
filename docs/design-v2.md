@@ -623,9 +623,155 @@ UI 비활성화는 안내용이다.** 2차의 핵심 시연 기능인 갤러리 
 조작 가능해지면 파생 지표(4.2)의 신뢰도가 떨어지기 때문이다. 실제 예매 시스템도 판매량은 시스템이
 쓰고 관계자는 본다.
 
-**함께 수정할 것**: `/staff/stage`가 `(console)` 라우트 그룹 **바깥**에 있어 이동하면 사이드바가
-언마운트되고, 사이드바의 "무대 연출" 메뉴는 어떤 상황에서도 활성으로 표시되지 않는다. 그룹 안으로
-옮긴다. 1차의 stub 페이지 3개는 삭제한다.
+**`/staff/stage`는 `(console)` 라우트 그룹 밖에 그대로 둔다.** 1차 설계(`docs/plan.md` Task 9, `docs/design.md`
+5.3)부터 "풀스크린, 사이드바 없음 + 브레드크럼(`← 대시보드 / 무대 연출`)"은 의도된 결정이었다 —
+버그였던 적이 없다. 7장 브레인스토밍 중 한 차례 "사이드바 일관성을 위해 `(console)` 안으로 옮기자"는
+안이 나왔으나, 배포된 1차 화면에서 직접 브레드크럼 내비게이션을 다시 확인한 결과 이동·복귀 모두
+막힘없이 자연스러웠고, 오히려 라우트 그룹으로 옮기면 사이드바 레이아웃(패딩 `px-10 py-8`, 밝은 톤)이
+무대 스튜디오의 풀블리드 다크 3D 캔버스와 충돌해 별도 중첩 라우트 그룹까지 만들어야 했다. 그 구조
+비용 대비 얻는 게 "사이드바의 '무대 연출' 항목이 활성 표시되는 것"뿐이라 되돌렸다. 1차의 stub 페이지
+3개는 삭제한다.
+
+### 7.1 `tracks` 소유 스코프 검토와 기각
+
+브레인스토밍 중 `tracks`를 `gallery_images`처럼 소유 스코프(`created_by = auth.uid()`, 로그인한 누구나
+추가하고 자기 것만 수정·삭제)로 바꾸는 안을 검토했다. 스키마상 불가능하진 않다 — `created_by` 컬럼을
+추가하고 시드 트랙을 `created_by = NULL`로 넣으면 시드는 보호된다.
+
+**기각한 이유는 순서변경과의 충돌이다.** 트랙 순서변경(7.3)은 인접한 두 트랙의 `no`를 서버가 swap하는
+방식인데, 소유 스코프에서는 "내가 만든 행"만 UPDATE할 수 있다. 방문자가 자기 트랙을 시드 트랙 사이에
+끼워넣으려 하면 인접한 시드 행(`created_by = NULL`)의 `no`는 RLS가 막아 swap이 반쪽만 성공하거나
+`unique(artist_id, no)` 위반으로 실패한다. 이걸 풀려면 소유 경계를 넘는 재정렬 전용 경로(예: security
+definer 함수)가 필요한데, 이는 4.5가 명시적으로 금지한 "service role 우회 제2경로"를 다시 만드는
+셈이다. `gallery_images`에는 애초에 재정렬 기능이 없어(삽입 시 `max+1`만 함) 참고할 선례도 없다.
+
+의미적으로도 `tracks`는 장식용 사진(아무나 올려도 무해)보다 `artists`/`shows`(아티스트를 대표하는
+정보) 쪽에 가깝다 — 공유 데모 계정 방문자가 진짜 곡 사이에 가짜 트랙을 끼워넣을 수 있으면 4.5가
+`artists`/`shows`를 역할 스코프로 묶은 이유가 그대로 적용된다. **`tracks`는 4.5에 정의된 대로 역할
+스코프를 유지한다.**
+
+### 7.2 `/staff/tours` — `shows` CRUD
+
+아티스트별 스코프(`ArtistSelect` 재사용, `?artist=slug`) — dashboard/artists/stage와 동일한 패턴이라
+화면 간 이동이 일관된다. 전체 아티스트를 한 테이블에 모으는 안은 기각했다 — 6명 합계 100개 안팎의
+공연이 한 화면에 다 들어가면 스크롤만 길어지고, 지금 화면 구조(다른 세 화면 모두 아티스트 단위)와도
+어긋난다.
+
+UI는 테이블 인라인 행 편집이다 — 목록이 그대로 폼이 된다("편집" 클릭 시 그 행이 input으로 바뀌고
+"저장"/"취소"). 맨 아래 "+ 공연 추가" 행. 모달 다이얼로그는 폼 전용 컴포넌트가 새로 필요한 데 비해
+얻는 게 없어 기각했다.
+
+**데이터**: `src/lib/data.ts`에 `getShows(slug): Promise<ShowRow[]>` 신규 — `getGalleryImages`와 동일
+패턴(`getArtistId` → `eq(artist_id)` → `order(show_date)`).
+
+**API**:
+
+| 메서드·경로 | 요청 | 응답 |
+|---|---|---|
+| `POST /api/shows` | `{ artistSlug, cityCode, cityName, country, venue, showDate, capacity, featured? }` | `201 { id }` / 같은 날짜·도시 이미 존재 → `409 { error: "duplicate" }` / 같은 날짜·다른 도시 이미 존재 → `409 { error: "date_conflict" }` |
+| `PATCH /api/shows/[id]` | 수정할 필드만 부분 전송 | `200 {}` / RLS 0행 → `403` / (날짜·도시 변경 시) 위와 동일한 `409` 두 종류 |
+| `DELETE /api/shows/[id]` | — | `204` / 0행 → `403` (`gallery/[id]/route.ts`와 동일 패턴 — 소유자 재확인 없이 RLS에 위임) |
+
+**같은 날짜 충돌 판정**: 한 아티스트가 같은 날짜에 같은 도시 공연을 또 만들려 하면(회차 추가) 이
+화면에서는 막고 "회차 추가는 문의"로 안내한다 — DB의 `unique(artist_id,city_code,show_date)` 제약이
+그대로 이걸 막아준다. 그런데 이 제약은 **다른 도시**면 같은 날짜라도 통과시킨다 — 한 아티스트가
+같은 날 서울과 LA에 동시에 있는 것 같은, 물리적으로 불가능한 조합이 생겨도 DB는 모른다. 그래서
+API가 insert/update 전에 "같은 artist_id + 같은 show_date" 행이 있는지 먼저 조회해서, 있고 도시가
+다르면 `date_conflict`로 막는다. DB 제약은 그대로 두고(마이그레이션 없음), 이 조건부 규칙만
+애플리케이션 레벨에서 체크한다 — 단순 `UNIQUE`로는 "다른 행이 있는데 도시만 다르면 막는다"를
+표현할 수 없어서다. 트리거로 DB에 넣는 대안도 있었으나, 이 프로젝트에 트리거가 하나도 없는
+상태에서 규칙 하나 때문에 새로 들이는 건 과하다고 판단해 기각했다.
+
+### 7.3 `/staff/artists` — 편집 폼 + `tracks` CRUD + 기존 갤러리
+
+**아티스트 편집 폼**(단일 레코드라 테이블이 아니라 폼 섹션): 색상(`<input type="color">`, 5장에서 이미
+쓴 패턴 재사용) · 뉴스 · 투어 배지(`tour_badge`) · 투어명(`tour_title_ko`) · 투어 연도(`tour_year`) ·
+셰이더 파라미터(`shader_pattern` select `wave`/`ripple`/`grain` + `shader_freq`/`shader_falloff`/
+`shader_speed` number). 셰이더 파라미터는 8장이 비주얼 반영을 붙이기 전까지는 값만 저장된다 —
+그때 가서 입력 UI를 다시 만들지 않도록 미리 붙여 둔다(8장 전제).
+
+`slug`/`name`/`orbit`/`angle`/`size`/`stat_tracks`는 편집 대상에서 뺀다. A탭 홈 궤도 레이아웃과
+지표 파생에 관여하는 필드라 잘못 바꾸면 다른 화면이 깨지고, 문서 §7 원안의 편집 필드 목록에도 없다.
+
+**데이터**: `getArtistRow(slug): Promise<ArtistRow | undefined>` 신규 — `getArtist`는 화면용 `Artist`
+타입으로 변환해 셰이더 파라미터 등 원본 컬럼을 잃어버리므로, 편집 폼은 원본 행을 그대로 쓰는 별도
+쿼리가 필요하다. `getTracks(slug): Promise<TrackRow[]>` 신규 — `no` 오름차순.
+
+**API (아티스트)**: `PATCH /api/artists/[id]` 뿐이다. 생성·삭제는 없다 — 아티스트는 시드가 만든 6명
+고정이고 문서 어디에도 아티스트 생성·삭제 요구가 없다.
+
+**tracks 섹션**: `/staff/tours`와 같은 테이블 인라인 행 패턴(no·title·duration·cover_from·cover_to +
+위/아래 버튼 + 삭제, 맨 아래 "+ 트랙 추가"). `cover_from`/`cover_to`는 `<input type="color">` 2개
+(실 커버아트가 없어 2스톱 그라디언트로 대체하는 기존 방식 그대로).
+
+**순서변경**: 위/아래 버튼 → 클릭한 행과 인접 행의 `id`+`no`를 이미 클라이언트가 들고 있다. 드래그 앤
+드롭 라이브러리는 쓰지 않는다 — 트랙 수가 적어(대표곡 4개 안팎) 버튼으로도 불편함이 거의 없다.
+`tracks`가 역할 스코프(7.1)라 오너만 쓰는 경로이므로 소유 경계로 인한 swap 실패는 없고, 실패한다면
+네트워크 문제뿐이다.
+
+경계 판정(맨 위 트랙의 "위로", 맨 아래 트랙의 "아래로" 비활성화)은 순수 함수로 뺀다 —
+`neighborSwap(tracks: TrackRow[], id: string, direction: "up" | "down"): [TrackRow, TrackRow] | null`
+(`no` 기준 정렬 후 인접 쌍을 찾고, 경계거나 id를 못 찾으면 `null`). `TracksManager` 컴포넌트가 버튼
+`disabled` 여부와 클릭 핸들러 양쪽에서 이 함수를 재사용한다.
+
+> 구현 에이전트 주의: **`PATCH`를 두 번 호출해 `no`를 직접 swap하지 않는다.** `unique(artist_id, no)`
+> 제약 때문에 A의 `no`를 B의 값으로 바꾸는 순간 B가 아직 그 값을 갖고 있어 `23505`가 난다(두 값이
+> 이미 둘 다 점유된 상태라 두 번의 단일 행 업데이트로는 어떤 순서로도 충돌을 피할 수 없다). 대신
+> **임시값을 경유하는 3단계**로 처리한다: ① A → 아무도 안 쓰는 임시값(`no` 컬럼이 `smallint`이므로
+> 그 최댓값 `32767`을 쓴다) ② B → A의 원래 `no` ③ A → B의 원래 `no`. 각 단계가 끝날 때마다 그
+> 값이 비므로 다음 단계가 충돌하지 않는다.
+
+> 구현 에이전트 주의: `no` 숫자 직접 입력 방식은 채택하지 않았다. 사용자가 중복값을 직접 넣으면
+> `unique(artist_id, no)` 위반으로 DB 에러가 나고, "순서 바꾸기"가 아니라 "번호 편집"으로 체감이
+> 달라진다는 이유로 기각했다(브레인스토밍에서 명시적으로 비교 후 결정).
+
+| 메서드·경로 | 요청 | 응답 |
+|---|---|---|
+| `POST /api/tracks` | `{ artistSlug, title, duration, coverFrom, coverTo }` | `201 { id }` — `no`는 서버가 현재 최댓값+1로 계산(`gallery/route.ts`의 `sort_order` 패턴과 동일) |
+| `PATCH /api/tracks/[id]` | 수정할 필드(순서변경은 이 엔드포인트를 두 번 호출) | `200 {}` / 0행 → `403` |
+| `DELETE /api/tracks/[id]` | — | `204` / 0행 → `403` |
+
+### 7.4 `/staff/tickets` — 조회 전용
+
+**데이터**: `getShowStatusList(slug): Promise<ShowStatusRow[]>` 신규 — `show_status` 뷰를 `featured`
+필터 없이 전체, `show_date` 오름차순(`getFeaturedShows`에서 `featured` 조건만 뺀 버전).
+
+**UI**: `ArtistSelect` + `<table>`(도시·베뉴·날짜·정원·판매량·예매율). 클라이언트 컴포넌트를 만들지
+않고 서버 컴포넌트에서 바로 렌더한다 — 편집 상태가 없으니 클라이언트 컴포넌트로 쪼갤 이유가 없다.
+
+### 7.5 데모 계정 읽기 전용 게이팅
+
+`getStaffRoleLabel(): Promise<"관리자" | "게스트">`를 `getStaffRole(): Promise<{ isOwner: boolean;
+label: "관리자" | "게스트" }>`로 확장한다. 기존 호출부(`Sidebar`)는 `label`만 꺼내 쓰면 되므로 시그니처가
+깨지지 않는다.
+
+각 페이지(서버 컴포넌트)가 `isOwner`를 편집 컴포넌트(`ToursManager`/`ArtistEditForm`/`TracksManager`)에
+prop으로 내려주고, 편집·추가·삭제 버튼과 입력 필드에 `disabled={!isOwner}` + 안내 문구
+("관리자만 편집할 수 있습니다")를 붙인다. 폼 자체는 항상 렌더하되 조작만 막는다 — 숨기지 않는다.
+**최종 게이트는 어디까지나 RLS이고 이 비활성화는 안내용이다**(문서 §7 도입부 원안 그대로).
+
+### 7.6 폼 검증 수준
+
+서버는 기존 패턴(필드 존재 확인)을 유지하고, 숫자 필드(`capacity`, `shader_freq` 등)는 `Number()`
+캐스팅 실패 시 `400`을 추가한다. `capacity > 0`, `unique` 제약 등은 DB가 최종 방어선이라 그 이상의
+서버 검증(zod 등 라이브러리 도입)은 하지 않는다. 클라이언트는 `required`/`min`/`max`/
+`type="date"|"number"|"color"` 네이티브 HTML 제약만 쓴다.
+
+### 7.7 변경 파일
+
+| 파일 | 작업 |
+|---|---|
+| `src/lib/data.ts` | `getShows`, `getArtistRow`, `getTracks`, `getShowStatusList` 추가, `getStaffRoleLabel` → `getStaffRole` |
+| `src/lib/trackOrder.ts` | 신규 — `neighborSwap` 순수 함수, TDD 대상 |
+| `src/app/staff/(console)/layout.tsx` | `getStaffRoleLabel()` → `getStaffRole()` 호출로 조정(`label`만 꺼내 `Sidebar`에 전달, `Sidebar.tsx` 자체는 무변경) |
+| `src/app/staff/(console)/tours/page.tsx` | stub 삭제 → 구현 |
+| `src/app/staff/(console)/artists/page.tsx` | 편집 폼 + tracks 섹션 추가 (갤러리 섹션은 유지) |
+| `src/app/staff/(console)/tickets/page.tsx` | stub 삭제 → 구현 |
+| `src/components/staff/ToursManager.tsx` · `ArtistEditForm.tsx` · `TracksManager.tsx` | 신규 |
+| `src/app/api/shows/route.ts` · `shows/[id]/route.ts` | 신규 |
+| `src/app/api/artists/[id]/route.ts` | 신규 |
+| `src/app/api/tracks/route.ts` · `tracks/[id]/route.ts` | 신규 |
+| `supabase/migrations/*.sql` | 변경 없음 — 역할 스코프 RLS는 4.5에서 이미 적용됨 |
 
 ---
 
@@ -739,9 +885,13 @@ vitest는 `environment: "node"`를 **유지한다.** 3D 컴포넌트를 import�
 
 ### 7장 · B탭 잔여 메뉴
 
-- [ ] 사이드바 메뉴 5개 모두 실 화면으로 연결되고 stub이 없다
-- [ ] `/staff/stage`에서 사이드바가 유지되고 "무대 연출"이 활성으로 표시된다
-- [ ] 데모 계정에서 세 화면이 읽기 전용으로 보인다
+- [x] 사이드바 메뉴 5개 모두 실 화면으로 연결되고 stub이 없다
+- [x] `/staff/stage`는 `(console)` 밖에서 브레드크럼 내비게이션으로 계속 동작한다 (의도된 유지, §7 참고)
+- [x] 데모 계정에서 세 화면(`tours`/`artists`/`tickets`)이 읽기 전용으로 보인다 — 편집 버튼이 비활성 렌더되고, 그 상태로 API를 직접 호출해도 RLS가 막는다(403)
+- [x] 오너 계정으로 `/staff/tours`에서 공연을 추가·수정·삭제하면 같은 아티스트의 `/staff/tickets`·A탭 투어 궤도(`featured`)에 반영된다
+- [x] `/staff/artists`에서 셰이더 파라미터를 바꿔 저장해도(8장 미착수 상태라) A탭 히어로에는 아직 반영되지 않는다 — 값만 정상 저장되는지 DB로 확인
+- [x] tracks 위/아래 버튼으로 순서를 바꾸면 `no`가 정상 swap되고, 새로고침 후에도 순서가 유지된다
+- [x] tracks/shows 둘 다 데모 계정으로 쓰기를 시도하면 막히고 오너 계정으로는 통과한다 (4.5 역할 스코프가 7장 API에도 그대로 적용됨을 재확인)
 
 ### 8장 · 셰이더 심화
 

@@ -11,8 +11,14 @@ const MENU = [
   { label: "티켓 현황", href: "/staff/tickets" },
 ];
 
+async function handleLogout() {
+  await fetch("/api/logout", { method: "POST" });
+  window.location.href = "/staff/login";
+}
+
 export default function Sidebar({ roleLabel }: { roleLabel: string }) {
   const pathname = usePathname();
+
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-surface-2">
       <div className="px-6 py-6">
@@ -41,6 +47,9 @@ export default function Sidebar({ roleLabel }: { roleLabel: string }) {
           );
         })}
       </nav>
+      <button type="button" onClick={handleLogout} className="mt-auto px-6 py-4 text-left text-sm text-gray-500 hover:text-gray-900">
+        로그아웃
+      </button>
     </aside>
   );
 }

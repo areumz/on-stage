@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
+import { useAutoDismiss } from "@/lib/hooks";
 import type { GalleryListItem } from "@/lib/types";
 
 export default function GalleryManager({ artistSlug, images }: { artistSlug: string; images: GalleryListItem[] }) {
@@ -12,11 +13,7 @@ export default function GalleryManager({ artistSlug, images }: { artistSlug: str
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirm();
 
-  useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(null), 3000);
-    return () => clearTimeout(timer);
-  }, [error]);
+  useAutoDismiss(error, setError, null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
