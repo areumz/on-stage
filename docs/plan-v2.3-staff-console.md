@@ -138,14 +138,14 @@ Task 1·2는 서로 독립이며 나머지 전부의 전제조건이다 — Task
 3. 이 함수는 네트워크·상태를 다루지 않는다(순수 함수) — `no` 값을 실제로 바꾸는 3단계 `PATCH`
    시퀀스는 Task 7의 컴포넌트 몫이다.
 
-- [ ] **Step 1: 실패하는 테스트 작성** — 케이스: 가운데 트랙을 위로(이전 트랙과 짝) · 가운데 트랙을
+- [x] **Step 1: 실패하는 테스트 작성** — 케이스: 가운데 트랙을 위로(이전 트랙과 짝) · 가운데 트랙을
       아래로(다음 트랙과 짝) · 맨 위 트랙을 위로(`null`) · 맨 아래 트랙을 아래로(`null`) · 존재하지
       않는 `id`(`null`) · `no` 순서가 뒤섞여 입력돼도 정렬 후 계산(가운데 트랙 기준 정상 동작).
       각 케이스에 왜 존재하는지 한국어 주석 한 줄
-- [ ] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (`trackOrder.ts`가 아직 없음)
-- [ ] **Step 3: `trackOrder.ts` 최소 구현** — 위 Interfaces·주의 그대로
-- [ ] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
-- [ ] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (`trackOrder.ts`가 아직 없음)
+- [x] **Step 3: `trackOrder.ts` 최소 구현** — 위 Interfaces·주의 그대로
+- [x] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
+- [x] **Step 5: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - Step 1의 6개 케이스가 전부 통과한다
@@ -177,14 +177,14 @@ Task 1·2는 서로 독립이며 나머지 전부의 전제조건이다 — Task
    `grep -rn "getStaffRoleLabel" src`로 `layout.tsx` 한 곳만 나와야 정상(있으면 그 시점에 이 함수
    전체가 아니라 이름만 바뀌는 리네임이므로 하나만 나온다).
 
-- [ ] **Step 1: `data.ts`에서 `getStaffRoleLabel` → `getStaffRole`로 변경**, 반환 타입을
+- [x] **Step 1: `data.ts`에서 `getStaffRoleLabel` → `getStaffRole`로 변경**, 반환 타입을
       `{ isOwner: boolean; label: "관리자" | "게스트" }`로 확장
-- [ ] **Step 2: `layout.tsx` 호출부 수정** — `getStaffRole()` 호출 후 `label`만 꺼내 `Sidebar`에 전달
-- [ ] **Step 3: `grep -rn "getStaffRoleLabel" src`로 잔여 참조 0건 확인**
-- [ ] **Step 4: `npm run build` 통과 확인**
-- [ ] **Step 5: 브라우저 검증** — 데모 계정으로 아무 `/staff/*` 화면 로그인 → 사이드바 상단에 "게스트"
+- [x] **Step 2: `layout.tsx` 호출부 수정** — `getStaffRole()` 호출 후 `label`만 꺼내 `Sidebar`에 전달
+- [x] **Step 3: `grep -rn "getStaffRoleLabel" src`로 잔여 참조 0건 확인**
+- [x] **Step 4: `npm run build` 통과 확인**
+- [x] **Step 5: 브라우저 검증** — 데모 계정으로 아무 `/staff/*` 화면 로그인 → 사이드바 상단에 "게스트"
       표시 확인. 오너 계정으로도 로그인해 "관리자" 표시 확인
-- [ ] **Step 6: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm run build` 통과
@@ -234,13 +234,13 @@ Task 1·2는 서로 독립이며 나머지 전부의 전제조건이다 — Task
    `error.code === "42501"`을 `23505`와 나란히 명시적으로 분기해 `403`으로 번역한다 — 이 분기가
    없으면 데모 계정의 정상적인 권한 거부가 `500`(서버 오류)으로 잘못 보고된다.
 
-- [ ] **Step 1: `getShows` 구현** — `data.ts`에 추가
-- [ ] **Step 2: `POST /api/shows` 구현** — 세션 확인 → 401, body 필드 존재 확인 → 400, `capacity`
+- [x] **Step 1: `getShows` 구현** — `data.ts`에 추가
+- [x] **Step 2: `POST /api/shows` 구현** — 세션 확인 → 401, body 필드 존재 확인 → 400, `capacity`
       캐스팅 실패/0 이하 → 400, `getArtistId` → 404, insert, `23505` → 409, **`42501` → 403**
-- [ ] **Step 3: `PATCH /api/shows/[id]` 구현** — 세션 확인 → 401, whitelist 매핑, 빈 patch → 400,
+- [x] **Step 3: `PATCH /api/shows/[id]` 구현** — 세션 확인 → 401, whitelist 매핑, 빈 patch → 400,
       update + 0행 → 403, `23505` → 409
-- [ ] **Step 4: `DELETE /api/shows/[id]` 구현** — 세션 확인 → 401, delete + 0행 → 403
-- [ ] **Step 5: API 수동 검증** (`next build && next start -p 3001`, 포트 3000은 손대지 않음.
+- [x] **Step 4: `DELETE /api/shows/[id]` 구현** — 세션 확인 → 401, delete + 0행 → 403
+- [x] **Step 5: API 수동 검증** (`next build && next start -p 3001`, 포트 3000은 손대지 않음.
       `.env.local`의 `SEED_OWNER_EMAIL`/`SEED_OWNER_PASSWORD`로 `/api/login` 로그인 후 세션 쿠키로
       curl) — 타임스탬프가 들어간 고유 `cityCode`로 테스트 공연을 만들고 마지막에 직접 지워 실
       데이터를 남기지 않는다:
@@ -252,7 +252,7 @@ Task 1·2는 서로 독립이며 나머지 전부의 전제조건이다 — Task
       6. 데모 계정 세션으로 같은 `POST`/`PATCH`/`DELETE` 시도 → 전부 `403`. `POST`는 "주의" 6번의
          `42501` 분기가 실제로 타는지 확인(분기가 없으면 `500`으로 잘못 나가므로, 이 케이스가
          `403 { error: "forbidden" }`으로 정확히 나오는지가 이 Step의 핵심 확인 대상이다)
-- [ ] **Step 6: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - Step 5의 시나리오 전부가 기대한 상태 코드를 반환한다
@@ -289,16 +289,16 @@ Task 1·2는 서로 독립이며 나머지 전부의 전제조건이다 — Task
 6. **필드 컬럼**: 날짜(`type="date"`) · 도시코드 · 도시명 · 국가 · 베뉴 · 수용인원(`type="number" min={1}`)
    · A탭 노출(`featured`, 체크박스).
 
-- [ ] **Step 1: `ToursManager.tsx` 구현** — 목록 렌더, 편집 모드 토글, 저장(`PATCH`)/추가(`POST`)/삭제(`DELETE`)
+- [x] **Step 1: `ToursManager.tsx` 구현** — 목록 렌더, 편집 모드 토글, 저장(`PATCH`)/추가(`POST`)/삭제(`DELETE`)
       핸들러, `isOwner` 게이팅
-- [ ] **Step 2: `tours/page.tsx` 교체** — `getArtists`/`getArtist`/`getShows`/`getStaffRole`을
+- [x] **Step 2: `tours/page.tsx` 교체** — `getArtists`/`getArtist`/`getShows`/`getStaffRole`을
       `Promise.all`로 병렬 조회, `notFound()` 가드, `ArtistSelect` + `ToursManager` 배치
       (`artists/page.tsx`의 기존 페이지 구조를 그대로 참고)
-- [ ] **Step 3: `npm run build` 통과 확인**
-- [ ] **Step 4: 브라우저 검증** (포트 3001) — 오너 계정: 공연 추가 → 목록에 반영 → 편집 → 저장 →
+- [x] **Step 3: `npm run build` 통과 확인**
+- [x] **Step 4: 브라우저 검증** (포트 3001) — 오너 계정: 공연 추가 → 목록에 반영 → 편집 → 저장 →
       값 반영 → 삭제 → 목록에서 사라짐, 전 과정 콘솔 에러 0건. 데모 계정: 모든 편집 버튼이 비활성
       렌더(클릭해도 요청이 안 나가는지 Network 탭으로 확인)
-- [ ] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 5: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - 오너 계정으로 추가·수정·삭제 전 과정이 브라우저에서 동작한다
@@ -403,16 +403,16 @@ Task 4 완료 후 직접 화면 테스트하며 나온 후속 수정 사항들.
    `text`), 서버가 이 세 값 중 하나인지 확인하고 아니면 400을 준다 — §7.6의 "얕은 검증" 원칙과
    충돌하지 않는다(타입 확인이지 범위/형식 검증이 아님).
 
-- [ ] **Step 1: `getArtistRow` 구현** — `data.ts`에 추가, `artists` 테이블에서 `slug`로 단건 조회
-- [ ] **Step 2: `PATCH /api/artists/[id]` 구현** — 세션 확인 → 401, whitelist 매핑 + 숫자 캐스팅 +
+- [x] **Step 1: `getArtistRow` 구현** — `data.ts`에 추가, `artists` 테이블에서 `slug`로 단건 조회
+- [x] **Step 2: `PATCH /api/artists/[id]` 구현** — 세션 확인 → 401, whitelist 매핑 + 숫자 캐스팅 +
       `shaderPattern` enum 확인 → 400, update + 0행 → 403
-- [ ] **Step 3: API 수동 검증** (curl, 오너 세션) — 오너 계정으로 임의 아티스트의 `news`와
+- [x] **Step 3: API 수동 검증** (curl, 오너 세션) — 오너 계정으로 임의 아티스트의 `news`와
       `shaderFreq`(셰이더 파라미터 대표로 하나) 두 필드를 **먼저 현재 값을 조회해 기록**한 뒤 변경 →
       재조회로 두 값 다 반영 확인 → 다시 원래 값으로 `PATCH`해 복구. `shaderPattern`에
       `"wave"`/`"ripple"`/`"grain"`이 아닌 값(예: `"nope"`) → `400` (enum 검증이 실제로 걸리는지
       확인 — "주의" 3번). 데모 계정 세션으로 정상 요청 하나 → `403`
-- [ ] **Step 4: `npm run build` 통과 확인**
-- [ ] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 4: `npm run build` 통과 확인**
+- [x] **Step 5: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - Step 3의 오너/데모 시나리오가 기대한 상태 코드를 반환한다
@@ -452,19 +452,19 @@ Task 4 완료 후 직접 화면 테스트하며 나온 후속 수정 사항들.
 5. **`POST`의 RLS 거부도 Task 3(`shows`)과 동일하게 `42501` → 403이다** — `tracks`도 역할 스코프라
    데모 계정의 insert는 조용히 실패하지 않고 에러를 던진다. `23505`와 나란히 명시적으로 분기한다.
 
-- [ ] **Step 1: `getTracks` 구현** — `data.ts`에 추가
-- [ ] **Step 2: `POST /api/tracks` 구현** — 세션 확인 → 401, body 필드 존재 확인 → 400,
+- [x] **Step 1: `getTracks` 구현** — `data.ts`에 추가
+- [x] **Step 2: `POST /api/tracks` 구현** — 세션 확인 → 401, body 필드 존재 확인 → 400,
       `getArtistId` → 404, `no` 최댓값+1 계산, insert, **`42501` → 403**
-- [ ] **Step 3: `PATCH /api/tracks/[id]` 구현** — 세션 확인 → 401, whitelist 매핑(`no`는 숫자 캐스팅),
+- [x] **Step 3: `PATCH /api/tracks/[id]` 구현** — 세션 확인 → 401, whitelist 매핑(`no`는 숫자 캐스팅),
       빈 patch → 400, update + 0행 → 403, `23505` → 409
-- [ ] **Step 4: `DELETE /api/tracks/[id]` 구현** — 세션 확인 → 401, delete + 0행 → 403
-- [ ] **Step 5: API 수동 검증** (curl, 오너 세션) — 타임스탬프 들어간 고유 제목으로 테스트 트랙
+- [x] **Step 4: `DELETE /api/tracks/[id]` 구현** — 세션 확인 → 401, delete + 0행 → 403
+- [x] **Step 5: API 수동 검증** (curl, 오너 세션) — 타임스탬프 들어간 고유 제목으로 테스트 트랙
       생성 → `no`가 기존 최댓값+1인지 확인 → `PATCH`로 이미 존재하는 다른 트랙의 `no`로 바꿔보기
       → `409` 확인 → 정상 값으로 `PATCH` → `200` → `DELETE` → `204`(테스트 데이터 정리). 데모 계정
       세션으로 동일 `POST`/`PATCH`/`DELETE` → 전부 `403`("주의" 5번의 `42501` 분기가 `POST`에서
       실제로 타는지 포함해 확인)
-- [ ] **Step 6: `npm run build` 통과 확인**
-- [ ] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: `npm run build` 통과 확인**
+- [x] **Step 7: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - Step 5의 오너/데모 시나리오가 기대한 상태 코드를 반환한다
@@ -512,21 +512,21 @@ Task 4 완료 후 직접 화면 테스트하며 나온 후속 수정 사항들.
    셰이더 파라미터를 안 갖고 있음). `getArtists()`(아티스트 목록, `ArtistSelect`용)는 계속 화면용
    `Artist[]`를 쓴다 — 이건 바뀌지 않는다.
 
-- [ ] **Step 1: `ArtistEditForm.tsx` 구현**
-- [ ] **Step 2: `TracksManager.tsx` 구현** — 3단계 swap 포함
-- [ ] **Step 3: `artists/page.tsx` 교체** — `getArtists`/`getArtistRow`/`getTracks`/`getGalleryImages`/
+- [x] **Step 1: `ArtistEditForm.tsx` 구현**
+- [x] **Step 2: `TracksManager.tsx` 구현** — 3단계 swap 포함
+- [x] **Step 3: `artists/page.tsx` 교체** — `getArtists`/`getArtistRow`/`getTracks`/`getGalleryImages`/
       `getStaffRole`을 `Promise.all`로 병렬 조회, `notFound()` 가드, `ArtistSelect` +
       `ArtistEditForm` + `TracksManager` + 기존 `GalleryManager`(갤러리 섹션 `key={slug}` 리마운트
       주석 유지) 순서로 배치
-- [ ] **Step 4: `npm run build` 통과 확인**
-- [ ] **Step 5: 브라우저 검증** (포트 3001) — 오너 계정: 색상 변경 후 저장 → 재조회 시 반영,
+- [x] **Step 4: `npm run build` 통과 확인**
+- [x] **Step 5: 브라우저 검증** (포트 3001) — 오너 계정: 색상 변경 후 저장 → 재조회 시 반영,
       **셰이더 패턴을 다른 값으로 select하고 주파수/감쇠/속도 숫자도 바꿔 저장 → 새로고침 후 폼에
       바뀐 값 그대로 표시**(Task 5의 curl 검증은 API 계층만 확인했으므로, 이 Step에서 실제 폼 UI로
       같은 필드가 왕복되는지 별도로 확인한다 — 8장 전까지 A탭 히어로에는 반영 안 됨, 그건 정상),
       트랙 추가 → 목록 맨 뒤에 표시, 트랙을 위로 두 번 옮겨 순서 확인(새로고침 후에도 유지), 트랙
       삭제, 갤러리 섹션이 기존과 동일하게 동작(회귀 확인). 데모 계정: 편집 폼·트랙 섹션 버튼 전부
       비활성, 갤러리 업로드/삭제는 정상 동작(소유 스코프라 그대로 열려 있어야 함)
-- [ ] **Step 6: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - 오너 계정으로 아티스트 편집·트랙 추가/순서변경/삭제 전 과정이 브라우저에서 동작한다
@@ -544,30 +544,17 @@ Task 4 완료 후 직접 화면 테스트하며 나온 후속 수정 사항들.
 **아티스트 목록 순서 버그**: `getArtists()`가 쓰는 `orderedArtistQuery`가 `tracks`/`shows`/
 `gallery_images` 하위 관계만 정렬하고 `artists` 테이블 자체엔 정렬 기준이 없었다. Postgres는 정렬
 없이 스캔 순서를 보장하지 않아서, Task 5의 PATCH API 검증(aurora 행을 여러 번 UPDATE)이 물리적
-스캔 순서를 흔들어 `ArtistSelect`에서 AURORA가 맨 뒤로 밀리는 게 눈에 띄었다. `orbit`/`angle`/`size`는
-A탭 궤도 배치용이라 목록 순서와 안 맞고 `created_at`은 시드가 배치 insert라 6개 다 같은 값 — 정렬에
-쓸 기존 컬럼이 없었다. `src/data/artists.json` 원본 배열 순서(aurora·velvet·nova·halo·lumen·echo)를
-진실 공급원으로 삼아 `getArtists()`에서 반환 직전에 자바스크립트로 정렬하는 `byArtistDisplayOrder`를
-추가했다(`src/lib/data.ts`) — 마이그레이션 없이 DB 스캔 순서와 무관하게 항상 같은 순서를 보장한다.
+스캔 순서를 흔들어 `ArtistSelect`에서 AURORA가 맨 뒤로 밀리는 게 눈에 띄었다. `src/data/artists.json` 원본 배열 순서(aurora·velvet·nova·halo·lumen·echo)를 기준으로 `getArtists()`에서 반환 직전에 자바스크립트로 정렬하는 `byArtistDisplayOrder`를 추가했다(`src/lib/data.ts`)
 
 **투어 배지 "N cities" 박제 버그**: `tour_badge`에 `"● World Tour 2026 · 24 cities"`처럼 도시수가
-문자열로 그대로 저장돼 있었다 — 계산되는 게 아니라 시드 시점 값이 박제된 것. 실제 공연 수가
-그 뒤로 바뀌면서(이 세션의 검증 작업 포함) 저장된 "24 cities"와 실제 26개가 어긋난 걸 사용자가
-A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 발견했다. `TourSection.tsx`는
-이미 배지에서 도시수 부분을 잘라내고 자체적으로 실시간 계산해 붙이고 있어 문제가 없었다 — 히어로
-쪽만 저장된 문자열을 그대로 노출하고 있었다.
+문자열로 그대로 저장돼 있었다 — 계산되는 게 아니라 시드 시점 값이 박제. 실제 공연 수가
+그 뒤로 바뀌면서 저장된 "24 cities"와 실제 갯수가 어긋난 걸 발견했다.
 
-- 사용자가 처음 요청한 방향은 "투어 배지 편집 필드를 배지 텍스트만으로 자르고, 도시수 표기
+- 처음 생각한 방향은 "투어 배지 편집 필드를 배지 텍스트만으로 자르고, 도시수 표기
   여부를 아티스트별 체크박스(on/off)로 두기"였으나, 이는 `artists`에 새 boolean 컬럼이 필요해
-  §7 계획의 "마이그레이션 추가 안 함" 제약과 충돌 — 확인 결과 **마이그레이션 없이 항상 실시간
-  표시**하는 쪽으로 범위를 좁혀 확정
+  §7 계획의 "마이그레이션 추가 안 함" 제약과 충돌
 - DB의 `tour_badge` 6개 전부에서 `/\s*·\s*\d+\s*cities\s*$/` 패턴을 정리해 배지 텍스트만 남김
   (예: `"● World Tour 2026 · 24 cities"` → `"● World Tour 2026"`)
-- 처음엔 히어로 배지에 `{artist.tour.badge} · {artist.stats.cities} cities`로 실시간 도시수를 다시
-  붙였으나, 사용자가 같은 아티스트 페이지 안에서 히어로 통계 블록("cities: 26")·`TourSection.tsx`의
-  자체 표기("4 Cities", featured 도시 기준)와 숫자가 세 군데로 갈라지는 걸 지적 — **배지에는 도시수를
-  아예 안 붙이는 쪽으로 되돌림**(`{artist.tour.badge}`만). 통계 블록이 전체 공연 수를, 투어 섹션이
-  궤도에 찍히는 featured 도시 수를 이미 각자 정확히 표시하고 있어 배지에 셋째 숫자를 더할 필요가 없었음
 - curl로 aurora·halo 배지가 깨끗한 텍스트만 렌더하는지, `TourSection.tsx`의 자체 도시수 표기는
   무변경 회귀 없는지 확인
 
@@ -592,13 +579,13 @@ A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 �
 2. `isOwner`/`getStaffRole`을 쓰지 않는다 — 이 화면엔 애초에 편집 버튼이 없어 게이팅 대상이 없다.
 3. 컬럼: 날짜·도시·베뉴·정원·판매량·예매율(`rate * 100`을 반올림해 `%`로 표시).
 
-- [ ] **Step 1: `getShowStatusList` 구현** — `data.ts`에 추가
-- [ ] **Step 2: `tickets/page.tsx` 교체** — `getArtists`/`getArtist`/`getShowStatusList`를
+- [x] **Step 1: `getShowStatusList` 구현** — `data.ts`에 추가
+- [x] **Step 2: `tickets/page.tsx` 교체** — `getArtists`/`getArtist`/`getShowStatusList`를
       `Promise.all`로 병렬 조회, `notFound()` 가드, `ArtistSelect` + 읽기 전용 `<table>` 렌더
-- [ ] **Step 3: `npm run build` 통과 확인**
-- [ ] **Step 4: 브라우저 검증** — 아티스트를 전환하며 테이블 내용이 바뀌는지, 편집 관련 UI가
+- [x] **Step 3: `npm run build` 통과 확인**
+- [x] **Step 4: 브라우저 검증** — 아티스트를 전환하며 테이블 내용이 바뀌는지, 편집 관련 UI가
       전혀 없는지(버튼도 input도 0개) 확인. 데모/오너 계정 둘 다 같은 화면(차이 없음)
-- [ ] **Step 5: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 5: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - 아티스트별로 공연 목록이 정확히 표시된다(`getFeaturedShows`가 이미 검증된 것과 같은 `show_status`
@@ -615,10 +602,10 @@ A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 �
 - Modify: `docs/design-v2.md` (§11 7장 체크박스)
 - Modify: `README.md` (2차 로드맵 체크박스, 국영문 병기)
 
-**Interfaces:** 없음 (검증·문서화 전담)
+**Interfaces:** 없음
 
 **왜**: §11 7장 완료 기준 7개 항목과 Task 1~8 개별 완료조건을 한 번 더 모아 확인하고, §9.2("각
-항목의 계획 요약과 검증 노트를 공개 문서로 남긴다")를 README에 반영한다.
+항목의 계획 요약과 검증 노트를 문서로 남긴다")를 README에 반영한다.
 
 - [x] **Step 1: §11 7장 체크리스트 7개 항목 전체 재확인** — 사이드바 5개 전부 실 화면·stub 없음 /
       `/staff/stage` 브레드크럼 유지 / 데모 계정 세 화면 읽기 전용(버튼 비활성 + API 직접 호출도
@@ -626,11 +613,8 @@ A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 �
       확인 / 트랙 순서변경 유지 / tracks·shows 데모 계정 쓰기 시도 403
 - [x] **Step 2: `npm test` · `npm run build` 최종 통과 확인**
 - [x] **Step 3: `docs/design-v2.md` §11 7장 체크박스를 `[x]`로 갱신**
-- [x] **Step 4: `README.md` 갱신** — "2차 로드맵" 항목(194행 부근)에 `[x]` +
-      `docs/plan-v2.3-staff-console.md` 링크 추가(`plan-v2.1-supabase.md`/`plan-v2.2-stage-tools.md`
-      항목과 같은 형식), "알려진 제한사항"에 B탭 잔여 메뉴가 stub이라는 문구가 있으면 실제 지원
-      범위로 갱신하거나 제거, 영문 대응 문단(Known Limitations·Phase 2 progress)도 함께 갱신
-- [x] **Step 5: 검증** — 최종 보고 후 멈춘다
+- [x] **Step 4: `README.md` 갱신**
+- [x] **Step 5: 검증**
 
 **완료조건:**
 - §11 7장 체크박스 7개 전부 확인 완료
@@ -642,18 +626,16 @@ A탭 아티스트 페이지 히어로(`artists/[slug]/page.tsx`)에서 직접 �
   tracks/shows 데모 쓰기 차단)는 Task 3~8 각각에서 이미 개별 확인된 내용을 재확인
 - 이번에 새로 교차 확인한 2개: `/staff/stage` 브레드크럼(코드 미변경 상태에서 살아있는지 재확인 —
   사이드바 없음·`← 대시보드` 링크 정상), tours→tickets·A탭 featured 반영(`featured: true` 공연을
-  신규 생성 → `/staff/tickets`와 A탭 아티스트 페이지 featured 도시 목록 양쪽에 실시간 반영 확인 →
-  테스트 데이터 삭제로 정리)
+  신규 생성 → `/staff/tickets`와 A탭 아티스트 페이지 featured 도시 목록 양쪽에 실시간 반영 확인)
 - `npm test` 29개 전부 통과, `npm run build` 통과(라우트 전체 정상 생성)
 
 ### 계획 밖 추가: Task 9 Step 3 이후 자체 리뷰(code-review + ponytail) 반영
 
-Step 3 완료 시점에 7장 전체 diff로 자체 코드리뷰와 ponytail 리뷰를 돌려 발견한 항목을 사용자
-지시대로 선별 반영. 고친 것과 의도적으로 미룬 것을 구분해 기록한다.
+Step 3 완료 시점에 7장 전체 diff로 자체 코드리뷰와 ponytail 리뷰를 돌려 발견한 항목을 기록한다.
 
 **반영함:**
 - `TracksManager`의 순서변경(임시값 3단계 swap) 도중 실패 시 부분 반영 상태로 남는 문제 —
-  try/catch/finally + 최선 노력 롤백 추가
+  try/catch/finally + 롤백 추가
 - `ToursManager`/`TracksManager` 삭제 버튼에 진행 중 상태 가드 없어 중복 클릭 시 중복 요청 가능
   — `busy` 상태로 비활성화
 - `PATCH /api/shows/[id]`·`PATCH /api/tracks/[id]`·`PATCH /api/artists/[id]`에 POST와 동등한
@@ -694,19 +676,6 @@ Step 3 완료 시점에 7장 전체 diff로 자체 코드리뷰와 ponytail 리�
 §7.5(데모 게이팅) → Task 2가 기반을 만들고 Task 4·7이 소비. §7.6(검증 수준) → Global Constraints에
 반영, 개별 Task의 "얕은 검증" 주의사항으로 재확인. §7.7(변경 파일) → 파일 구조 트리와 1:1 대응.
 §11 7장 완료 기준 7개는 Task 9에서 한 번 더 모아 확인한다.
-
-**설계 문서를 쓰다가 발견해 고친 버그 하나** — 브레인스토밍 중엔 트랙 순서변경을 "`PATCH` 두 번"으로
-설계했는데, 이 계획을 쓰면서 `unique(artist_id, no)` 제약과 맞대보니 두 값을 직접 swap하는 두 번의
-단일 행 업데이트는 항상 중간에 `23505`(unique violation)가 난다는 걸 발견했다(두 값이 이미 둘 다
-점유된 상태라 어떤 순서로 업데이트해도 충돌). `design-v2.md` §7.3을 임시값 경유 3단계로 먼저
-고치고 이 계획(Task 7)에 반영했다 — 계획을 시작하기 전에 설계 쪽을 고쳐 두 문서가 어긋나지 않게
-했다.
-
-**Task 경계의 판단** — 화면 3개(tours/artists/tickets) 중 tours·artists는 백엔드/프론트를 분리했지만
-(Task 3-4, 5-6-7) tickets는 Task 8 하나로 묶었다. tours·artists는 새 API 계약(엔드포인트 여러 개 +
-whitelist 매핑 + 3단계 swap 같은 복잡한 로직)이 있어 분리하면 각각 독립적으로 검증 가능하지만,
-tickets는 읽기 전용 쿼리 하나 + 정적 테이블 렌더뿐이라 나누면 오히려 Task가 너무 얇아진다(5장
-계획의 Task 분리 기준과 동일 — "새 API 계약을 도입하는지"가 분리 여부를 가른다).
 
 **타입 일관성** — `neighborSwap(tracks: TrackRow[], id: string, direction: SwapDirection): [TrackRow, TrackRow] | null`
 (Task 1)이 Task 7의 `TracksManager`에서 그대로 재사용된다. `getStaffRole(): Promise<{ isOwner: boolean; label: "관리자" | "게스트" }>`

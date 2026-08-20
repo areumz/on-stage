@@ -11,13 +11,13 @@ const MENU = [
   { label: "티켓 현황", href: "/staff/tickets" },
 ];
 
+async function handleLogout() {
+  await fetch("/api/logout", { method: "POST" });
+  window.location.href = "/staff/login";
+}
+
 export default function Sidebar({ roleLabel }: { roleLabel: string }) {
   const pathname = usePathname();
-
-  async function handleLogout() {
-    await fetch("/api/logout", { method: "POST" });
-    window.location.href = "/staff/login";
-  }
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-surface-2">

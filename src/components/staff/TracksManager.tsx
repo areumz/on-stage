@@ -70,47 +70,62 @@ export default function TracksManager({
     setBusy(true);
     setError(null);
     setSuccess(false);
-    const res = await patchTrack(id, draft);
-    setBusy(false);
-    if (!res.ok) {
-      setError(await errorMessageFor(res));
-      return;
+    try {
+      const res = await patchTrack(id, draft);
+      if (!res.ok) {
+        setError(await errorMessageFor(res));
+        return;
+      }
+      setEditingId(null);
+      setSuccess(true);
+      router.refresh();
+    } catch {
+      setError("네트워크 오류로 저장에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    setEditingId(null);
-    setSuccess(true);
-    router.refresh();
   }
 
   async function handleAdd() {
     if (!newDraft.title.trim() || !newDraft.duration.trim()) return;
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/tracks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ artistSlug, ...newDraft }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setError(await errorMessageFor(res));
-      return;
+    try {
+      const res = await fetch("/api/tracks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistSlug, ...newDraft }),
+      });
+      if (!res.ok) {
+        setError(await errorMessageFor(res));
+        return;
+      }
+      setAdding(false);
+      setNewDraft(EMPTY_DRAFT);
+      router.refresh();
+    } catch {
+      setError("네트워크 오류로 추가에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    setAdding(false);
-    setNewDraft(EMPTY_DRAFT);
-    router.refresh();
   }
 
   async function handleDelete(id: string) {
     if (!(await confirm("이 트랙을 삭제하시겠습니까?"))) return;
     setBusy(true);
     setError(null);
-    const res = await fetch(`/api/tracks/${id}`, { method: "DELETE" });
-    setBusy(false);
-    if (res.status === 204) {
-      router.refresh();
-      return;
+    try {
+      const res = await fetch(`/api/tracks/${id}`, { method: "DELETE" });
+      if (res.status === 204) {
+        router.refresh();
+        return;
+      }
+      setError(res.status === 403 ? "삭제 권한이 없습니다." : `삭제 실패 (${res.status})`);
+    } catch {
+      setError("네트워크 오류로 삭제에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    setError(res.status === 403 ? "삭제 권한이 없습니다." : `삭제 실패 (${res.status})`);
   }
 
   // unique(artist_id, no) 제약 때문에 두 값을 직접 교환할 수 없어 임시값을 경유하는 3단계로
@@ -170,6 +185,7 @@ export default function TracksManager({
                     <input
                       value={draft.title}
                       onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                      aria-label="제목"
                       className="w-full rounded border border-gray-300 px-2 py-1"
                     />
                   </td>
@@ -178,6 +194,7 @@ export default function TracksManager({
                       value={draft.duration}
                       onChange={(e) => setDraft({ ...draft, duration: e.target.value })}
                       placeholder="3:45"
+                      aria-label="길이"
                       className="w-20 rounded border border-gray-300 px-2 py-1"
                     />
                   </td>
@@ -187,12 +204,14 @@ export default function TracksManager({
                         type="color"
                         value={draft.coverFrom}
                         onChange={(e) => setDraft({ ...draft, coverFrom: e.target.value })}
+                        aria-label="커버 시작 색상"
                         className="h-7 w-7 cursor-pointer rounded border border-gray-300"
                       />
                       <input
                         type="color"
                         value={draft.coverTo}
                         onChange={(e) => setDraft({ ...draft, coverTo: e.target.value })}
+                        aria-label="커버 끝 색상"
                         className="h-7 w-7 cursor-pointer rounded border border-gray-300"
                       />
                     </div>
@@ -269,6 +288,7 @@ export default function TracksManager({
                     value={newDraft.title}
                     onChange={(e) => setNewDraft({ ...newDraft, title: e.target.value })}
                     placeholder="제목"
+                    aria-label="제목"
                     className="w-full rounded border border-gray-300 px-2 py-1"
                   />
                 </td>
@@ -277,6 +297,7 @@ export default function TracksManager({
                     value={newDraft.duration}
                     onChange={(e) => setNewDraft({ ...newDraft, duration: e.target.value })}
                     placeholder="3:45"
+                    aria-label="길이"
                     className="w-20 rounded border border-gray-300 px-2 py-1"
                   />
                 </td>
@@ -286,12 +307,14 @@ export default function TracksManager({
                       type="color"
                       value={newDraft.coverFrom}
                       onChange={(e) => setNewDraft({ ...newDraft, coverFrom: e.target.value })}
+                      aria-label="커버 시작 색상"
                       className="h-7 w-7 cursor-pointer rounded border border-gray-300"
                     />
                     <input
                       type="color"
                       value={newDraft.coverTo}
                       onChange={(e) => setNewDraft({ ...newDraft, coverTo: e.target.value })}
+                      aria-label="커버 끝 색상"
                       className="h-7 w-7 cursor-pointer rounded border border-gray-300"
                     />
                   </div>

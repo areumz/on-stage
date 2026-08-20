@@ -53,28 +53,33 @@ export default function ArtistEditForm({ artist, isOwner }: { artist: ArtistRow;
     setSaving(true);
     setError(null);
     setSuccess(false);
-    const res = await fetch(`/api/artists/${artist.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        color: draft.color,
-        news: draft.news,
-        tourBadge: draft.tourBadge,
-        tourTitleKo: draft.tourTitleKo,
-        tourYear: Number(draft.tourYear),
-        shaderPattern: draft.shaderPattern,
-        shaderFreq: Number(draft.shaderFreq),
-        shaderFalloff: Number(draft.shaderFalloff),
-        shaderSpeed: Number(draft.shaderSpeed),
-      }),
-    });
-    setSaving(false);
-    if (!res.ok) {
-      setError(await errorMessageFor(res));
-      return;
+    try {
+      const res = await fetch(`/api/artists/${artist.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          color: draft.color,
+          news: draft.news,
+          tourBadge: draft.tourBadge,
+          tourTitleKo: draft.tourTitleKo,
+          tourYear: Number(draft.tourYear),
+          shaderPattern: draft.shaderPattern,
+          shaderFreq: Number(draft.shaderFreq),
+          shaderFalloff: Number(draft.shaderFalloff),
+          shaderSpeed: Number(draft.shaderSpeed),
+        }),
+      });
+      if (!res.ok) {
+        setError(await errorMessageFor(res));
+        return;
+      }
+      setSuccess(true);
+      router.refresh();
+    } catch {
+      setError("네트워크 오류로 저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
     }
-    setSuccess(true);
-    router.refresh();
   }
 
   const editTitle = isOwner ? undefined : "관리자만 편집할 수 있습니다";

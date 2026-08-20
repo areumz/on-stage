@@ -93,6 +93,7 @@ function comboField({
   setMode,
   placeholder,
   width,
+  ariaLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -101,6 +102,7 @@ function comboField({
   setMode: (m: PickerMode) => void;
   placeholder: string;
   width: string;
+  ariaLabel: string;
 }) {
   if (mode === "select") {
     return (
@@ -113,6 +115,7 @@ function comboField({
           }
           onChange(e.target.value);
         }}
+        aria-label={ariaLabel}
         className={`${width} rounded border border-gray-300 bg-white px-1 py-1 text-sm`}
       >
         <option value="" disabled>
@@ -132,6 +135,7 @@ function comboField({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      aria-label={ariaLabel}
       className={`${width} rounded border border-gray-300 px-2 py-1`}
     />
   );
@@ -187,19 +191,24 @@ export default function ToursManager({
     setBusy(true);
     setError(null);
     setSuccess(false);
-    const res = await fetch(`/api/shows/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...draft, capacity: Number(draft.capacity) }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setError(await errorMessageFor(res));
-      return;
+    try {
+      const res = await fetch(`/api/shows/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...draft, capacity: Number(draft.capacity) }),
+      });
+      if (!res.ok) {
+        setError(await errorMessageFor(res));
+        return;
+      }
+      setEditingId(null);
+      setSuccess(true);
+      router.refresh();
+    } catch {
+      setError("네트워크 오류로 저장에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    setEditingId(null);
-    setSuccess(true);
-    router.refresh();
   }
 
   async function handleAdd() {
@@ -212,40 +221,50 @@ export default function ToursManager({
       return;
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/shows", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        artistSlug,
-        ...newDraft,
-        capacity: Number(newDraft.capacity),
-      }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setError(await errorMessageFor(res));
-      return;
+    try {
+      const res = await fetch("/api/shows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistSlug,
+          ...newDraft,
+          capacity: Number(newDraft.capacity),
+        }),
+      });
+      if (!res.ok) {
+        setError(await errorMessageFor(res));
+        return;
+      }
+      setAdding(false);
+      setNewDraft(EMPTY_DRAFT);
+      router.refresh();
+    } catch {
+      setError("네트워크 오류로 추가에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    setAdding(false);
-    setNewDraft(EMPTY_DRAFT);
-    router.refresh();
   }
 
   async function handleDelete(id: string) {
     if (!(await confirm("이 공연을 삭제하시겠습니까?"))) return;
     setBusy(true);
     setError(null);
-    const res = await fetch(`/api/shows/${id}`, { method: "DELETE" });
-    setBusy(false);
-    if (res.status === 204) {
-      router.refresh();
-      return;
+    try {
+      const res = await fetch(`/api/shows/${id}`, { method: "DELETE" });
+      if (res.status === 204) {
+        router.refresh();
+        return;
+      }
+      setError(
+        res.status === 403
+          ? "삭제 권한이 없습니다."
+          : `삭제 실패 (${res.status})`,
+      );
+    } catch {
+      setError("네트워크 오류로 삭제에 실패했습니다.");
+    } finally {
+      setBusy(false);
     }
-    setError(
-      res.status === 403
-        ? "삭제 권한이 없습니다."
-        : `삭제 실패 (${res.status})`,
-    );
   }
 
   // 지금까지 정해진(select 모드로 고른) 필드들과 전부 일치하는 knownLocations 부분집합.
@@ -311,6 +330,7 @@ export default function ToursManager({
             type="date"
             value={fields.showDate}
             onChange={(e) => onChange({ ...fields, showDate: e.target.value })}
+            aria-label="공연 날짜"
             className="rounded border border-gray-300 px-2 py-1"
           />
         </td>
@@ -323,6 +343,7 @@ export default function ToursManager({
             setMode: switchToManual,
             placeholder: "ICN",
             width: "w-20",
+            ariaLabel: "도시 코드",
           })}
         </td>
         <td className="px-4 py-3">
@@ -334,6 +355,7 @@ export default function ToursManager({
             setMode: switchToManual,
             placeholder: "서울",
             width: "w-24",
+            ariaLabel: "도시명",
           })}
         </td>
         <td className="px-4 py-3">
@@ -345,6 +367,7 @@ export default function ToursManager({
             setMode: switchToManual,
             placeholder: "대한민국",
             width: "w-28",
+            ariaLabel: "국가",
           })}
         </td>
         <td className="px-4 py-3">
@@ -356,6 +379,7 @@ export default function ToursManager({
             setMode: switchToManual,
             placeholder: "고척스카이돔",
             width: "w-36",
+            ariaLabel: "베뉴",
           })}
         </td>
         <td className="px-4 py-3">
@@ -364,6 +388,7 @@ export default function ToursManager({
             min={1}
             value={fields.capacity}
             onChange={(e) => onChange({ ...fields, capacity: e.target.value })}
+            aria-label="수용 인원"
             className="w-20 rounded border border-gray-300 px-2 py-1"
           />
         </td>
@@ -371,6 +396,7 @@ export default function ToursManager({
           <input
             type="checkbox"
             checked={fields.featured}
+            aria-label="메인 노출 여부"
             onChange={(e) =>
               onChange({ ...fields, featured: e.target.checked })
             }
