@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const path = body?.path;
   if (!artistSlug || !path) return Response.json({ error: "bad request" }, { status: 400 });
 
-  const artistId = await getArtistId(supabase, artistSlug);
+  const artistId = await getArtistId(artistSlug);
   if (!artistId) return Response.json({ error: "artist not found" }, { status: 404 });
 
   // sort_order를 안 주면 기본값 0으로 깔려 기존 이미지들과 뒤섞임

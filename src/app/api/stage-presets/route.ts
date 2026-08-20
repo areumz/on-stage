@@ -5,8 +5,7 @@ export async function GET(request: Request) {
   const artistSlug = new URL(request.url).searchParams.get("artist");
   if (!artistSlug) return Response.json({ error: "bad request" }, { status: 400 });
 
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, artistSlug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(artistSlug)]);
   if (!artistId) return Response.json({ error: "artist not found" }, { status: 404 });
 
   const { data, error } = await supabase
@@ -32,7 +31,7 @@ export async function POST(request: Request) {
   const state = body?.state;
   if (!artistSlug || !name || !state) return Response.json({ error: "bad request" }, { status: 400 });
 
-  const artistId = await getArtistId(supabase, artistSlug);
+  const artistId = await getArtistId(artistSlug);
   if (!artistId) return Response.json({ error: "artist not found" }, { status: 404 });
 
   const row = { user_id: user.id, artist_id: artistId, name, state };

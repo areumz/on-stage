@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "bad request" }, { status: 400 });
   }
 
-  const artistId = await getArtistId(supabase, artistSlug);
+  const artistId = await getArtistId(artistSlug);
   if (!artistId) return Response.json({ error: "artist not found" }, { status: 404 });
 
   // 같은 아티스트가 같은 날짜에 이미 공연이 있는지 먼저 확인

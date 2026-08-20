@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { toMetricsView } from "@/lib/metricsView";
 import type {
@@ -108,15 +109,16 @@ export async function getArtistRow(slug: string): Promise<ArtistRow | undefined>
 
 export const DEFAULT_METRICS_SLUG = "aurora";
 
-export async function getArtistId(supabase: SupabaseClient, slug: string): Promise<string | undefined> {
+// React cache()로 요청 1건 안에서 slug당 1왕복만 나가게함
+export const getArtistId = cache(async (slug: string): Promise<string | undefined> => {
+  const supabase = await createServerSupabase();
   const { data, error } = await supabase.from("artists").select("id").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`getArtistId: ${error.message}`);
   return data?.id;
-}
+});
 
 export async function getArtistMetrics(slug: string): Promise<ArtistMetricsRow | undefined> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return undefined;
   const { data, error } = await supabase.from("artist_metrics").select("*").eq("artist_id", artistId).maybeSingle();
   if (error) throw new Error(`getArtistMetrics: ${error.message}`);
@@ -124,8 +126,7 @@ export async function getArtistMetrics(slug: string): Promise<ArtistMetricsRow |
 }
 
 export async function getNextShow(slug: string): Promise<ShowStatusRow | null> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return null;
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
@@ -143,8 +144,7 @@ export async function getNextShow(slug: string): Promise<ShowStatusRow | null> {
 // 대시보드 '도시별 예매 현황' 차트용. A탭 투어 궤도와 같은 featured 도시 집합을 재사용해
 // "표기 도시 수"가 화면마다 따로 노는 걸 막는다.
 export async function getFeaturedShows(slug: string): Promise<ShowStatusRow[]> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return [];
   const { data, error } = await supabase
     .from("show_status")
@@ -158,8 +158,7 @@ export async function getFeaturedShows(slug: string): Promise<ShowStatusRow[]> {
 
 // B탭 티켓 현황 화면(조회 전용). getFeaturedShows에서 featured 필터만 뺀 버전 — 전체 공연을 보여준다.
 export async function getShowStatusList(slug: string): Promise<ShowStatusRow[]> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return [];
   const { data, error } = await supabase
     .from("show_status")
@@ -178,19 +177,18 @@ export async function getMetrics(slug: string): Promise<Metrics | undefined> {
 }
 
 // 헤더/사이드바 라벨 + 편집 게이트용 role 판정. app_metadata.role이 "owner"면 관리자, 그 외(공유 데모 계정 포함)는 게스트
-export async function getStaffRole(): Promise<{ isOwner: boolean; label: "관리자" | "게스트" }> {
+export const getStaffRole = cache(async (): Promise<{ isOwner: boolean; label: "관리자" | "게스트" }> => {
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const isOwner = user?.app_metadata?.role === "owner";
   return { isOwner, label: isOwner ? "관리자" : "게스트" };
-}
+});
 
 // B탭 트랙 관리 화면 목록. getGalleryImages와 동일 패턴(원본 행 그대로, 화면용 타입 변환 없음).
 export async function getTracks(slug: string): Promise<TrackRow[]> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return [];
   const { data, error } = await supabase.from("tracks").select("*").eq("artist_id", artistId).order("no", { ascending: true });
   if (error) throw new Error(`getTracks: ${error.message}`);
@@ -199,8 +197,7 @@ export async function getTracks(slug: string): Promise<TrackRow[]> {
 
 // B탭 투어 일정 관리 화면 목록. getGalleryImages와 동일 패턴(원본 행 그대로, 화면용 타입 변환 없음).
 export async function getShows(slug: string): Promise<ShowRow[]> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return [];
   const { data, error } = await supabase
     .from("shows")
@@ -230,8 +227,7 @@ export async function getKnownLocations(): Promise<{ cityCode: string; cityName:
 
 // B탭 갤러리 관리 화면 목록. id를 포함해 GalleryPhoto보다 하나 더 (삭제 버튼 필요로 함).
 export async function getGalleryImages(slug: string): Promise<GalleryListItem[]> {
-  const supabase = await createServerSupabase();
-  const artistId = await getArtistId(supabase, slug);
+  const [supabase, artistId] = await Promise.all([createServerSupabase(), getArtistId(slug)]);
   if (!artistId) return [];
   const { data, error } = await supabase
     .from("gallery_images")
