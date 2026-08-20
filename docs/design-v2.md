@@ -790,6 +790,86 @@ prop으로 내려주고, 편집·추가·삭제 버튼과 입력 필드에 `disa
 > 구현 에이전트 주의: `docs/design.md:125`는 `artists.json`에 "셰이더 테마" 필드가 있다고 적었으나
 > 실제로는 없다. 1차 설계와 구현이 어긋난 지점이며, 이 장이 그 격차를 메우는 작업이다.
 
+`shader_*` 컬럼과 입력 UI(select + number 3개)는 이미 4장·7장에서 만들어졌다 — 이 장은 그 값을 A탭
+`HeroBackground` 셰이더에 실제로 반영하는 것만 다룬다. DB 기본값(`freq=9`, `falloff=0.75`, `speed=0.5`,
+`pattern='wave'`)이 `HeroBackground.tsx`의 기존 하드코딩 값과 정확히 일치하므로, wave 기본 렌더링은
+이번 작업으로 시각적으로 달라지지 않는다. `scripts/seed.mjs`는 이미 6명에게 pattern 3종 + `freq
+6~14` / `falloff 0.55~0.9` / `speed 0.35~0.8` 범위로 값을 분산 배정해뒀다 — 이게 실사용 자연 범위다.
+
+### 8.1 데이터 흐름 — `Artist` 타입 확장
+
+`getArtist()`가 반환하는 화면용 `Artist` 타입(`src/lib/types.ts`)에는 셰이더 필드가 없다 — `ArtistRow`
+(DB 행 타입)에만 있고 `toArtist()` 변환 과정에서 버려진다. `HeroBackground`를 쓰는
+`src/app/artists/[slug]/page.tsx`는 `getArtist()`를 쓰므로, 타입 확장 없이는 셰이더 파라미터가 화면까지
+닿지 않는다.
+
+`tour: { badge, titleKo, year }`와 같은 기존 중첩 패턴을 따라 `Artist`에 `shader: { pattern, freq,
+falloff, speed }`를 추가한다. `ArtistEditForm.tsx`에 로컬로만 정의돼 있던 `type ShaderPattern = "wave" |
+"ripple" | "grain"`을 `src/lib/types.ts`로 승격해 양쪽이 재사용한다.
+
+`ARTIST_SELECT`(`"*, tracks(*), shows(*), gallery_images(*)"`)가 이미 `artists.*`를 통째로 읽어오므로,
+`toArtist()`에 매핑 4줄만 추가하면 된다 — 쿼리 변경도, 추가 왕복도 없다.
+
+`HeroBackground` props를 `{ color: string }`에서 `{ color: string; shader: ArtistShader }`로 확장하고,
+`artists/[slug]/page.tsx`에서 `<HeroBackground color={artist.color} shader={artist.shader} />`로 호출부를
+바꾼다.
+
+### 8.2 GLSL 패턴 3종
+
+프래그먼트 셰이더 내 분기 하나로 처리한다(§8 원안 그대로) — 패턴별 함수 분리나 별도 셰이더 파일은
+만들지 않는다. `uPattern`(0=wave/1=ripple/2=grain)은 `GlowPlane`이 `shader.pattern` 문자열을
+`useMemo`에서 숫자로 매핑해 유니폼으로 넘긴다.
+
+기존 `wave` 항의 `p`(중심 기준 uv, `p = vUv - 0.5`)와 `d`(글로우용 반지름, `d = length(p * vec2(1.4,
+1.0))`)를 세 패턴이 공유한다.
+
+```glsl
+uniform float uFreq;
+uniform float uFalloff;
+uniform float uSpeed;
+uniform int uPattern; // 0=wave, 1=ripple, 2=grain
+
+float wave;
+if (uPattern == 0) {
+  // wave(기존) — 격자형 간섭무늬. 기존 9.0/7.0 비율(0.78 ≈ 7/9)을 유지
+  wave = 0.5 + 0.5 * sin(p.x * uFreq + uTime * uSpeed) * sin(p.y * uFreq * 0.78 - uTime * uSpeed * 0.7);
+} else if (uPattern == 1) {
+  // ripple(신규) — 중심에서 퍼지는 동심원. glow용 d를 재사용해 추가 연산이 거의 없다
+  wave = 0.5 + 0.5 * sin(d * uFreq * 2.0 - uTime * uSpeed * 2.0);
+} else {
+  // grain(신규) — 의사난수 기반 알갱이 질감. 부드러운 파동이 아니라 거친 텍스처라
+  // wave/ripple과 가장 이질적으로 달라 보인다("실제로 다르게 보인다" 요건을 가장 확실히 충족)
+  wave = fract(sin(dot(p * uFreq, vec2(12.9898, 78.233)) + uTime * uSpeed) * 43758.5453);
+}
+
+float glow = smoothstep(uFalloff, 0.0, d);
+vec3 col = base + uColor * glow * (0.10 + 0.10 * wave);
+```
+
+코드 증가는 +10줄 안팎이고 새 의존성은 없다.
+
+### 8.3 파라미터 매핑과 범위
+
+| 필드 | 유니폼 | 매핑 | 검증된 범위 |
+|---|---|---|---|
+| `shader_freq` | `uFreq` | 그대로 대입 | 서버·폼 모두 무제한(얕은 검증 원칙) — 시드 실사용값 6~14 |
+| `shader_falloff` | `uFalloff` | 그대로 대입 | 폼 `min={0} max={1}` + 서버 `0~1` 검증 — `smoothstep(uFalloff, 0.0, d)`의 자연 정의역과 이미 일치, 스케일 조정 불필요 |
+| `shader_speed` | `uSpeed` | 그대로 대입, `uTime * uSpeed`로 사용 | 서버 `≥0`만 검증 — 시드 실사용값 0.35~0.8 |
+| `shader_pattern` | `uPattern` | 클라이언트에서 문자열→0/1/2 변환 | `wave`/`ripple`/`grain` 3종 고정(서버가 이미 검증) |
+
+새 서버/폼 검증은 추가하지 않는다 — 기존 범위(falloff 0~1, speed ≥0)가 셰이더 정의역과 이미 맞고,
+freq는 원래도 무제한이었다(§7.6 얕은 검증 원칙 유지).
+
+### 8.4 변경 파일
+
+| 파일 | 작업 |
+|---|---|
+| `src/lib/types.ts` | `ShaderPattern` 타입 신규(공용화), `Artist`에 `shader: { pattern, freq, falloff, speed }` 추가 |
+| `src/lib/data.ts` | `toArtist()`에 `shader` 필드 매핑 추가 |
+| `src/components/three/HeroBackground.tsx` | `shader` prop 추가, fragment 셰이더에 `uFreq`/`uFalloff`/`uSpeed`/`uPattern` 유니폼과 패턴 분기 추가 |
+| `src/app/artists/[slug]/page.tsx` | `<HeroBackground>` 호출부에 `shader={artist.shader}` 전달 |
+| `src/components/staff/ArtistEditForm.tsx` | 로컬 `ShaderPattern` 타입 제거, `@/lib/types`에서 import |
+
 ---
 
 ## 9. 개발 워크플로우 (2차)
