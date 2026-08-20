@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "bad request" }, { status: 400 });
   }
 
-  const artistId = await getArtistId(supabase, artistSlug);
+  const artistId = await getArtistId(artistSlug);
   if (!artistId) return Response.json({ error: "artist not found" }, { status: 404 });
 
   // no는 클라이언트가 안 보낸다 — 신규 트랙은 항상 맨 뒤(현재 최댓값+1)에 붙는다.
