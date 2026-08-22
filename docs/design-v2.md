@@ -829,24 +829,33 @@ uniform float uFalloff;
 uniform float uSpeed;
 uniform int uPattern; // 0=wave, 1=ripple, 2=grain
 
-float wave;
+// intensity: uColor에 곱할 최종 진폭. wave(기존)는 0.10~0.20 폭을 토씨 하나 안 바꾸고 그대로
+// 둬서 회귀를 보존한다. ripple/grain은 원래 없던 패턴이라 회귀 제약이 없고, 이 폭이 좁으면
+// 패턴 구조(링·알갱이)가 다 눌려 육안으로 안 보이므로(실측으로 확인된 문제) 훨씬 넓게 잡는다.
+float intensity;
 if (uPattern == 0) {
-  // wave(기존) — 격자형 간섭무늬. 기존 9.0/7.0 비율(0.78 ≈ 7/9)을 유지
-  wave = 0.5 + 0.5 * sin(p.x * uFreq + uTime * uSpeed) * sin(p.y * uFreq * 0.78 - uTime * uSpeed * 0.7);
+  // wave(기존) — 격자형 간섭무늬. 기존 9.0/7.0 비율을 uFreq*(7.0/9.0)로 유지 —
+  // freq=9(기본값)일 때 정확히 7.0이 나와 회귀가 없다(0.78 같은 소수 근사는 9*0.78=7.02로 어긋남)
+  float wave = 0.5 + 0.5 * sin(p.x * uFreq + uTime * uSpeed) * sin(p.y * uFreq * (7.0 / 9.0) - uTime * uSpeed * 0.7);
+  intensity = 0.10 + 0.10 * wave;
 } else if (uPattern == 1) {
-  // ripple(신규) — 중심에서 퍼지는 동심원. glow용 d를 재사용해 추가 연산이 거의 없다
-  wave = 0.5 + 0.5 * sin(d * uFreq * 2.0 - uTime * uSpeed * 2.0);
+  // ripple(신규) — 중심에서 퍼지는 동심원. glow용 d를 재사용해 추가 연산이 거의 없다.
+  // 배율 6.0 — falloff 반경 안에 링을 여러 개 채워야 "링 여러 개가 반복된다"는 게 눈에 띈다.
+  // 배율이 낮으면(예: 2.0) 링이 1~2개뿐이라 그냥 더 밝은 덩어리로 보이고 무늬로 안 읽힌다
+  float ripple = 0.5 + 0.5 * sin(d * uFreq * 6.0 - uTime * uSpeed * 2.0);
+  intensity = 0.05 + 0.35 * ripple;
 } else {
   // grain(신규) — 의사난수 기반 알갱이 질감. 부드러운 파동이 아니라 거친 텍스처라
   // wave/ripple과 가장 이질적으로 달라 보인다("실제로 다르게 보인다" 요건을 가장 확실히 충족)
-  wave = fract(sin(dot(p * uFreq, vec2(12.9898, 78.233)) + uTime * uSpeed) * 43758.5453);
+  float grain = fract(sin(dot(p * uFreq, vec2(12.9898, 78.233)) + uTime * uSpeed) * 43758.5453);
+  intensity = 0.40 * grain;
 }
 
 float glow = smoothstep(uFalloff, 0.0, d);
-vec3 col = base + uColor * glow * (0.10 + 0.10 * wave);
+vec3 col = base + uColor * glow * intensity;
 ```
 
-코드 증가는 +10줄 안팎이고 새 의존성은 없다.
+코드 증가는 +15줄 안팎이고 새 의존성은 없다.
 
 ### 8.3 파라미터 매핑과 범위
 
