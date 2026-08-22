@@ -3,9 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAutoDismiss } from "@/lib/hooks";
-import type { ArtistRow } from "@/lib/types";
-
-type ShaderPattern = "wave" | "ripple" | "grain";
+import type { ArtistRow, ShaderPattern } from "@/lib/types";
 
 type Draft = {
   color: string;

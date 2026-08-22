@@ -103,6 +103,9 @@ export type Track = {
   cover: { from: string; to: string };
 };
 
+// A탭 HeroBackground 셰이더 패턴 3종 (design-v2.md §8)
+export type ShaderPattern = "wave" | "ripple" | "grain";
+
 export type Artist = {
   slug: string;
   name: string; // 영문 대문자 표기
@@ -118,6 +121,7 @@ export type Artist = {
   cities: City[];
   tracks: Track[];
   gallery: GalleryPhoto[];
+  shader: { pattern: ShaderPattern; freq: number; falloff: number; speed: number };
 };
 
 export type Metrics = {
