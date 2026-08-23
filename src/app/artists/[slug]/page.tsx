@@ -17,7 +17,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
       {/* Hero */}
       <section className="relative flex h-screen flex-col">
         <div className="absolute inset-0">
-          <HeroBackground color={artist.color} />
+          <HeroBackground color={artist.color} shader={artist.shader} />
         </div>
         <div className="relative z-10 flex items-center justify-between px-8 py-5">
           <Link href="/" className="text-sm text-white/60 hover:text-white">

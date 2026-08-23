@@ -10,13 +10,12 @@ A dual-perspective platform for a fictional entertainment label — the stage fa
 
 > **Live demo:** https://on-stage-nine.vercel.app/
 
-![A탭 · 레이블 메인 궤도](public/screenshots/a-tab-orbit.png)
-![A탭 · 아티스트 Hero 01](public/screenshots/a-tab-hero01.png)
-![A탭 · 아티스트 Hero 02](public/screenshots/a-tab-hero02.png)
-![A탭 · 아티스트 Hero 03](public/screenshots/a-tab-hero03.png)
-![A탭 · 아티스트 Hero 04](public/screenshots/a-tab-hero04.png)
+![A탭 · 레이블 메인 궤도부터 아티스트 Hero까지](public/screenshots/a-tab.gif)
 ![B탭 · 대시보드](public/screenshots/b-dashboard.png)
+![B탭 · 투어 일정 관리](public/screenshots/b-tour.png)
 ![B탭 · 무대 연출 3D 툴](public/screenshots/b-stage.png)
+![B탭 · 아티스트 편집](public/screenshots/b-artist01.png)
+![B탭 · 트랙 관리 · 갤러리](public/screenshots/b-artist02.png)
 
 ---
 
@@ -198,7 +197,8 @@ Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content
 - [x] **B탭 사이드바 잔여 메뉴 실 화면 구현** (투어 일정 관리, 아티스트 편집+트랙 관리, 티켓 현황 조회) —
       오너 계정만 쓰기 가능, 데모 계정은 읽기 전용. 자세한 내용은 [docs/plan-v2.3-staff-console.md](docs/plan-v2.3-staff-console.md) 참고
 - [ ] 반응형 대응
-- [ ] 셰이더 심화 (아티스트별 차별화 확대)
+- [x] **셰이더 심화** (아티스트별로 다른 GLSL 패턴 3종 — 파동/동심원/알갱이 — 적용, `/staff/artists`에서
+      파라미터를 바꾸면 A탭 히어로에 실시간 반영) — 자세한 내용은 [docs/plan-v2.4-shader-depth.md](docs/plan-v2.4-shader-depth.md) 참고
 - [ ] 갤러리 이미지 정교화 (일부 아티스트는 AI 생성 이미지 등으로 교체 검토)
 
 자세한 배경은 [docs/design-v2.md](docs/design-v2.md)를 참고하세요.
@@ -212,7 +212,11 @@ picking, and named presets you can save, load, and delete. See
 staff console is also done** — tour schedule management, artist profile + track editing, and a
 read-only ticket status view, all gated to owner-only writes with demo accounts read-only. See
 [docs/plan-v2.3-staff-console.md](docs/plan-v2.3-staff-console.md) for the implementation log.
-Remaining: responsive layouts, deeper per-artist shader variation, and refined gallery imagery. See
+**Shader depth is also done** — each artist's hero background now runs one of three GLSL patterns
+(wave, ripple, grain) driven by per-artist parameters, and changes made in the staff artist editor
+reflect immediately on the A-tab hero. See [docs/plan-v2.4-shader-depth.md](docs/plan-v2.4-shader-depth.md)
+for the implementation log.
+Remaining: responsive layouts and refined gallery imagery. See
 [docs/design-v2.md](docs/design-v2.md) for details.
 
 ---

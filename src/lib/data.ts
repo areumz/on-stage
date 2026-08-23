@@ -9,6 +9,7 @@ import type {
   GalleryImageRow,
   GalleryListItem,
   Metrics,
+  ShaderPattern,
   ShowRow,
   ShowStatusRow,
   TrackRow,
@@ -81,6 +82,12 @@ function toArtist(row: ArtistJoinRow, supabase: SupabaseClient): Artist {
       cover: { from: t.cover_from, to: t.cover_to },
     })),
     gallery: row.gallery_images.map((g) => toGalleryPhoto(g, supabase)),
+    shader: {
+      pattern: row.shader_pattern as ShaderPattern,
+      freq: row.shader_freq,
+      falloff: row.shader_falloff,
+      speed: row.shader_speed,
+    },
   };
 }
 
