@@ -10,13 +10,12 @@ A dual-perspective platform for a fictional entertainment label — the stage fa
 
 > **Live demo:** https://on-stage-nine.vercel.app/
 
-![A탭 · 레이블 메인 궤도](public/screenshots/a-tab-orbit.png)
-![A탭 · 아티스트 Hero 01](public/screenshots/a-tab-hero01.png)
-![A탭 · 아티스트 Hero 02](public/screenshots/a-tab-hero02.png)
-![A탭 · 아티스트 Hero 03](public/screenshots/a-tab-hero03.png)
-![A탭 · 아티스트 Hero 04](public/screenshots/a-tab-hero04.png)
+![A탭 · 레이블 메인 궤도부터 아티스트 Hero까지](public/screenshots/a-tab.gif)
 ![B탭 · 대시보드](public/screenshots/b-dashboard.png)
+![B탭 · 투어 일정 관리](public/screenshots/b-tour.png)
 ![B탭 · 무대 연출 3D 툴](public/screenshots/b-stage.png)
+![B탭 · 아티스트 편집](public/screenshots/b-artist01.png)
+![B탭 · 트랙 관리 · 갤러리](public/screenshots/b-artist02.png)
 
 ---
 
