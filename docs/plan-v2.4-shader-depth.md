@@ -103,18 +103,23 @@ Task 4  완료 기준 검증 · 문서 갱신
    건드리고 `Artist`(화면용 타입)에만 좁은 타입을 적용한다.
 2. `ArtistEditForm.tsx`는 import만 바꾼다 — `toDraft`/`handleSave` 등 기존 로직은 무변경.
 
-- [ ] **Step 1: `types.ts`에 `ShaderPattern` export 추가, `Artist`에 `tour`와 같은 중첩 패턴으로
+- [x] **Step 1: `types.ts`에 `ShaderPattern` export 추가, `Artist`에 `tour`와 같은 중첩 패턴으로
       `shader: { pattern: ShaderPattern; freq: number; falloff: number; speed: number }` 추가**
-- [ ] **Step 2: `ArtistEditForm.tsx`의 로컬 `type ShaderPattern = "wave" | "ripple" | "grain"` 제거,
+- [x] **Step 2: `ArtistEditForm.tsx`의 로컬 `type ShaderPattern = "wave" | "ripple" | "grain"` 제거,
       `@/lib/types`에서 import로 교체**
-- [ ] **Step 3: `grep -rn "type ShaderPattern" src`로 재정의가 `src/lib/types.ts` 한 곳뿐인지 확인**
-- [ ] **Step 4: `npm run build` 통과 확인**
-- [ ] **Step 5: 검증** — 아래 완료조건 확인
+- [x] **Step 3: `grep -rn "type ShaderPattern" src`로 재정의가 `src/lib/types.ts` 한 곳뿐인지 확인**
+- [x] **Step 4: `npm run build` 통과 확인**
+- [x] **Step 5: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm run build` 통과
 - `grep -rn "type ShaderPattern" src` 결과가 `src/lib/types.ts` 한 줄뿐
 - `/staff/artists`에서 셰이더 패턴 select + 숫자 필드 3개가 기존과 동일하게 표시·저장된다(회귀 없음)
+
+**검증 노트**: 계획에는 없던 발견 — Task 1 혼자서는 `npm run build`가 통과할 수 없었다.
+`Artist.shader`를 필수 필드로 추가하면 `toArtist()`(Task 2 담당)가 바로 타입 에러를 내기 때문에,
+실제로는 Task 1·2를 한 커밋으로 묶어 진행했다(`feat: promote ShaderPattern to shared type and map
+it onto Artist.shader`). 나머지는 계획대로.
 
 ---
 
@@ -135,15 +140,17 @@ Task 4  완료 기준 검증 · 문서 갱신
 1. `row.shader_pattern`은 `string`이라 `as ShaderPattern`으로 좁힌다 — `PATCH /api/artists/[id]`가
    이미 3종만 허용하도록 검증하므로(`SHADER_PATTERNS` 셋) 여기서 런타임 재검증은 하지 않는다.
 
-- [ ] **Step 1: `toArtist()`에 `shader: { pattern: row.shader_pattern as ShaderPattern, freq:
+- [x] **Step 1: `toArtist()`에 `shader: { pattern: row.shader_pattern as ShaderPattern, freq:
       row.shader_freq, falloff: row.shader_falloff, speed: row.shader_speed }` 매핑 추가**
-- [ ] **Step 2: `npm run build` 통과 확인**
-- [ ] **Step 3: 검증** — 아래 완료조건 확인
+- [x] **Step 2: `npm run build` 통과 확인**
+- [x] **Step 3: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm run build` 통과
 - (실제 값이 화면에 정확히 반영되는지는 Task 3의 시각 검증에서 최종 확인 — 이 Task는 타입 레벨
   검증까지)
+
+**검증 노트**: Task 1과 한 커밋으로 처리(위 참고). `npm run build`·`eslint`·`vitest`(29개) 통과.
 
 ---
 
@@ -180,13 +187,13 @@ Task 4  완료 기준 검증 · 문서 갱신
 4. `artists/[slug]/page.tsx`는 `<HeroBackground color={artist.color} shader={artist.shader} />`로
    호출부만 바꾼다 — 그 외 로직 무변경.
 
-- [ ] **Step 1: `HeroBackground.tsx`에 `uFreq`/`uFalloff`/`uSpeed`/`uPattern` 유니폼 추가, fragment
+- [x] **Step 1: `HeroBackground.tsx`에 `uFreq`/`uFalloff`/`uSpeed`/`uPattern` 유니폼 추가, fragment
       셰이더에 3종 분기 구현(§8.2), `HeroBackground` props에 `shader` 추가**
-- [ ] **Step 2: `GlowPlane`의 `useMemo`에 패턴 문자열→숫자 매핑 추가, 의존성 배열을 `shader`
+- [x] **Step 2: `GlowPlane`의 `useMemo`에 패턴 문자열→숫자 매핑 추가, 의존성 배열을 `shader`
       개별 필드(`shader.pattern`/`shader.freq`/`shader.falloff`/`shader.speed`)로 좁힘**
-- [ ] **Step 3: `artists/[slug]/page.tsx`에서 `shader={artist.shader}` 전달**
-- [ ] **Step 4: `npm run build` 통과 확인**
-- [ ] **Step 5: 브라우저 검증**(`next build && next start -p 3001`, 포트 3000은 손대지 않음) —
+- [x] **Step 3: `artists/[slug]/page.tsx`에서 `shader={artist.shader}` 전달**
+- [x] **Step 4: `npm run build` 통과 확인**
+- [x] **Step 5: 브라우저 검증**(`next build && next start -p 3001`, 포트 3000은 손대지 않음) —
       `scripts/seed.mjs`의 `SHADER_BY_SLUG` 기준 6명(aurora=wave, velvet=ripple, nova=grain,
       halo=wave, lumen=ripple, echo=grain)을 각각 `/artists/[slug]`로 열어서:
       1. `aurora`(wave, 기본값)가 기존(1차) 렌더링과 시각적으로 동일한지 — 회귀 없음 확인
@@ -194,11 +201,31 @@ Task 4  완료 기준 검증 · 문서 갱신
       3. `ripple` 2명(velvet/lumen)이 중심에서 퍼지는 동심원으로 보이는지
       4. `grain` 2명(nova/echo)이 알갱이 텍스처로 보이는지, wave/ripple과 뚜렷이 다른지
       5. 3종이 서로 명확히 구분되는지(§11 8장 완료 기준 1번의 실측)
-- [ ] **Step 6: 검증** — 아래 완료조건 확인
+- [x] **Step 6: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm run build` 통과
 - 6명 아티스트 전부 육안 확인 완료, `aurora`가 기존과 동일, 3 패턴이 서로 다르게 보인다
+
+**검증 노트 (Step 5)**: 계획에 없던 발견 두 건:
+
+1. **`p.y * uFreq * 0.78`이 근사값이라 회귀가 깨짐** — `0.78`은 `7/9`의 소수 근사(§8.2 원안에도
+   "≈"로 명시)라 `freq=9`(기본값)일 때 `9*0.78=7.02`가 나와 원래 하드코딩 `7.0`과 미세하게 어긋남.
+   `uFreq * (7.0/9.0)`로 교체 — GLSL이 컴파일 타임에 계산해 `freq=9`일 때 정확히 `7.0`이 나온다.
+2. **진폭 공식이 공유돼 있어 패턴 구분이 안 됨** — `col = base + uColor * glow * (0.10 + 0.10 * wave)`가
+   분기 밖에서 3종 전부에 공통 적용돼, wave/ripple/grain 값 자체는 달라도 최종 밝기 폭이
+   0.10~0.20(2배)뿐이라 육안으로 거의 안 보였음(실제 화면에서 확인). `intensity` 계산을
+   분기 안으로 옮겨 wave는 원래 폭 그대로(회귀 보존), ripple/grain은 훨씬 넓게(`0.05~0.40`,
+   `0~0.40`) 재설정. ripple은 추가로 링 배율(`d * uFreq * 2.0` → `6.0`)도 올렸다 — falloff 반경 안에
+   링이 1~2개뿐이면 무늬로 안 읽히고 그냥 밝은 덩어리로 보였기 때문.
+
+이후 code-review + ponytail-review를 진행해 3건을 검토했다:
+- `smoothstep(uFalloff, 0.0, d)`는 `uFalloff=0`(폼·서버 둘 다 허용하는 값)일 때 GLSL 스펙상
+  `edge0>=edge1`로 정의되지 않은 연산이 된다. **다만 falloff=0을 실제로 재현해보니 현재 테스트 브라우저/GPU(Chrome·macOS)에서는 시각적으로 안 깨졌다** — 
+  그래도 스펙이 명시적으로 undefined라 다른 브라우저·GPU(모바일 Safari, 타 벤더 등)에서는 다르게
+  나올 수 있어, `max(uFalloff, 0.001)`를 유지한다
+- `PATTERN_INDEX[shader.pattern]`이 알 수 없는 값에 `undefined`를 반환하는 것을 `?? 0`(wave 기본)으로 방지
+- `ShaderParams`가 `Artist.shader`와 중복 선언돼 있던 것을 `type ShaderParams = Artist["shader"]`로 재사용
 
 ---
 
@@ -212,21 +239,27 @@ Task 4  완료 기준 검증 · 문서 갱신
 
 **왜**: §11 8장 완료 기준 2개 항목을 최종 확인하고, §9.2 문서화 방침을 README에 반영한다.
 
-- [ ] **Step 1: 오너 계정으로 `/staff/artists`에서 임의 아티스트의 `shader_pattern`/`shader_freq`/
+- [x] **Step 1: 오너 계정으로 `/staff/artists`에서 임의 아티스트의 `shader_pattern`/`shader_freq`/
       `shader_falloff`/`shader_speed`를 변경 → 저장**
-- [ ] **Step 2: 같은 아티스트의 `/artists/[slug]`(A탭)를 다시 열어 변경값이 히어로 셰이더에 그대로
+- [x] **Step 2: 같은 아티스트의 `/artists/[slug]`(A탭)를 다시 열어 변경값이 히어로 셰이더에 그대로
       반영되는지 확인** — 서버 컴포넌트라 별도 캐시 무효화 없이 재방문 시 최신값을 읽는다(§11 8장
       완료 기준 2번의 실측)
-- [ ] **Step 3: 원래 값(시드값)으로 복구** — 실 데이터 변형 방지, 재시드 없이 직접 되돌린다
-- [ ] **Step 4: `npm run build` 최종 통과 확인**
-- [ ] **Step 5: `docs/design-v2.md` §11 8장 체크박스 2개 `[x]`로 갱신**
-- [ ] **Step 6: `README.md` 갱신**(국문·영문 병기, 2차 로드맵 항목)
-- [ ] **Step 7: 검증** — 아래 완료조건 확인
+- [x] **Step 3: 원래 값(시드값)으로 복구** — 실 데이터 변형 방지, 재시드 없이 직접 되돌린다
+- [x] **Step 4: `npm run build` 최종 통과 확인**
+- [x] **Step 5: `docs/design-v2.md` §11 8장 체크박스 2개 `[x]`로 갱신**
+- [x] **Step 6: `README.md` 갱신**(국문·영문 병기, 2차 로드맵 항목)
+- [x] **Step 7: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - §11 8장 체크박스 2개 전부 확인 완료
 - README 국문·영문 모두 갱신되고 서로 내용이 어긋나지 않는다
 - `npm run build` 통과
+
+**검증 노트**: Step 1~2는 `aurora`를 PATCH API로 `grain/14/0.9/0.8`로 바꿔 A탭에서 즉시 반영 확인
+(스크린샷) → 시드값(`wave/9/0.75/0.5`)으로 복구. Step 4·7의 최종 검증은 `tsc --noEmit`
+(exit 0) / `eslint`(exit 0) / `vitest` 29개 전부 통과 / `npm run build`(exit 0, 19개 라우트 정상
+생성)를 이 리포트 작성 시점에 새로 실행해 확인 — Task 3에서 review로 검토한 3건(falloff=0 이식성
+안전장치, 알 수 없는 pattern, ShaderParams 중복)을 반영한 뒤의 최종 상태다.
 
 ---
 
@@ -246,6 +279,9 @@ Task 4  완료 기준 검증 · 문서 갱신
 
 **설계 문서에 없던 결정 하나** — §8.1은 "`Artist`에 `shader` 필드 추가"까지만 정하고, `HeroBackground`
 prop 타입을 `Artist["shader"]`로 참조할지 독립적으로 인라인 선언할지는 명시하지 않았다. 이 계획은
-`HeroBackground.tsx`가 `Artist` 전체 타입을 몰라도 되게(3D 컴포넌트가 화면 도메인 타입에 결합되지
-않도록) `ShaderPattern`만 import하고 나머지는 인라인 객체 타입으로 선언하는 쪽으로 정리했다(Task 3
-Interfaces 참고).
+처음엔 `HeroBackground.tsx`가 `Artist` 전체 타입을 몰라도 되게 `ShaderPattern`만 import하고 나머지는
+인라인 객체 타입(`type ShaderParams = { pattern: ShaderPattern; freq: number; falloff: number; speed:
+number }`)으로 선언하는 쪽으로 정리했었다. **하지만 Task 3 이후 code-review + ponytail-review에서
+이 인라인 타입이 `Artist.shader`와 모양이 중복된다는 지적을 받아, 최종적으로는 `Artist`를 import해서
+`type ShaderParams = Artist["shader"]`로 재사용하는 쪽으로 뒤집었다** — `HeroBackground.tsx:7,61` 참고.
+결합도보다 단일 진실 공급원을 우선한 결정이다.
