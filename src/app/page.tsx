@@ -1,23 +1,10 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import NowTicker from "@/components/fans/NowTicker";
 import OrbitScene from "@/components/three/OrbitScene";
-import type { Artist } from "@/lib/types";
+import { getArtists } from "@/lib/data";
 
-export default function Home() {
-  const [artists, setArtists] = useState<Artist[]>([]);
-
-  useEffect(() => {
-    fetch("/api/artists")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((d: { artists: Artist[] }) => setArtists(d.artists))
-      .catch((e) => console.error(e));
-  }, []);
+export default async function Home() {
+  const artists = await getArtists();
 
   return (
     <main className="flex h-screen flex-col bg-bg-dark text-white">
