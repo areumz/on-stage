@@ -68,7 +68,7 @@ function Spot({ x, color, spot }: { x: number; color: string; spot: SpotState })
 
 export default function StageScene({ state, controls = true }: { state: StageState; controls?: boolean }) {
   return (
-    <Scene3D shadows notifyContextLoss camera={{ position: CAMERA_PRESETS.front, fov: 50 }}>
+    <Scene3D shadows notifyContextLoss dpr={[1, 1.5]} camera={{ position: CAMERA_PRESETS.front, fov: 50 }}>
       <CameraRig cameraAngle={state.camera} />
       <ambientLight intensity={0.15} />
       {/* 바닥 — 30×30이라 먼 가장자리가 카메라에서 아주 먼 상태. 안개를 그대로 적용하면 지평선이

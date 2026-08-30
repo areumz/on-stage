@@ -134,7 +134,7 @@ export default function Scene3D({
   if (!notifyContextLoss) {
     return (
       <SceneErrorBoundary fallback={fallbackNode}>
-        <Canvas className={className} {...canvasProps}>
+        <Canvas className={className} dpr={[1, 2]} {...canvasProps}>
           {children}
         </Canvas>
       </SceneErrorBoundary>
@@ -148,7 +148,7 @@ export default function Scene3D({
             scroll:true), 무대 연출 툴 패널은 스크롤로 실제 크기가 바뀌지 않으니 필요 없다. 그
             재측정이 슬라이더 드래그 때와 같은 <Canvas> 재구성을 다시 유발해 스크롤 중
             webglcontextlost가 나는 걸 확인했다 — 꺼서 막는다 */}
-        <Canvas ref={canvasRef} className={className} resize={{ scroll: false }} {...canvasProps}>
+        <Canvas ref={canvasRef} className={className} dpr={[1, 2]} resize={{ scroll: false }} {...canvasProps}>
           {children}
         </Canvas>
       </SceneErrorBoundary>
