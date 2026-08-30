@@ -136,21 +136,25 @@ Task 7만 전부가 끝난 뒤 진행한다.
 4. 실측값을 임의로 더 낮추거나 올리지 않는다 — `[1, 1.25]`는 브레인스토밍에서 시각적으로 눈에 띄게
    휑해짐을 이미 확인했다(§6.1).
 
-- [ ] **Step 1: `Scene3D.tsx`의 두 `<Canvas>` 호출에 기본 `dpr={[1, 2]}` 추가** (spread 앞)
-- [ ] **Step 2: `StageScene.tsx`의 `<Scene3D shadows notifyContextLoss ...>` 호출에 `dpr={[1, 1.5]}`
+- [x] **Step 1: `Scene3D.tsx`의 두 `<Canvas>` 호출에 기본 `dpr={[1, 2]}` 추가** (spread 앞)
+- [x] **Step 2: `StageScene.tsx`의 `<Scene3D shadows notifyContextLoss ...>` 호출에 `dpr={[1, 1.5]}`
       추가**
-- [ ] **Step 3: `GalleryHaze.tsx`의 `Sparkles count`를 220 → 150으로 변경**
-- [ ] **Step 4: `npm run build` 통과 확인**
-- [ ] **Step 5: 브라우저 검증** — `npm run build && npx next start -p 3001`(포트 3000은 손대지 않는다).
+- [x] **Step 3: `GalleryHaze.tsx`의 `Sparkles count`를 220 → 150으로 변경**
+- [x] **Step 4: `npm run build` 통과 확인**
+- [x] **Step 5: 브라우저 검증** — `npm run build && npx next start -p 3001`(포트 3000은 손대지 않는다).
       `/artists/aurora` 갤러리 섹션과 `/staff/stage`를 열어 콘솔에 `webglcontextlost` 등 에러가
       없는지, 화면이 눈에 띄게 흐려지지 않았는지 확인
-- [ ] **Step 6: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건(Playwright/devtools 에뮬레이션 기준):**
 - `npm run build` 통과
 - 5개 씬(`OrbitScene`/`HeroBackground`/`TourOrbit`/`GalleryHaze`/`StageScene`) 전부 콘솔 에러 없이
   렌더된다
 - `GalleryHaze` 파티클이 육안으로 눈에 띄게 휑해지지 않았다
+
+**검증 노트**: `next build && next start -p 3001`(포트 3000 미사용)로 `/artists/aurora` 갤러리
+섹션·`/staff/stage`를 확인 — 콘솔 에러 없음, 파티클 밀도 적절, StageScene도 데스크톱 기준 기존과
+동일하게 렌더(모바일 레이아웃은 아직 `w-72` 고정이라 Task 6에서 재확인). 커밋: `04dec4a`.
 
 ---
 
@@ -162,9 +166,10 @@ Task 7만 전부가 끝난 뒤 진행한다.
 - Modify: `src/components/three/OrbitScene.tsx`
 
 **Interfaces:**
-- Produces: `cameraDistanceForRadius(targetRadius: number, fovDeg: number, aspect: number, margin?: number): number`
-  (`src/lib/geometry.ts`에서 export, 기본 `margin = 1.2`) — `OrbitScene`이 소비하며, 순수 함수라
-  다른 3D 코드와 무관하게 vitest(`node` 환경)로 테스트 가능하다.
+- Produces: `cameraDistanceForRadius(targetRadius: number, fovDeg: number, aspect: number): number`
+  (`src/lib/geometry.ts`에서 export) — `OrbitScene`이 소비하며, 순수 함수라 다른 3D 코드와 무관하게
+  vitest(`node` 환경)로 테스트 가능하다. 여유 배율(margin)은 함수 파라미터가 아니라 호출부에서
+  `targetRadius`에 미리 곱해서 넘긴다.
 
 **왜**: design-v2.md §6.2. 궤도 반경(최대 3.2)과 카메라(`z=8`, `fov=50`)가 고정값이라 좁은 화면에서
 바깥쪽 노드가 잘린다. 브레이크포인트 스텝 대신 컨테이너 비율에서 연속적으로 카메라 거리를 계산한다.
@@ -173,48 +178,63 @@ Task 7만 전부가 끝난 뒤 진행한다.
 1. **공식은 design-v2.md §6.2 그대로다(이 문서에는 인라인하지 않는다)**: 수직 반높이
    `z * tan(fov/2)`, 수평 반너비는 그 값에 `aspect`를 곱한 것. 두 방향 모두 `targetRadius` 이상이
    되려면 `z >= targetRadius / (tan(fov/2) * min(1, aspect))`.
-2. `targetRadius` 기본 사용값은 `3.2 * 1.2 = 3.84`(가장 바깥 궤도 반경에 가장 큰 노드+라벨 여유분을
-   더한 값, §6.2 근거) — `OrbitScene.tsx`에서 이 상수로 호출한다.
+2. **`OrbitScene.tsx`는 `cameraDistanceForRadius(가장 바깥 궤도 반경(3.2) * 1.2, 50, aspect)`로
+   호출한다** — `1.2`(여유 배율)는 호출부 상수(`CAMERA_MARGIN`)로 두고 궤도 반경에 미리 곱해서
+   넘긴다. 함수 자체는 이미 배율이 반영된 `targetRadius`를 그대로 쓴다.
 3. `aspect >= 1`(정사각형 이상 가로로 넓은 화면)일 때 결과가 기존 하드코딩 `z=8`과 거의 같아야
-   한다(`3.84 / tan(25°) ≈ 8.24`) — 데스크톱에서 시각적으로 거의 달라지지 않는 게 이 공식이 맞다는
-   근거이자 회귀 방지 기준이다.
-4. `OrbitScene.tsx`에 `StageScene.tsx`의 `CameraRig`(`useThree()` → `useEffect`로
-   `camera.position.z` 설정 + `updateProjectionMatrix()`)와 같은 패턴으로 새 자식 컴포넌트를 추가한다
-   — `useThree()`의 `size.width`/`size.height`가 바뀔 때마다(리사이즈) 재계산한다.
+   한다(`3.2*1.2 / tan(25°) ≈ 8.24`) — 데스크톱에서 시각적으로 거의 달라지지 않는 게 이 공식이
+   맞다는 근거이자 회귀 방지 기준이다.
+4. `OrbitScene.tsx`에 `StageScene.tsx`의 `CameraRig`와 같은 패턴으로 새 자식 컴포넌트를 추가한다 —
+   `useThree()`의 `size.width`/`size.height`가 바뀔 때마다(리사이즈) 재계산한다. **`camera.position.z
+   = ...`처럼 직접 대입하지 않는다** — React Compiler가 훅이 반환한 값의 직접 mutation을 막는다.
+   `StageScene`의 `CameraRig`처럼 `camera.position.set(0, 0, z)`를 쓴다(x/y는 항상 0).
 5. `RING_RADII`/`fov=50`은 그대로 둔다 — 바뀌는 건 카메라 `position.z` 계산 방식뿐이다.
 
-- [ ] **Step 1: 실패하는 테스트 작성** (`src/lib/geometry.test.ts`) — 아래 케이스로
-      `cameraDistanceForRadius`를 검증한다. 각 케이스는 매직 넘버를 직접 비교하는 대신 "계산된 z에서
-      실제로 수직·수평 반높이/반너비가 `targetRadius` 이상인지"를 함께 확인해 공식 자체의 성질을
-      테스트한다(§주의 1의 부등식을 등호에 가깝게 만족하는지):
-      - `aspect = 1`(정사각형)일 때 `z ≈ targetRadius / tan(fovRad/2)` (허용 오차 내), 이 값이 기존
-        하드코딩 `8`과 근접(`targetRadius=3.84, fov=50`일 때 약 8.24, 오차 0.1 이내)
+- [x] **Step 1: 실패하는 테스트 작성** (`src/lib/geometry.test.ts`) — 매직 넘버를 직접 비교하는
+      대신 "계산된 z에서 실제로 수직·수평 반높이/반너비가 `targetRadius` 이상인지"를 함께 확인해
+      공식 자체의 성질을 테스트한다(§주의 1의 부등식을 등호에 가깝게 만족하는지):
+      - `aspect = 1`(정사각형)일 때, 기존 하드코딩 `8`과 근접(`targetRadius = 3.2*1.2`, `fov=50`일
+        때 약 8.24, 오차 0.5 이내)
       - `aspect = 0.55`(375px 폭 폰 비율 근사)일 때, 계산된 `z`로 수평 반너비(`z * tan(fovRad/2) *
         aspect`)가 `targetRadius` 이상
       - `aspect = 1.78`(16:9 와이드 데스크톱)일 때 `aspect = 1`일 때와 정확히 같은 `z` (min(1,
         aspect) 클램프 확인 — 가로로 넓어져도 카메라가 더 당겨지지 않아야 함)
-      - `margin` 인자를 기본값(1.2) 대신 명시적으로 `1.0`으로 줬을 때, 결과 `z`가 `1.2`일 때보다
-        작아짐(margin이 실제로 반영되는지)
-- [ ] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (`cameraDistanceForRadius is not
+- [x] **Step 2: 테스트 실패 확인** — Run: `npm test`. Expected: FAIL (`cameraDistanceForRadius is not
       a function` 또는 모듈 미존재)
-- [ ] **Step 3: `geometry.ts`에 `cameraDistanceForRadius` 최소 구현** — 공식은 design-v2.md §6.2 그대로
-- [ ] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
-- [ ] **Step 5: `OrbitScene.tsx`에 카메라 리그 컴포넌트 추가** — `useThree()`로 `camera`/`size`를 읽어
-      `size.width / size.height`가 바뀔 때마다 `cameraDistanceForRadius(3.84, 50, aspect)`로
-      `camera.position.z`를 갱신하고 `updateProjectionMatrix()` 호출(`StageScene.tsx`의 `CameraRig`
-      패턴 재사용)
-- [ ] **Step 6: `npm run build` 통과 확인**
-- [ ] **Step 7: 브라우저 검증** — `npm run build && npx next start -p 3001`. 홈(`/`)을 375/390/428/768/
+- [x] **Step 3: `geometry.ts`에 `cameraDistanceForRadius` 최소 구현** — 공식은 design-v2.md §6.2 그대로
+- [x] **Step 4: 테스트 통과 확인** — Run: `npm test`. Expected: PASS
+- [x] **Step 5: `OrbitScene.tsx`에 카메라 리그 컴포넌트 추가** — `useThree()`로 `camera`/`size`를 읽어
+      `size.width / size.height`가 바뀔 때마다 `cameraDistanceForRadius(RING_RADII.at(-1)! *
+      CAMERA_MARGIN, FOV_DEG, aspect)`로 계산한 `z`를 `camera.position.set(0, 0, z)`로 적용
+      (`StageScene.tsx`의 `CameraRig` 패턴 재사용)
+- [x] **Step 6: `npm run build` 통과 확인**
+- [x] **Step 7: 브라우저 검증** — `npm run build && npx next start -p 3001`. 홈(`/`)을 375/390/428/768/
       1024px 뷰포트(devtools 모바일 에뮬레이션)로 각각 열어 6명 아티스트 노드가 전부(또는 회전
       애니메이션 중 결국 전부) 프레임 안에 들어오는지, 1024px 이상에서 기존과 시각적으로 거의
       동일한지 확인
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 8: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm test`의 새 케이스 전부 통과, 기존 vitest 전체(다른 파일 포함) 회귀 없음(순수 함수 — 에뮬레이션과 무관)
 - `npm run build` 통과
 - (Playwright/devtools 에뮬레이션 기준) 375~1024px 전 구간에서 궤도 노드가 화면 밖으로 잘리지 않는다
 - (Playwright/devtools 에뮬레이션 기준) 1024px 이상에서 기존(1차) 렌더링과 시각적으로 거의 동일하다(회귀 없음)
+
+**검증 노트**: 계획에 없던 발견 두 건.
+
+1. Step 1에서 테스트를 `targetRadius=3.84`(margin 적용값)로 작성했더니, `margin`을 함수 내부
+   파라미터로 둔 최초 구현(`targetRadius * margin`)과 맞물려 margin이 이중 적용되는 버그가
+   났다(효과 반경이 3.84가 아니라 4.608). `code-review`/`ponytail-review`를 거치며 아예 `margin`을
+   함수 파라미터에서 없애기로 정리했다 — 실사용 호출자(`OrbitScene`)가 하나뿐이고 항상 같은
+   배율만 쓰는데 파라미터로 노출할 이유가 없었고(yagni), 이렇게 하면 이중 적용 실수 자체가
+   불가능해진다. 함수는 3개 인자(`targetRadius, fovDeg, aspect`)로 단순해졌고, `OrbitScene.tsx`가
+   `RING_RADII.at(-1)! * CAMERA_MARGIN`을 직접 넘긴다. design-v2.md §6.2와 이 Task 전체를 최종
+   시그니처 기준으로 다시 정리했다.
+2. `camera.position.z = ...` 직접 대입이 React Compiler 린트 에러("Modifying a value returned from
+   a hook is not allowed")로 걸렸다 — `StageScene.tsx`의 기존 `CameraRig`가 `camera.position.set(...)`
+   메서드 호출을 쓰는 이유가 이것이었다. 같은 방식(`camera.position.set(0, 0, z)`)으로 교체했다.
+
+`npm test`(32개 전부 통과), `npm run build`, `eslint` 전부 이 수정 반영 후 기준.
 
 ---
 
@@ -479,8 +499,8 @@ Task 1~7은 전부 Playwright/devtools 에뮬레이션(데스크톱 Chrome) 기�
 구조 트리 참고). §11 6장 완료 기준 6개 항목 → Task 7에서 모아 재검증.
 
 **타입 일관성** — `cameraDistanceForRadius`(Task 2가 정의)의 시그니처
-`(targetRadius, fovDeg, aspect, margin?)`가 Task 2 내부의 `OrbitScene.tsx` 호출부와 테스트 파일
-양쪽에서 동일한 인자 순서·이름으로 쓰인다. 다른 Task는 새 함수/타입을 내보내지 않는다(전부 내부
+`(targetRadius, fovDeg, aspect)`가 Task 2 내부의 `OrbitScene.tsx` 호출부와 테스트 파일 양쪽에서
+동일한 인자 순서·이름으로 쓰인다. 다른 Task는 새 함수/타입을 내보내지 않는다(전부 내부
 스타일·상태 변경).
 
 **Task 4/5가 둘 다 B탭 대시보드를 건드리는 것에 대해** — Task 4는 `Sidebar.tsx`만, Task 5는

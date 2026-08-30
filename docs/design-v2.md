@@ -640,14 +640,19 @@ z를 동적으로 계산해 궤도 전체가 항상 프레임 안에 들어오�
 사이에서 다시 깨지는 스텝 방식보다, 연속 함수로 계산하는 편이 어떤 화면 크기에서도 견고하다.
 
 **공식**: 수직 FOV가 고정이므로 거리 `z`에서 보이는 수직 절반 높이는 `z * tan(fov/2)`, 수평 절반
-너비는 `그 값 * aspect`다. 두 방향 모두 목표 반경 이상이 되려면 `z >= targetRadius / (tan(fov/2) *
-min(1, aspect))`. `targetRadius`는 가장 바깥 궤도 반경(3.2) + 노드 반지름·라벨 여유분을 합쳐
-**3.84**(margin 1.2배)로 잡는다 — 가장 큰 노드(`aurora`, `size=1`, 반경 `0.32`)가 바깥 궤도(orbit
-2)에 있고 라벨이 그 아래로 더 뻗는 실측 케이스를 덮는 값이다. 순수 함수
-`cameraDistanceForRadius(targetRadius, fovDeg, aspect, margin = 1.2): number`로
-`src/lib/geometry.ts`에 추가하고, `OrbitScene`은 `useThree()`의 `size.width/size.height`가 바뀔
-때마다 이 함수로 카메라 `position.z`를 다시 계산해 적용한다(`StageScene`의 `CameraRig` 패턴과 동일
-— `useEffect` 안에서 `camera.position.z` 설정 + `updateProjectionMatrix()`).
+너비는 `그 값 * aspect`다. 두 방향 모두 `targetRadius` 이상이 되려면 `z >= targetRadius /
+(tan(fov/2) * min(1, aspect))`. 순수 함수 `cameraDistanceForRadius(targetRadius, fovDeg, aspect):
+number`로 `src/lib/geometry.ts`에 추가한다 — 여유 배율(margin)은 함수 파라미터로 두지 않고 호출부
+(`OrbitScene`)에서 미리 곱해서 넘긴다: 실사용 호출은 `cameraDistanceForRadius(가장 바깥 궤도
+반경(3.2) * 1.2, 50, aspect)`. `1.2`배는 노드 반지름·라벨이 궤도 반경보다 살짝 더 뻗어나가는
+여유분이다 — 가장 큰 노드(`aurora`, `size=1`, 반경 `0.32`)가 바깥 궤도(orbit 2)에 있고 라벨이 그
+아래로 더 뻗는 실측 케이스를 덮는 값이다. margin을 함수 파라미터로 만들지 않은 이유는 실사용
+호출자가 하나뿐이고 그 호출자가 항상 같은 배율만 쓰기 때문이다(호출부에서 곱해서 넘기면 함수가
+3개 인자로 단순해지고, "이미 배율 적용된 값을 또 곱하는" 이중 적용 실수도 애초에 불가능해진다).
+`useThree()`의 `size.width/size.height`가 바뀔 때마다 이 함수로 카메라 거리를 다시 계산해
+적용한다(`StageScene`의 `CameraRig` 패턴과 동일 — `useEffect` 안에서
+`camera.position.set(0, 0, z)`. 위치 변경은 투영 행렬과 무관해 `updateProjectionMatrix()`는
+필요 없다 — `CameraRig`도 호출하지 않는다).
 
 ### 6.3 A탭 아티스트 페이지 — 디스코그래피 커버플로우 오버플로우
 

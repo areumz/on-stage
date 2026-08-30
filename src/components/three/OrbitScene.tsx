@@ -1,15 +1,18 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Group } from "three";
-import { ringPoints } from "@/lib/geometry";
+import { cameraDistanceForRadius, ringPoints } from "@/lib/geometry";
 import Scene3D from "@/components/three/Scene3D";
 import type { Artist } from "@/lib/types";
 
 const RING_RADII = [1.4, 2.3, 3.2];
+const FOV_DEG = 50;
+// 노드 반지름·라벨이 궤도 반경보다 살짝 더 뻗어나가는 여유분
+const CAMERA_MARGIN = 1.2;
 
 function ArtistNode({ artist, rotation }: { artist: Artist; rotation: React.RefObject<number> }) {
   const router = useRouter();
@@ -71,9 +74,22 @@ function Orbits({ artists }: { artists: Artist[] }) {
   );
 }
 
+// 컨테이너 가로세로비가 좁아지면(수직 FOV 고정, 가로 FOV만 aspect에 비례해 줄어듦) 궤도 바깥쪽
+// 노드가 화면 밖으로 잘리는 문제 — 리사이즈마다 카메라 거리를 다시 계산해
+// 궤도 전체(가장 바깥 반경 기준)가 항상 프레임 안에 들어오게 한다.
+function OrbitCameraRig() {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const z = cameraDistanceForRadius(RING_RADII.at(-1)! * CAMERA_MARGIN, FOV_DEG, size.width / size.height);
+    camera.position.set(0, 0, z);
+  }, [camera, size.width, size.height]);
+  return null;
+}
+
 export default function OrbitScene({ artists }: { artists: Artist[] }) {
   return (
-    <Scene3D camera={{ position: [0, 0, 8], fov: 50 }}>
+    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }}>
+      <OrbitCameraRig />
       <Orbits artists={artists} />
     </Scene3D>
   );
