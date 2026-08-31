@@ -176,7 +176,6 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 
 - 회원가입/비밀번호 재설정 기능 없음 (Supabase Auth의 이메일·비밀번호 로그인만 지원, 계정은 시드로만 생성)
 - 다국어(i18n) 미지원
-- 모바일 반응형 미지원 (데스크톱 기준)
 - 실제 결제/예매 기능 없음
 - 백엔드 서버 분리 없음
 - **권장 브라우저: Chrome 최신, Safari 16.4+.** 그 외 환경(구형 Safari 등 WebGL 미지원·구형 브라우저)에서는
@@ -184,8 +183,7 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 
 The list below covers what's still missing. Of these, the auth approach (phase 2 roadmap item 1) is
 done; the rest remain on the roadmap. No sign-up or password reset (Supabase Auth email/password
-login only, accounts are seed-created), no i18n, no mobile responsiveness (desktop-only), no real
-payments/booking, no separate backend. **Recommended browsers: latest Chrome,
+login only, accounts are seed-created), no i18n, no real payments/booking, no separate backend. **Recommended browsers: latest Chrome,
 Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content may not display.
 
 ### 2차 로드맵 / Phase 2 Roadmap
@@ -196,7 +194,10 @@ Safari 16.4+.** In other environments (older Safari, no WebGL, etc.), 3D content
       프리셋) — 자세한 내용은 [docs/plan-v2.2-stage-tools.md](docs/plan-v2.2-stage-tools.md) 참고
 - [x] **B탭 사이드바 잔여 메뉴 실 화면 구현** (투어 일정 관리, 아티스트 편집+트랙 관리, 티켓 현황 조회) —
       오너 계정만 쓰기 가능, 데모 계정은 읽기 전용. 자세한 내용은 [docs/plan-v2.3-staff-console.md](docs/plan-v2.3-staff-console.md) 참고
-- [ ] 반응형 대응
+- [x] **반응형 대응** (모바일에서도 5개 R3F 씬 전부 유지 — 정적 이미지로 대체하지 않음, 홈 궤도 씬
+      카메라를 화면 비율에 맞춰 동적으로 프레이밍, B탭 사이드바 햄버거+드로워 전환, 무대 연출 툴
+      컨트롤 패널 하단 시트 전환) — 실기기 프레임레이트는 미검증(위 알려진 제한사항 참고). 자세한
+      내용은 [docs/plan-v2.5-responsive.md](docs/plan-v2.5-responsive.md) 참고
 - [x] **셰이더 심화** (아티스트별로 다른 GLSL 패턴 3종 — 파동/동심원/알갱이 — 적용, `/staff/artists`에서
       파라미터를 바꾸면 A탭 히어로에 실시간 반영) — 자세한 내용은 [docs/plan-v2.4-shader-depth.md](docs/plan-v2.4-shader-depth.md) 참고
 - [ ] 갤러리 이미지 정교화 (일부 아티스트는 AI 생성 이미지 등으로 교체 검토)
@@ -215,9 +216,13 @@ read-only ticket status view, all gated to owner-only writes with demo accounts 
 **Shader depth is also done** — each artist's hero background now runs one of three GLSL patterns
 (wave, ripple, grain) driven by per-artist parameters, and changes made in the staff artist editor
 reflect immediately on the A-tab hero. See [docs/plan-v2.4-shader-depth.md](docs/plan-v2.4-shader-depth.md)
-for the implementation log.
-Remaining: responsive layouts and refined gallery imagery. See
-[docs/design-v2.md](docs/design-v2.md) for details.
+for the implementation log. **Responsive design is also done** — all five R3F scenes stay interactive
+on mobile (no static-image fallback), the home orbit scene's camera reframes continuously from the
+viewport's aspect ratio, the staff sidebar collapses into a hamburger drawer, and the stage tool's
+control panel becomes a bottom sheet below `md`. Real-device frame rate under the DPR clamp is still
+unverified (no mobile GPU in this environment) and needs a post-deploy check. See
+[docs/plan-v2.5-responsive.md](docs/plan-v2.5-responsive.md) for the implementation log.
+Remaining: refined gallery imagery. See [docs/design-v2.md](docs/design-v2.md) for details.
 
 ---
 
