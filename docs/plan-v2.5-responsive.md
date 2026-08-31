@@ -254,22 +254,39 @@ Task 7만 전부가 끝난 뒤 진행한다.
 2. 드래그(`onPointerDown`/`onPointerMove`)로 카드를 넘기는 상호작용 영역은 `overflow-hidden`을 걸어도
    그대로 동작해야 한다 — 클릭/드래그 대상은 카드 자체(`button`)이지 넘치는 시각 요소가 아니다.
 
-- [ ] **Step 1: 카드들을 감싸는 컨테이너(포인터 이벤트 핸들러가 달린 요소)에 `overflow-hidden`
+- [x] **Step 1: 카드들을 감싸는 컨테이너(포인터 이벤트 핸들러가 달린 요소)에 `overflow-hidden`
       추가**
-- [ ] **Step 2: `npm run build` 통과 확인**
-- [ ] **Step 3: 브라우저 검증** — `npm run build && npx next start -p 3001`. `/artists/aurora`를
+- [x] **Step 2: `npm run build` 통과 확인**
+- [x] **Step 3: 브라우저 검증** — `npm run build && npx next start -p 3001`. `/artists/aurora`를
       768px(md) 뷰포트로 열어 `document.documentElement.scrollWidth === window.innerWidth`인지(가로
       스크롤 없음) 확인하고, 커버플로우 좌우 드래그로 트랙 전환이 여전히 되는지 확인
-- [ ] **Step 4: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 4: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건:**
 - `npm run build` 통과
-- (Playwright/devtools 에뮬레이션 기준) `/artists/aurora`가 375~1024px 전 구간에서 페이지 레벨
-  가로 스크롤이 없다
+- (Playwright/devtools 에뮬레이션 기준) 커버플로우 자체가 원인이 되는 페이지 레벨 가로 스크롤은
+  375~1024px 전 구간에서 없다(768px 기준으로 실측했던 130px 오버플로우 해소 확인) — **단, 375/428px
+  에는 아티스트 페이지 히어로(`text-[10rem]`, Task 5 범위)가 원인인 별개의 130px대 오버플로우가
+  남아 있다. 이건 이 Task가 다룬 커버플로우와 무관한 기존 문제라 그대로 둔다.**
 - (Playwright/devtools 에뮬레이션 기준) 커버플로우 좌우 드래그/클릭 전환이 회귀 없이 동작한다 —
   **단, 마우스 드래그로만 확인 가능하다. 실제 손가락 터치 제스처(핀치·스와이프 관성 등)는 데스크톱
   Chrome 에뮬레이션으로 신뢰할 수 없는 항목이라 실기기 확인이 별도로 필요하다**(문서 맨 끝 실기기
   체크리스트 참고)
+
+**검증 노트**: 계획에 없던 발견 두 건.
+
+1. `overflow-hidden` 적용 후에도 375/428px에서 `document.documentElement.scrollWidth`가 여전히
+   viewport보다 넓게 나왔다. 원인을 추적하니 커버플로우가 아니라 아티스트 페이지 히어로
+   `<h1 className="... text-[10rem] ...">`("AURORA")였다 — 공백 없는 한 단어라 줄바꿈이 안 되고,
+   160px 폰트에서 그대로 뷰포트 밖으로 삐져나간다(`docWidth`가 h1의 `getBoundingClientRect().right`
+   값과 정확히 일치함을 확인). 이건 design-v2.md §6.5/Task 5가 다루기로 이미 정해진 항목이라 이
+   Task에서는 안 건드리고 그대로 남겼다.
+2. 브레인스토밍 단계에서 "a탭 아티스트 페이지는 375~428px에서 가로 스크롤 없음"으로 기록했던 실측이
+   **부정확했다** — 당시 Playwright 컨텍스트에 `isMobile: true`를 켠 상태로 쟀는데, 콘텐츠가 넘칠 때
+   모바일 에뮬레이션이 "레이아웃 뷰포트"를 콘텐츠에 맞춰 확대해버려서 `window.innerWidth`와
+   `document.documentElement.scrollWidth`가 같은 값(687)으로 같이 부풀어 올라 "오버플로우 없음"처럼
+   보였던 것 — 이번엔 `isMobile` 없이(데스크톱 컨텍스트, 뷰포트 폭만 좁힘) 재보니 실제로는 항상
+   있었다. Task 5 진행 시 이 측정 방식(비-모바일 컨텍스트로 뷰포트 폭만 조정)을 쓸 것.
 
 ---
 
