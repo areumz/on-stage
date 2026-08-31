@@ -84,7 +84,9 @@ src/
 │       └── StageControls.tsx            # 수정 — 시트 안에서 폭 반응형 (Task 6)
 └── app/
     ├── artists/[slug]/page.tsx          # 수정 — 히어로 text-[10rem] → sm 미만 축소 (Task 5)
-    └── staff/(console)/dashboard/page.tsx # 수정 — 지표/하단 grid → md 미만 1열 (Task 5)
+    └── staff/
+        ├── (console)/dashboard/page.tsx # 수정 — 지표/하단 grid → md 미만 1열 (Task 5)
+        └── (console)/layout.tsx         # 수정 — flex flex-col md:flex-row (Task 4, 계획 외 발견)
 ```
 
 ---
@@ -294,6 +296,7 @@ Task 7만 전부가 끝난 뒤 진행한다.
 
 **Files:**
 - Modify: `src/components/staff/Sidebar.tsx`
+- Modify: `src/app/staff/(console)/layout.tsx` (계획에 없던 추가 — 아래 검증 노트 참고)
 
 **Interfaces:**
 - `Sidebar`의 외부 시그니처는 변경 없음(`{ roleLabel: string }`) — 내부에 열림/닫힘
@@ -318,25 +321,38 @@ Task 7만 전부가 끝난 뒤 진행한다.
 4. 로그아웃 핸들러(`handleLogout`)와 `usePathname` 기반 활성 링크 표시는 그대로 재사용 — 드로워
    안의 링크 목록도 같은 `MENU` 배열·같은 활성 스타일을 쓴다(별도 목록을 새로 만들지 않는다).
 
-- [ ] **Step 1: 데스크톱 `<aside>`에 `hidden md:flex` + `sticky top-0 h-screen` 추가**(sticky 버그
+- [x] **Step 1: 데스크톱 `<aside>`에 `hidden md:flex` + `sticky top-0 h-screen` 추가**(sticky 버그
       수정 포함)
-- [ ] **Step 2: `md` 미만에서만 보이는 헤더 바(햄버거 버튼 + "STAGE.ONE") 추가**(`flex md:hidden`)
-- [ ] **Step 3: 열림 상태 `useState` + 오버레이 드로워(배경 스크림 + 패널) 구현** — `MENU` 5개
-      항목과 로그아웃 버튼을 데스크톱 `<aside>`와 동일한 내용으로 재사용
-- [ ] **Step 4: 배경 스크림 클릭 · 링크 클릭 시 드로워 닫힘 구현**
-- [ ] **Step 5: `npm run build` 통과 확인**
-- [ ] **Step 6: 브라우저 검증** — `npm run build && npx next start -p 3001`, 데모 계정으로 로그인.
+- [x] **Step 2: `md` 미만에서만 보이는 헤더 바(햄버거 버튼 + "STAGE.ONE") 추가**(`flex md:hidden`)
+- [x] **Step 3: 열림 상태 `useState` + 오버레이 드로워(배경 스크림 + 패널) 구현** — `MENU` 5개
+      항목과 로그아웃 버튼을 데스크톱 `<aside>`와 동일한 내용으로 재사용(공용 `SidebarNav`
+      서브컴포넌트로 추출)
+- [x] **Step 4: 배경 스크림 클릭 · 링크 클릭 시 드로워 닫힘 구현**
+- [x] **Step 5: `npm run build` 통과 확인**
+- [x] **Step 6: 브라우저 검증** — `npm run build && npx next start -p 3001`, 데모 계정으로 로그인.
       375px에서 `/staff/dashboard`·`/staff/tours`·`/staff/artists`·`/staff/tickets` 4화면 모두
       햄버거로 드로워가 열리고 메뉴 이동이 되는지, 768px 이상에서는 기존 고정 사이드바가 그대로
       보이는지, **`/staff/tours`처럼 긴 페이지에서 로그아웃 버튼이 스크롤 없이 항상 보이는지**(md
       이상 포함) 확인
-- [ ] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건(Playwright/devtools 에뮬레이션 기준):**
 - `npm run build` 통과
 - `md` 미만 4화면 전부에서 햄버거 → 드로워 → 메뉴 이동이 동작한다
 - `md` 이상 어떤 페이지 길이에서도 로그아웃 버튼이 스크롤 없이 보인다(sticky 버그 수정 확인)
 - 375px에서 어떤 B탭 사이드바 화면도 페이지 레벨 가로 스크롤이 없다
+
+**검증 노트**: 계획에 없던 발견 하나 — `Sidebar`가 모바일 헤더 바(`flex md:hidden`)를 데스크톱
+`<aside>`와 나란히 형제 엘리먼트로 반환하는데, 이 둘을 감싸는 `(console)/layout.tsx`의 바깥
+컨테이너가 항상 `flex`(행 방향)였다. 그 상태로는 모바일 헤더 바가 콘텐츠 **위**가 아니라
+**옆**(같은 행)에 배치돼 레이아웃이 깨졌다. `layout.tsx`의 컨테이너를 `flex flex-col md:flex-row`로
+바꿔서 `md` 미만에서는 세로 스택(헤더 바 → 콘텐츠), `md` 이상에서는 기존과 동일한 가로 배치가
+되도록 고쳤다 — `Sidebar.tsx` 단독 수정만으로는 드로워 기능 자체가 성립할 수 없어 범위를
+`layout.tsx` 한 줄까지 넓혔다.
+
+`npm run build`·`npm test`(32개) 통과. Playwright로 4화면 375px 가로 스크롤 없음, 드로워
+열림·메뉴 재사용 확인, 데스크톱(1280px) 스크린샷 기존과 동일, `/staff/tours`(뷰포트보다 훨씬 긴
+페이지)에서 1500px 스크롤 후에도 로그아웃 버튼이 사이드바에 고정돼 계속 보이는 것 확인.
 
 ---
 
