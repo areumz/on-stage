@@ -44,7 +44,7 @@ export default function StageStudio({
       </div>
 
       {sheetOpen && (
-        <div className="fixed inset-0 z-20 bg-black/50 md:hidden" onClick={() => setSheetOpen(false)} />
+        <button type="button" aria-label="조정 패널 닫기" className="fixed inset-0 z-20 bg-black/50 md:hidden" onClick={() => setSheetOpen(false)} />
       )}
 
       <div

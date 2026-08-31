@@ -80,7 +80,7 @@ export default function Sidebar({ roleLabel }: { roleLabel: string }) {
       {/* md 미만: 오버레이 드로워 */}
       {open && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <button type="button" aria-label="메뉴 닫기" className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
           <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-surface-2">
             <SidebarNav roleLabel={roleLabel} pathname={pathname} onNavigate={() => setOpen(false)} />
           </aside>
