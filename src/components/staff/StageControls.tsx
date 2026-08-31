@@ -30,7 +30,7 @@ export default function StageControls({ artists, artistSlug, state, onChange }: 
   const throttledColorChange = useThrottledChange(state, onChange);
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col gap-8 overflow-y-auto border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white">
+    <aside className="flex w-full shrink-0 flex-col gap-8 overflow-y-auto border-l border-white/10 bg-bg-dark-2 px-6 py-8 text-white md:w-72">
       <section>
         <p className="text-sm text-white/50">조명 프리셋</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">

@@ -146,7 +146,7 @@ Task 7만 전부가 끝난 뒤 진행한다.
 - [x] **Step 5: 브라우저 검증** — `npm run build && npx next start -p 3001`(포트 3000은 손대지 않는다).
       `/artists/aurora` 갤러리 섹션과 `/staff/stage`를 열어 콘솔에 `webglcontextlost` 등 에러가
       없는지, 화면이 눈에 띄게 흐려지지 않았는지 확인
-- [x] **Step 6: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 6: 검증** — 아래 완료조건 확인
 
 **완료조건(Playwright/devtools 에뮬레이션 기준):**
 - `npm run build` 통과
@@ -262,7 +262,7 @@ Task 7만 전부가 끝난 뒤 진행한다.
 - [x] **Step 3: 브라우저 검증** — `npm run build && npx next start -p 3001`. `/artists/aurora`를
       768px(md) 뷰포트로 열어 `document.documentElement.scrollWidth === window.innerWidth`인지(가로
       스크롤 없음) 확인하고, 커버플로우 좌우 드래그로 트랙 전환이 여전히 되는지 확인
-- [x] **Step 4: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 4: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm run build` 통과
@@ -334,7 +334,7 @@ Task 7만 전부가 끝난 뒤 진행한다.
       햄버거로 드로워가 열리고 메뉴 이동이 되는지, 768px 이상에서는 기존 고정 사이드바가 그대로
       보이는지, **`/staff/tours`처럼 긴 페이지에서 로그아웃 버튼이 스크롤 없이 항상 보이는지**(md
       이상 포함) 확인
-- [x] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 7: 검증** — 아래 완료조건 확인
 
 **완료조건(Playwright/devtools 에뮬레이션 기준):**
 - `npm run build` 통과
@@ -389,7 +389,7 @@ Task 7만 전부가 끝난 뒤 진행한다.
       각각에서 `/artists/aurora`(갤러리·히어로), `/staff/dashboard`(지표 카드·하단 그리드),
       `/staff/tours` 등 `TourSection`을 쓰는 화면을 열어 `md` 미만 1열, `md` 이상 기존 그리드로
       보이는지, 카드 안 텍스트가 잘리거나 한 글자씩 줄바꿈되지 않는지 확인
-- [x] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 7: 검증** — 아래 완료조건 확인
 
 **완료조건(Playwright/devtools 에뮬레이션 기준):**
 - `npm run build` 통과
@@ -439,25 +439,25 @@ sm:text-[10rem]` 적용으로 해소됨(375px에서 실측 폰트 60px, 640px �
 5. `useThrottledChange`(100ms 스로틀)는 이미 씬 반영 빈도를 조절하고 있다 — 시트 개폐 자체가 씬
    props를 바꾸지 않으므로 이 안전장치를 수정할 필요는 없다.
 
-- [ ] **Step 1: `StageStudio.tsx`에 시트 열림/닫힘 `useState<boolean>` 추가**
-- [ ] **Step 2: `md` 미만에서 `StageControls`를 감싸는 하단 시트 오버레이 컨테이너 추가**(`fixed
+- [x] **Step 1: `StageStudio.tsx`에 시트 열림/닫힘 `useState<boolean>` 추가**
+- [x] **Step 2: `md` 미만에서 `StageControls`를 감싸는 하단 시트 오버레이 컨테이너 추가**(`fixed
       inset-x-0 bottom-0 md:static`, 닫힘 상태는 `translate-y-full` 류로 화면 밖에 두거나 렌더 안 함)
       **+ 닫힘 상태에서 보이는 토글 버튼**(`md:hidden`)
-- [ ] **Step 3: `md` 이상에서는 기존과 동일한 정적 레이아웃 유지 확인**(별도 조건부 컨테이너로
+- [x] **Step 3: `md` 이상에서는 기존과 동일한 정적 레이아웃 유지 확인**(별도 조건부 컨테이너로
       감싸지 않고 시트 래퍼 자체가 `md:static md:flex`로 기존 흐름에 자연스럽게 합류하게 구성)
-- [ ] **Step 4: `StageControls.tsx` 루트 `<aside>`의 폭을 `w-full md:w-72`로 변경**
-- [ ] **Step 5: `npm run build` 통과 확인**
-- [ ] **Step 6: 브라우저 검증** — `npm run build && npx next start -p 3001`, 데모 계정으로 로그인.
+- [x] **Step 4: `StageControls.tsx` 루트 `<aside>`의 폭을 `w-full md:w-72`로 변경**
+- [x] **Step 5: `npm run build` 통과 확인**
+- [x] **Step 6: 브라우저 검증** — `npm run build && npx next start -p 3001`, 데모 계정으로 로그인.
       375px에서 `/staff/stage`를 열어 3D 씬이 전체 화면으로 보이는지, 토글 버튼으로 시트가 열리고
       슬라이더 조작이 되는지, 시트를 열고 닫는 동안 브라우저 콘솔에 `webglcontextlost`가 안
       뜨는지(Network/Console 탭) 확인. 768px 이상에서는 기존과 동일하게 사이드 패널로 보이는지 확인
-- [ ] **Step 7: StageScene DPR 1.5 재확인**(design-v2.md §6.1) — 이번 Task 전까지는 `StageControls`가
+- [x] **Step 7: StageScene DPR 1.5 재확인**(design-v2.md §6.1) — 이번 Task 전까지는 `StageControls`가
       `w-72` 고정이라 3D 씬이 반토막나 있어 DPR 값을 시각적으로 판단할 수 없었다. 이제 375px에서도
       씬이 전체 화면으로 보이니, `dpr={[1, 1.5]}`(현재값)와 `dpr={[1, 2]}`(공용 기본값)를 번갈아
       넣어 `/staff/stage`를 스크린샷 비교한다 — 스팟라이트 빛줄기·그림자 경계·Cloud 질감이 `1.5`에서
       눈에 띄게 뭉개지면 `1.75` 등으로 올리고, 차이가 안 보이면 `1.5`를 그대로 유지한다. 결정과
       근거를 design-v2.md §6.1에 한 문장으로 갱신한다("코드 구조 근거로만" 문구를 실측 결과로 교체)
-- [ ] **Step 8: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 8: 검증** — 아래 완료조건 확인
 
 **완료조건:**
 - `npm run build` 통과
@@ -472,6 +472,48 @@ sm:text-[10rem]` 적용으로 해소됨(375px에서 실측 폰트 60px, 640px �
 - (Playwright/devtools 에뮬레이션 기준) StageScene DPR 1.5가 전체 화면 상태에서 시각 비교되었고,
   design-v2.md §6.1에 그 결과가 반영됐다 — 프레임레이트 자체는 이 기준으로도 검증 불가(§6.1 기존
   전제 유지)
+
+**검증 노트**: 계획에 없던 발견 하나, 그리고 계획대로 진행된 DPR 재확인.
+
+1. 처음엔 시트 개폐를 `translate-y-0`/`translate-y-full` + `transition-transform`으로 구현했는데,
+   `max-h-[75vh]`(높이 상한) + `overflow-y-auto`(내부 스크롤) 조합에서 CSS 트랜지션이 끝난 뒤에도
+   최종 위치가 어긋나는 버그가 있었다(실측: 닫힘 목표 top=800이어야 하는데 실제로는 408에서
+   멈춤 — 트랜지션 도중 퍼센트 기준 높이가 잘못 고정되는 것으로 보임, 스크린샷과
+   `getBoundingClientRect` 값으로 확인). 애니메이션이 요구사항이 아니었으므로(디자인 문서·계획
+   모두 트랜지션 스타일을 강제하지 않음) `hidden`/`block` 클래스로 즉시 표시·숨김만 전환하도록
+   단순화해 근본적으로 없앴다 — Sidebar 드로워(Task 4)의 스크림 패턴도 그대로 재사용.
+2. `md` 이상 레이아웃 보존은 `md:contents`(`display: contents`)로 처리했다 — 계획 문서가 제안한
+   `md:static md:flex`도 검토했으나, 시트 래퍼에 걸린 `fixed`/`z-30`/`max-h`/`overflow-y-auto` 전부를
+   `md:` 변형으로 하나하나 취소해야 해서(놓치면 데스크톱에서 미묘한 회귀 가능) 더 복잡했다.
+   `display: contents`는 래퍼 자체를 박스 트리에서 제거해 `StageControls`가 다시 grandparent
+   flex row의 직계 자식이 되므로, 기존 `w-72 shrink-0` + flex 기본 stretch만으로 데스크톱 레이아웃이
+   1차 구현과 픽셀 단위로 동일해진다 — 오버라이드 클래스 4~5개 대신 1개.
+3. Step 7 DPR 재확인: Playwright `deviceScaleFactor: 3`(데스크톱 Chrome엔 없는 실제 모바일급
+   고밀도 화면을 흉내) 컨텍스트로 375px에서 스팟라이트 3개 전부 켜고 밝기 최대 + 스모그 농도
+   0.6으로 맞춘 뒤 `dpr={[1, 1.5]}`/`dpr={[1, 2]}`를 번갈아 스크린샷 비교 — 스팟라이트 글로우·
+   Cloud 텍스처·그림자 경계 모두 육안으로 차이 없음. `1.5` 유지, design-v2.md §6.1을 실측 결과로
+   갱신함(코드 구조 근거 → 실측 근거).
+
+테스트 중 로그인 세션 하나가 "JWT issued at future"로 500 에러를 낸 적이 있었으나, 새 세션으로
+즉시 재현 안 됨을 확인 — Task 6 변경과 무관한 기존 인증 플로우의 일회성 플레이키니스로 판단하고
+넘어감(별도 Task로 분리하지 않음, 재현 불가능).
+
+4. **(Task 6 보고 이후, 추가 발견)** `/staff/stage`에서 브라우저 창 크기를 줄이거나
+   개발자도구 반응형 모드로 뷰포트를 바꿔도 3D 씬이 새로고침 전까지 이전 크기 그대로 남아 있는
+   버그를 발견 — 새로 발생한 게 아니라 1차 구현 때부터 있던 기존 버그(이번에 처음 반응형
+   리사이즈를 실측하며 드러남). 원인: `StageStudio.tsx`의 씬 컨테이너(`<div className="relative
+   flex-1">`)가 `overflow` 지정 없이 flex-row의 자식이었던 것 — CSS flexbox는 `overflow:visible`인
+   flex 아이템에 `min-width:auto`(콘텐츠 크기 밑으로 못 줄어듦)를 기본 적용하는데, 그 "콘텐츠"가
+   `<canvas>` 자신이고 캔버스는 자신의 현재 렌더 픽셀 크기를 고유 크기로 보고한다. 그 결과
+   컨테이너는 캔버스의 기존 크기 밑으로 못 줄고, 캔버스는 컨테이너가 안 줄었으니 다시 그릴 필요를
+   못 느끼는 순환에 갇혀 리사이즈가 고정된다. Scene3D.tsx(공용 컴포넌트)가 원인이 아님을
+   `notifyContextLoss` 분기를 실험적으로 단순화해 먼저 배제하고, `/`(OrbitScene, flex-col 레이아웃이라
+   너비가 flex 주축이 아님)는 정상 리사이즈됨을 대조군으로 확인한 뒤 찾아냈다. 수정:
+   `relative flex-1` → `relative flex-1 overflow-hidden`(1줄). 1280→900→375(md 경계 통과)→1280px로
+   새로고침 없이 반복 리사이즈해 매번 정확한 캔버스 크기로 다시 그려짐을 확인. `npm run build`·
+   `npm test`(32개) 통과.
+
+`npm run build`·`npm test`(32개) 통과.
 
 ---
 
