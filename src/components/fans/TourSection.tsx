@@ -35,7 +35,7 @@ export default function TourSection({ artist }: { artist: Artist }) {
   }
 
   return (
-    <section id="tour" ref={ref} className="grid min-h-screen grid-cols-2 items-center gap-8 px-16">
+    <section id="tour" ref={ref} className="grid min-h-screen grid-cols-1 items-center gap-8 px-16 md:grid-cols-2">
       <div>
         <p className="text-xs tracking-[0.25em] text-brand-soft">SECTION 02 · TOUR</p>
         <h2 className="mt-4 font-serif-hero text-4xl leading-snug">

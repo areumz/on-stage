@@ -379,23 +379,32 @@ Task 7만 전부가 끝난 뒤 진행한다.
    카드 안 텍스트가 넘치거나 잘리면(예: 대시보드 지표 카드) 그 카드 내부 padding/폰트 크기는 최소
    조정 허용(§6.5 "정확한 축소값은 구현 중 실측하며 조정한다").
 
-- [ ] **Step 1: `GallerySection.tsx`의 `grid-cols-3` → `grid-cols-1 md:grid-cols-3`**
-- [ ] **Step 2: `TourSection.tsx`의 `grid-cols-2` → `grid-cols-1 md:grid-cols-2`**
-- [ ] **Step 3: `staff/(console)/dashboard/page.tsx`의 지표 카드 `grid-cols-3`, 하단
+- [x] **Step 1: `GallerySection.tsx`의 `grid-cols-3` → `grid-cols-1 md:grid-cols-3`**
+- [x] **Step 2: `TourSection.tsx`의 `grid-cols-2` → `grid-cols-1 md:grid-cols-2`**
+- [x] **Step 3: `staff/(console)/dashboard/page.tsx`의 지표 카드 `grid-cols-3`, 하단
       `grid-cols-2` 각각 `md` 미만 `grid-cols-1`로 변경**
-- [ ] **Step 4: `artists/[slug]/page.tsx` 히어로 `text-[10rem]` → `text-6xl sm:text-[10rem]`**
-- [ ] **Step 5: `npm run build` 통과 확인**
-- [ ] **Step 6: 브라우저 검증** — `npm run build && npx next start -p 3001`. 375/428/768/1024px
+- [x] **Step 4: `artists/[slug]/page.tsx` 히어로 `text-[10rem]` → `text-6xl sm:text-[10rem]`**
+- [x] **Step 5: `npm run build` 통과 확인**
+- [x] **Step 6: 브라우저 검증** — `npm run build && npx next start -p 3001`. 375/428/768/1024px
       각각에서 `/artists/aurora`(갤러리·히어로), `/staff/dashboard`(지표 카드·하단 그리드),
       `/staff/tours` 등 `TourSection`을 쓰는 화면을 열어 `md` 미만 1열, `md` 이상 기존 그리드로
       보이는지, 카드 안 텍스트가 잘리거나 한 글자씩 줄바꿈되지 않는지 확인
-- [ ] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
+- [x] **Step 7: 검증** — 아래 완료조건 확인 후 보고하고 멈춘다
 
 **완료조건(Playwright/devtools 에뮬레이션 기준):**
 - `npm run build` 통과
 - 4개 화면 전부 `md` 미만에서 1열, `md` 이상에서 기존과 동일한 그리드로 보인다
 - 375px에서 지표 카드 텍스트가 한 글자씩 세로로 줄바꿈되지 않는다(§6.4에서 실측한 원래 증상의
   일부가 여기서도 해소되는지 재확인 — 사이드바 자체는 Task 4가 고친다)
+
+**검증 노트**: `next build && next start -p 3001`(포트 3000 미사용)로 확인. `getComputedStyle`로
+`gridTemplateColumns` 컬럼 수를 직접 재서 375px에서 갤러리·투어·지표 카드·대시보드 하단 그리드
+전부 1열, 768/1024px에서 각각 3/2/3/2열(기존과 동일)임을 확인. `/artists/aurora`를 375/428/768/
+1024px 전 구간에서 `scrollWidth === innerWidth`로 페이지 레벨 가로 스크롤 없음 확인 — Task 3에서
+발견했던 히어로 `text-[10rem]` 오버플로우(375px에서 폭 432px로 삐져나오던 것)가 `text-6xl
+sm:text-[10rem]` 적용으로 해소됨(375px에서 실측 폰트 60px, 640px 이상에서 160px로 정확히
+전환). 대시보드 지표 카드 스크린샷(375px)으로 텍스트가 한 글자씩 줄바꿈되지 않고 정상 표시됨을
+육안으로도 확인. `npm run build` 통과.
 
 ---
 

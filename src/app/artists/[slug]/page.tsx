@@ -29,7 +29,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
           <span className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-brand-soft">
             {artist.tour.badge}
           </span>
-          <h1 className="mt-6 font-serif-hero text-[10rem] leading-none">
+          <h1 className="mt-6 font-serif-hero text-6xl leading-none sm:text-[10rem]">
             {artist.name}
           </h1>
           <p className="mt-4 font-serif-kr text-3xl" style={{ color: artist.color }}>
