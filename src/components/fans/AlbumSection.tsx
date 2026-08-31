@@ -18,7 +18,7 @@ function Coverflow({ tracks, active, onActive }: {
 
   return (
     <div
-      className="relative mt-14 h-60 cursor-grab touch-pan-y select-none [perspective:1000px] active:cursor-grabbing"
+      className="relative mt-14 h-60 cursor-grab touch-pan-y select-none overflow-hidden [perspective:1000px] active:cursor-grabbing"
       onPointerDown={(e) => {
         dragFrom.current = e.clientX;
         dragged.current = false;

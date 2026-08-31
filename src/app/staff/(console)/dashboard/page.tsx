@@ -28,7 +28,7 @@ export default async function DashboardPage({
         <ArtistSelect artists={artists} current={slug} />
       </div>
 
-      <div className="mt-8 grid grid-cols-3 gap-5">
+      <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
         <MetricCard
           title="총 티켓 판매"
           value={metrics.totalTickets.value.toLocaleString()}
@@ -47,7 +47,7 @@ export default async function DashboardPage({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-5">
+      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
         <div className="rounded-xl border border-gray-200 bg-surface-2 p-6">
           <h2 className="font-medium">도시별 예매 현황</h2>
           <div className="mt-4">

@@ -88,7 +88,7 @@ export default function GallerySection({ artist }: { artist: Artist }) {
       <div className="relative mx-auto max-w-5xl px-8">
         <p className="text-xs tracking-[0.25em] text-brand-soft">SECTION 04 · GALLERY</p>
         <h2 className="mt-4 font-serif-kr text-5xl">갤러리</h2>
-        <div className="mt-12 grid grid-cols-3 gap-4">
+        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {photos.map((photo, i) => (
             <Tile
               key={photo.src}

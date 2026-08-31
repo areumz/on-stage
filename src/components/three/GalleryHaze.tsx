@@ -11,7 +11,7 @@ export default function GalleryHaze({ color }: { color: string }) {
     <div className="pointer-events-none absolute inset-0">
       {/* 실 사진 뒤에 얹는 장식용 파티클층 — 3D가 실패해도 사진은 멀쩡하므로 조용히 생략 */}
       <Scene3D camera={{ position: [0, 0, 9], fov: 50 }} fallback={null}>
-        <Sparkles count={220} scale={[16, 12, 6]} size={3} speed={0.15} opacity={0.55} color={color} />
+        <Sparkles count={150} scale={[16, 12, 6]} size={3} speed={0.15} opacity={0.55} color={color} />
       </Scene3D>
     </div>
   );
