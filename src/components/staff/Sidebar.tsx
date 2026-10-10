@@ -8,6 +8,7 @@ const MENU = [
   { label: "대시보드", href: "/staff/dashboard" },
   { label: "투어 일정", href: "/staff/tours" },
   { label: "무대 연출", href: "/staff/stage" },
+  { label: "무대 연출 디렉터", href: "/staff/director" },
   { label: "아티스트", href: "/staff/artists" },
   { label: "티켓 현황", href: "/staff/tickets" },
 ];

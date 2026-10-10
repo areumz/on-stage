@@ -1,23 +1,34 @@
 // 서버 컴포넌트용 조회. 내 곡·시드 곡과 내 연출을 읽는다 (RLS 가 범위를 정한다).
 // 연출 이름은 컬럼이 없다: sequenceName(trackTitle, 날짜) 로 만든다 (format.ts).
+import { byArtistDisplayOrder } from "@/lib/data";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { AudioTrackSummary, SequenceSummary, StageSequenceRow } from "@/lib/director/types";
+
+// 업로드 화면의 "아티스트 선택(등록된 6명)"용. audio_tracks.artist_id 에 uuid 가 필요해서 id 를 같이 준다.
+export type ArtistChoice = { id: string; slug: string; name: string; color: string };
+
+export async function getArtistChoices(): Promise<ArtistChoice[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("artists").select("id, slug, name, color");
+  if (error) throw new Error(`getArtistChoices: ${error.message}`);
+  return byArtistDisplayOrder((data ?? []) as ArtistChoice[]);
+}
 
 const TRACK_COLUMNS =
   "id, user_id, artist_id, title, genre, mood_keywords, storage_path, file_hash, duration_sec, analysis_status, created_at";
 
 // 내 곡 + 시드 곡(user_id 가 null). 시드가 아닌 곡은 최신순.
-export async function getTracks(): Promise<AudioTrackSummary[]> {
+export async function getAudioTracks(): Promise<AudioTrackSummary[]> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.from("audio_tracks").select(TRACK_COLUMNS).order("created_at", { ascending: false });
-  if (error) throw new Error(`getTracks: ${error.message}`);
+  if (error) throw new Error(`getAudioTracks: ${error.message}`);
   return (data ?? []) as AudioTrackSummary[];
 }
 
-export async function getTrack(id: string): Promise<AudioTrackSummary | undefined> {
+export async function getAudioTrack(id: string): Promise<AudioTrackSummary | undefined> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.from("audio_tracks").select(TRACK_COLUMNS).eq("id", id).maybeSingle();
-  if (error) throw new Error(`getTrack: ${error.message}`);
+  if (error) throw new Error(`getAudioTrack: ${error.message}`);
   return (data as AudioTrackSummary | null) ?? undefined;
 }
 
