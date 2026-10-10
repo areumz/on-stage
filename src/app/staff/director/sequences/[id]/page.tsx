@@ -14,7 +14,7 @@ export default async function SequencePage({ params }: { params: Promise<{ id: s
   if (!isUuid(id)) notFound();
   const row = await getSequence(id);
   if (!row) notFound();
-  const detail = await getTrackDetail(row.audio_track_id);
+  const detail = await getTrackDetail(row.audio_track_id, { energy: row.status === "approved" });
   if (!detail) notFound();
   const { track, artist, energyCurve } = detail;
 

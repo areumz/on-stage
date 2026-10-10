@@ -50,3 +50,33 @@ it("shouldPoll", () => {
   for (const v of [{ kind: "approved" }, { kind: "error", code: "x" }, { kind: "confirm", interrupt: confirm }, { kind: "review", interrupt: review, feedbackCount: 0 }] as const)
     expect(shouldPoll(v)).toBe(false);
 });
+
+import { displayCode, isTransient, pollErrorAction, QUIET_RETRIES, resumeErrorAction } from "./runFlow";
+
+describe("오류 분기", () => {
+  it("일시 오류", () => {
+    expect(isTransient({ code: "connection_failed", status: 0 })).toBe(true);
+    expect(isTransient({ code: "internal_error", status: 502 })).toBe(true);
+    expect(isTransient({ code: "save_failed", status: 500 })).toBe(false);
+    expect(isTransient({ code: "not_found", status: 404 })).toBe(false);
+  });
+  it("폴링은 횟수까지만 조용히", () => {
+    const e = { code: "connection_failed", status: 0 };
+    expect(pollErrorAction(e, QUIET_RETRIES)).toBe("quiet");
+    expect(pollErrorAction(e, QUIET_RETRIES + 1)).toBe("show");
+    expect(pollErrorAction({ code: "unauthorized", status: 401 }, 1)).toBe("show");
+  });
+  it("displayCode", () => {
+    expect(displayCode({ code: "save_failed", status: 422 })).toBe("result_invalid");
+    expect(displayCode({ code: "save_failed", status: 500 })).toBe("save_failed");
+  });
+  it("resume 분기", () => {
+    expect(resumeErrorAction({ code: "kind_mismatch", status: 409 })).toBe("refetch");
+    expect(resumeErrorAction({ code: "stale_interrupt", status: 409 })).toBe("refetch");
+    expect(resumeErrorAction({ code: "feedback_limit", status: 429 })).toBe("inline");
+    expect(resumeErrorAction({ code: "invalid_sections", status: 422 })).toBe("inline");
+    expect(resumeErrorAction({ code: "connection_failed", status: 0 })).toBe("keep");
+    expect(resumeErrorAction({ code: "internal_error", status: 500 })).toBe("keep");
+    expect(resumeErrorAction({ code: "thread_expired", status: 410 })).toBe("fatal");
+  });
+});

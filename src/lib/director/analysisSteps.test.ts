@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analysisView } from "./analysisSteps";
+import { analysisView, canRestartJob, deleteAlreadyGone } from "./analysisSteps";
 
 const states = (p: number | null) => analysisView("running", p).steps.map((s) => s.state).join();
 
@@ -19,5 +19,16 @@ describe("analysisView", () => {
       expect(v.steps.map((s) => s.state)).toEqual(["now", "todo", "todo"]);
     }
     expect(analysisView("creating", null).headline).toBe("연출 만들기를 시작하고 있어요");
+  });
+});
+
+describe("재시작·삭제 판단", () => {
+  it("job_not_found 재시작은 한 번만", () => {
+    expect(canRestartJob(0)).toBe(true);
+    expect(canRestartJob(1)).toBe(false);
+  });
+  it("삭제 404 는 이미 지워진 것", () => {
+    expect(deleteAlreadyGone(404)).toBe(true);
+    expect(deleteAlreadyGone(500)).toBe(false);
   });
 });

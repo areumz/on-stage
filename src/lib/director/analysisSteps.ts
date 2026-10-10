@@ -58,3 +58,9 @@ export function analysisView(phase: AnalysisPhase, progress: number | null): Ana
       };
   }
 }
+
+// job_not_found 로 분석을 다시 시작하는 것은 시도당 한 번만. POST 는 되는데 GET 이 계속 404 인 경우 무한 반복을 막는다.
+export const canRestartJob = (restarts: number) => restarts < 1;
+
+// 초안 삭제가 404 면 이미 다른 곳에서 지워진 것이라 성공으로 본다.
+export const deleteAlreadyGone = (status: number) => status === 404;

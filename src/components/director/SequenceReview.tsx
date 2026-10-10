@@ -88,7 +88,7 @@ function Inner({ interrupt, badge, feedbackCount, submitting, error, onFeedback,
       {copy && (
         <div role="alert" className="mt-4 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${ROSE}66`, background: `${ROSE}1a` }}>
           <p className="font-medium text-white">{copy.headline}</p>
-          <p className="mt-0.5 text-white/70">{copy.sub}</p>
+          <p className="mt-0.5 text-white/70">{error?.code === "invalid_targets" && error.message ? error.message : copy.sub}</p>
         </div>
       )}
 

@@ -6,8 +6,8 @@ import AnalysisProgress from "@/components/director/AnalysisProgress";
 import ErrorPanel from "@/components/director/ErrorPanel";
 import { ScreenHeader } from "@/components/director/ProgressCard";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
-import { createSequence, deleteSequence, pollAnalysis, startAnalysis, type AnalysisPoll, type ApiError, type Result } from "@/lib/director/api";
-import type { AnalysisPhase } from "@/lib/director/analysisSteps";
+import { createSequence, deleteSequence, pollAnalysis, startAnalysis, type AnalysisPoll, type Result } from "@/lib/director/api";
+import { canRestartJob, deleteAlreadyGone, type AnalysisPhase } from "@/lib/director/analysisSteps";
 import { usePolling } from "@/lib/director/usePolling";
 import { DISCARD_CONFIRM, type ActionKind } from "@/lib/python/errors";
 
@@ -42,6 +42,8 @@ export default function TrackFlow({
   const gen = useRef(0);
   const creating = useRef(false);
   const pollFailures = useRef(0);
+  const restarts = useRef(0); // job_not_found 로 다시 시작한 횟수. 분석 시도마다 초기화
+  const discarding = useRef(false); // 확인창이 열려 있는 동안 연타 방지
 
   const fail = (code: string, stage: Failure["stage"], draftId?: string | null) => {
     setPolling(false);
@@ -73,6 +75,7 @@ export default function TrackFlow({
   async function kickoff() {
     const g = ++gen.current;
     pollFailures.current = 0;
+    restarts.current = 0;
     // 첫 응답이 늦으면 서버 깨우는 중 화면을 보여 준다
     const timer = setTimeout(() => {
       if (g === gen.current) setPhase("waking");
@@ -98,7 +101,12 @@ export default function TrackFlow({
       let r = await pollAnalysis(trackId);
       if (g !== gen.current) return true;
       if (!r.ok && r.error.code === "job_not_found") {
-        // 7일이 지났거나 아직 POST 전: 같은 곡으로 다시 시작해서 이어간다
+        // 7일이 지났거나 아직 POST 전: 같은 곡으로 한 번만 다시 시작해서 이어간다. 그래도 404 면 무한 POST 대신 오류로 보낸다
+        if (!canRestartJob(restarts.current)) {
+          fail("job_not_found", "analysis");
+          return true;
+        }
+        restarts.current++;
         r = await startAnalysis(trackId);
         if (g !== gen.current) return true;
         return !apply(r);
@@ -120,7 +128,8 @@ export default function TrackFlow({
     creating.current = false;
     if (g !== gen.current) return;
     if (r.ok) {
-      router.push(`/staff/director/sequences/${r.data.id}`); // 이동하는 동안 creating 화면 유지
+      // replace: 뒤로 가기로 "creating" 만 남은 곡 화면에 돌아오지 않게 한다. 이동하는 동안 creating 화면 유지
+      router.replace(`/staff/director/sequences/${r.data.id}`);
       return;
     }
     setPhase("done");
@@ -137,17 +146,24 @@ export default function TrackFlow({
   }
 
   async function discardAndCreate(draftId: string) {
+    if (discarding.current) return;
+    discarding.current = true;
     const ok = await confirm(`${DISCARD_CONFIRM.title} ${DISCARD_CONFIRM.body}`, {
       confirmLabel: DISCARD_CONFIRM.confirm,
       cancelLabel: DISCARD_CONFIRM.cancel,
     });
-    if (!ok) return;
+    if (!ok) {
+      discarding.current = false;
+      return;
+    }
     const g = gen.current;
     setBusy(true);
     const d: Result<void> = await deleteSequence(draftId);
+    discarding.current = false;
     if (g !== gen.current) return;
     setBusy(false);
-    if (!d.ok) return fail((d.error as ApiError).code, "create", draftId);
+    // 다른 탭에서 이미 지웠으면(404) 목적은 달성된 것이라 이어서 만든다
+    if (!d.ok && !deleteAlreadyGone(d.error.status)) return fail(d.error.code, "create", draftId);
     void create();
   }
 
@@ -169,6 +185,10 @@ export default function TrackFlow({
         return failure?.draftId ? router.push(`/staff/director/sequences/${failure.draftId}`) : library();
       case "discardDraft":
         return failure?.draftId ? void discardAndCreate(failure.draftId) : library();
+      default:
+        // restartRun·backToReview·resave·later 는 이 화면의 오류 문구에 쓰이지 않는다. 눌러도 반응이 없는 것보다
+        // 목록으로 보내는 쪽이 안전하다(여기서 retry 를 하면 이미 승인·생성된 것을 다시 만들 수 있다)
+        return library();
     }
   }
 

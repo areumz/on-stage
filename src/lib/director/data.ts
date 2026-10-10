@@ -81,11 +81,12 @@ export type TrackDetail = {
   energyCurve: number[] | null;
 };
 
-export async function getTrackDetail(id: string): Promise<TrackDetail | undefined> {
+// energy: true 일 때만 analysis(큰 jsonb)를 읽어 energyCurve 를 채운다. 진행 화면은 필요 없으니 기본은 읽지 않는다.
+export async function getTrackDetail(id: string, { energy = false }: { energy?: boolean } = {}): Promise<TrackDetail | undefined> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("audio_tracks")
-    .select(`${TRACK_COLUMNS}, analysis, artists(slug, name, color)`)
+    .select(`${TRACK_COLUMNS}, ${energy ? "analysis, " : ""}artists(slug, name, color)`)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`getTrackDetail: ${error.message}`);

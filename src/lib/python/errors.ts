@@ -15,12 +15,14 @@ export type ErrorKey =
   | "job_not_found" // 404, 분석 결과 7일 만료
   | "thread_expired" // 410, 진행 중이던 작업 만료
   | "connection_failed" // 502
+  | "analysis_not_ready" // 409, 분석 결과가 아직 없는 곡으로 연출을 만들려 함
   // on-stage 자체 한도 (계약서 코드 아님)
   | "approved_limit" // 곡당 승인본 5개
   | "daily_limit" // 서비스 전체 하루 연출 만들기
   | "draft_exists" // 곡당 동시 초안 1개
   | "feedback_limit" // 시퀀스당 다시 생성 3회
-  | "save_failed"; // 승인 후 저장 실패
+  | "save_failed" // 승인 후 저장 실패
+  | "result_invalid"; // 승인된 결과가 저장 전 검증(§4.5)을 통과하지 못함 — 다시 저장해도 같다
 
 // 버튼이 하는 일. 이동 위치는 화면이 정한다.
 export type ActionKind =
@@ -142,6 +144,15 @@ export const ERROR_COPY: Record<ErrorKey, ErrorCopy> = {
     primary: retry,
     secondary: demo,
   },
+  // 연출 만들기를 눌렀는데 서버에 분석 결과가 없는 경우(분석 전·결과 삭제). 다시 시도해도 같으니 분석부터 다시 한다.
+  analysis_not_ready: {
+    tint: "amber",
+    headline: "분석이 아직 끝나지 않았어요",
+    sub: "이 곡의 분석 결과가 준비되지 않았어요. 다시 분석하면 이어서 연출을 만들 수 있어요.",
+    hint: "분석은 보통 수 초~수십 초 걸려요.",
+    primary: { action: "reanalyze", label: "다시 분석" },
+    secondary: pickSong,
+  },
   approved_limit: {
     tint: "amber",
     headline: "지금은 더 만들 수 없어요",
@@ -173,6 +184,15 @@ export const ERROR_COPY: Record<ErrorKey, ErrorCopy> = {
     hint: "버리고 새로 만들면 다시 생성 횟수가 0/3부터 시작돼요. 승인한 연출 수(곡당 5개)에는 포함되지 않아요.",
     primary: { action: "backToReview", label: "검토로 돌아가기" },
     secondary: discardDraft,
+  },
+  // save_failed 와 달리 같은 결과를 다시 받아도 같은 검증에서 또 실패한다. 다시 저장 대신 초안을 버리고 새로 만들게 한다.
+  result_invalid: {
+    tint: "rose",
+    headline: "연출을 저장할 수 없어요",
+    sub: "만들어진 연출이 저장 규칙에 맞지 않아요. 다시 저장해도 같은 결과예요. 이 초안을 버리고 새로 만들어 주세요.",
+    hint: "버려도 이미 승인해서 저장한 연출은 그대로예요.",
+    primary: { action: "discardDraft", label: "이 초안 버리고 새로 만들기" },
+    secondary: { action: "later", label: "나중에 하기" },
   },
   save_failed: {
     tint: "amber",
