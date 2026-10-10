@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { authed, jsonError, pythonFailure } from "@/lib/director/http";
+import { authed, isUuid, jsonError, pythonFailure } from "@/lib/director/http";
 import { APPROVED_LIMIT, dailyRunLimit } from "@/lib/director/limits";
 import { loadRunContext } from "@/lib/director/prepare";
 import type { AudioTrackRow } from "@/lib/director/types";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const audioTrackId = body?.audioTrackId;
-  if (typeof audioTrackId !== "string" || !audioTrackId) return jsonError("bad_request", 400);
+  if (!isUuid(audioTrackId)) return jsonError("bad_request", 400);
 
   const { data: trackData, error: trackError } = await supabase
     .from("audio_tracks")

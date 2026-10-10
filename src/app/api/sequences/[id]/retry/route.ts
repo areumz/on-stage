@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { authed, jsonError, pythonFailure } from "@/lib/director/http";
+import { authed, isUuid, jsonError, pythonFailure } from "@/lib/director/http";
 import { loadRunContext } from "@/lib/director/prepare";
 import type { AudioTrackRow, StageSequenceRow } from "@/lib/director/types";
 import { PythonError, python } from "@/lib/python/client";
@@ -15,6 +15,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext<"/api/sequences/
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
+  if (!isUuid(id)) return jsonError("not_found", 404);
 
   const { data, error } = await supabase.from("stage_sequences").select("*").eq("id", id).maybeSingle();
   if (error) return jsonError("internal_error", 500);

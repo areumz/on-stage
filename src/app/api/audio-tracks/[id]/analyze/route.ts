@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { signAudioUrl } from "@/lib/audio/signedUrl";
-import { authed, jsonError, pythonFailure } from "@/lib/director/http";
+import { authed, isUuid, jsonError, pythonFailure } from "@/lib/director/http";
 import type { AnalysisStatus, AudioTrackRow } from "@/lib/director/types";
 import type { AnalyzeBody } from "@/lib/python/contract";
 import { PythonError, python } from "@/lib/python/client";
@@ -60,6 +60,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext<"/api/audio-trac
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
+  if (!isUuid(id)) return jsonError("not_found", 404);
 
   const { track, failed } = await loadTrack(supabase, id);
   if (failed) return jsonError("internal_error", 500);
@@ -89,6 +90,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/audio-track
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
+  if (!isUuid(id)) return jsonError("not_found", 404);
 
   const { track, failed } = await loadTrack(supabase, id);
   if (failed) return jsonError("internal_error", 500);

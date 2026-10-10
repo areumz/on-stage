@@ -73,3 +73,30 @@ export async function getSequence(id: string): Promise<(StageSequenceRow & { tra
   const track = Array.isArray(audio_tracks) ? audio_tracks[0] : audio_tracks;
   return { ...row, trackTitle: track?.title ?? "" };
 }
+
+// 곡 한 건의 화면용 상세: 아티스트(이름·색)와 재생 타임라인용 에너지 곡선까지. analysis 전체는 크기가 커서 내보내지 않는다.
+export type TrackDetail = {
+  track: AudioTrackSummary;
+  artist: { slug: string; name: string; color: string } | null;
+  energyCurve: number[] | null;
+};
+
+export async function getTrackDetail(id: string): Promise<TrackDetail | undefined> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("audio_tracks")
+    .select(`${TRACK_COLUMNS}, analysis, artists(slug, name, color)`)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(`getTrackDetail: ${error.message}`);
+  if (!data) return undefined;
+  const { analysis, artists, ...track } = data as unknown as AudioTrackSummary & {
+    analysis: { energyCurve?: number[] } | null;
+    artists: TrackDetail["artist"] | NonNullable<TrackDetail["artist"]>[] | null;
+  };
+  return {
+    track,
+    artist: (Array.isArray(artists) ? artists[0] : artists) ?? null,
+    energyCurve: analysis?.energyCurve ?? null,
+  };
+}

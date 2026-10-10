@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
-import { authed, jsonError, pythonFailure } from "@/lib/director/http";
+import { authed, isUuid, jsonError, pythonFailure } from "@/lib/director/http";
 import { validateSequence } from "@/lib/director/sequenceValidate";
 import type { StageSequenceRow } from "@/lib/director/types";
 import { PythonError, python } from "@/lib/python/client";
@@ -59,6 +59,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/sequences/[
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
+  if (!isUuid(id)) return jsonError("not_found", 404);
 
   const { row, failed } = await loadSequence(supabase, id);
   if (failed) return jsonError("internal_error", 500);
@@ -93,6 +94,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/sequences/[
 export async function DELETE(_req: NextRequest, ctx: RouteContext<"/api/sequences/[id]">) {
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
+  if (!isUuid(id)) return jsonError("not_found", 404);
 
   const { data, error } = await auth.supabase.from("stage_sequences").delete().eq("id", id).select("id");
   if (error) return jsonError("internal_error", 500);

@@ -75,11 +75,12 @@ function fakeSupabase(cfg: Cfg, calls: string[]) {
   };
 }
 
-const doneTrack = { id: "t1", analysis_status: "done", analysis: { durationSec: 100 } };
+const TRACK_ID = "11111111-1111-4111-8111-111111111111";
+const doneTrack = { id: TRACK_ID, analysis_status: "done", analysis: { durationSec: 100 } };
 const context = { ctx: true };
 
-function call() {
-  return POST(new Request("http://x/api/sequences", { method: "POST", body: JSON.stringify({ audioTrackId: "t1" }) }) as never);
+function call(audioTrackId: string = TRACK_ID) {
+  return POST(new Request("http://x/api/sequences", { method: "POST", body: JSON.stringify({ audioTrackId }) }) as never);
 }
 
 let calls: string[];
@@ -105,6 +106,14 @@ describe("POST /api/sequences", () => {
   it("로그인하지 않았으면 401", async () => {
     authed.mockResolvedValue(null);
     expect((await call()).status).toBe(401);
+  });
+
+  // uuid 가 아닌 값을 DB 에 넘기면 Postgres 오류가 나서 500 이 된다. 앞에서 400 으로 거른다.
+  it("곡 id 가 uuid 가 아니면 400, DB 는 건드리지 않는다", async () => {
+    setup();
+    const res = await call("not-a-uuid");
+    expect([res.status, (await res.json()).error]).toEqual([400, "bad_request"]);
+    expect(calls).toEqual([]);
   });
 
   it("분석이 끝나지 않은 곡은 409 analysis_not_ready, 아무것도 만들지 않는다", async () => {

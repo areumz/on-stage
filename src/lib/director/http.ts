@@ -13,6 +13,10 @@ export async function authed() {
 
 export type Authed = NonNullable<Awaited<ReturnType<typeof authed>>>;
 
+// uuid 가 아닌 id 를 그대로 DB 에 넘기면 Postgres 오류가 나서 400/404 가 아니라 500 이 된다. 라우트 앞에서 거른다.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
+
 export function jsonError(code: string, status: number, extra: Record<string, unknown> = {}) {
   return Response.json({ error: code, ...extra }, { status });
 }

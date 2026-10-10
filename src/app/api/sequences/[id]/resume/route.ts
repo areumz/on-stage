@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { authed, jsonError, pythonFailure } from "@/lib/director/http";
+import { authed, isUuid, jsonError, pythonFailure } from "@/lib/director/http";
 import { FEEDBACK_LIMIT } from "@/lib/director/limits";
 import { parseResumeBody } from "@/lib/director/resumeBody";
 import type { StageSequenceRow } from "@/lib/director/types";
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/sequences/[
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
+  if (!isUuid(id)) return jsonError("not_found", 404);
 
   const resume = parseResumeBody(await req.json().catch(() => null));
   if (!resume) return jsonError("bad_request", 400);
