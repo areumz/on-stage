@@ -90,8 +90,9 @@ function Timeline({ rows, durationSec, energy, disabled, onMove }: {
     <div className="hidden rounded-2xl border border-white/10 bg-bg-dark-2 px-6 pb-3 pt-8 md:block">
       <div ref={track} className="relative h-24">
         <div className="absolute inset-0 flex items-end" aria-hidden>
+          {/* 소수점이 긴 퍼센트는 브라우저가 스타일을 반올림해 읽어서 서버 HTML 과 어긋난다(하이드레이션 불일치). 소수 첫째 자리로 맞춘다. */}
           {energy.map((v, k) => (
-            <div key={k} className="flex-1 bg-white/15" style={{ height: `${Math.max(4, (v / max) * 100)}%` }} />
+            <div key={k} className="flex-1 bg-white/15" style={{ height: `${Math.max(4, Math.round((v / max) * 1000) / 10)}%` }} />
           ))}
         </div>
         {rows.map((r, i) => (

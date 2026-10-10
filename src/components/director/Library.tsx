@@ -51,8 +51,8 @@ export default function Library({ tracks, sequences, onDelete = deleteSequence }
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-8 text-white md:px-8">
-      <h1 className="text-2xl font-bold">내 연출</h1>
+    <section aria-labelledby="library-title" className="w-full text-white">
+      <h2 id="library-title" className="text-2xl font-bold">내 연출</h2>
       {error && (
         <p role="alert" className="mt-4 rounded-lg border border-rose-400/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-200">
           {error}
@@ -133,6 +133,6 @@ export default function Library({ tracks, sequences, onDelete = deleteSequence }
 
       <p className="mt-10 text-xs text-white/60">삭제하면 되돌릴 수 없어요. 데모 곡은 목록에 없고 항상 볼 수 있어요.</p>
       {dialog}
-    </main>
+    </section>
   );
 }
