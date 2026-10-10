@@ -9,9 +9,14 @@ import { forbiddenIfNoRows } from "@/lib/routeHelpers";
 
 export const maxDuration = 60;
 
+// 초안을 만든 직후에는 Python 이 아직 그 스레드를 모를 수 있다(콜드 스타트로 POST /runs 가 늦게 도착,
+// 같은 곡을 두 번 요청한 탭이 먼저 폴링). 이 시간 안의 404 는 "만료"가 아니라 "아직 시작 전"으로 본다.
+const STARTUP_GRACE_MS = 90_000;
+
+// 조회 오류와 "없음"을 구분한다. 일시적인 DB 오류가 "사라진 연출"로 보이면 안 된다.
 async function loadSequence(supabase: SupabaseClient, id: string) {
-  const { data } = await supabase.from("stage_sequences").select("*").eq("id", id).maybeSingle();
-  return (data as StageSequenceRow | null) ?? null;
+  const { data, error } = await supabase.from("stage_sequences").select("*").eq("id", id).maybeSingle();
+  return { row: (data as StageSequenceRow | null) ?? null, failed: !!error };
 }
 
 // 승인된 결과를 검증하고 저장한다. 같은 결과로 몇 번을 불러도 같은 상태가 된다(멱등).
@@ -45,7 +50,7 @@ async function saveApproved(supabase: SupabaseClient, row: StageSequenceRow, res
     return jsonError("save_failed", 500);
   }
   // 0행: 다른 탭이 먼저 저장했거나 그사이 지워졌다
-  if (data.length === 0 && (await loadSequence(supabase, row.id))?.status !== "approved") return jsonError("not_found", 404);
+  if (data.length === 0 && (await loadSequence(supabase, row.id)).row?.status !== "approved") return jsonError("not_found", 404);
   return Response.json({ status: "approved" });
 }
 
@@ -55,14 +60,15 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/sequences/[
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
 
-  const row = await loadSequence(supabase, id);
+  const { row, failed } = await loadSequence(supabase, id);
+  if (failed) return jsonError("internal_error", 500);
   if (!row) return jsonError("not_found", 404);
   if (row.status === "approved") return Response.json({ status: "approved" });
 
   try {
     const run = await python.getRun(id);
     if (run.status === "done") {
-      return run.result ? await saveApproved(supabase, row, run.result) : jsonError("internal_error", 500);
+      return run.result ? await saveApproved(supabase, row, run.result) : jsonError("internal_error", 502);
     }
     return Response.json({
       status: run.status,
@@ -71,8 +77,11 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/sequences/[
       feedbackCount: row.feedback_count,
     });
   } catch (e) {
-    // Python 은 "존재한 적 없음"과 "7일 방치로 삭제됨"을 구별하지 못한다. 초안에 대해서만 만료로 보고 지운다.
     if (e instanceof PythonError && e.code === "thread_not_found") {
+      if (Date.now() - new Date(row.created_at).getTime() < STARTUP_GRACE_MS) {
+        return Response.json({ status: "queued", interrupt: null, error: null, feedbackCount: row.feedback_count });
+      }
+      // Python 은 "존재한 적 없음"과 "7일 방치로 삭제됨"을 구별하지 못한다. 초안에 대해서만 만료로 보고 지운다.
       await supabase.from("stage_sequences").delete().eq("id", id).eq("status", "draft");
       return jsonError("thread_expired", 410);
     }

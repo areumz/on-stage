@@ -89,6 +89,13 @@ describe("pythonFetch", () => {
     expect([e.status, e.code]).toEqual([502, "bad_gateway"]);
   });
 
+  // 200 인데 JSON 이 아니면 500 이 아니라 연결 문제(502)로 본다
+  it("200 인데 JSON 이 아닌 응답은 502 bad_gateway", async () => {
+    fetchMock.mockResolvedValue(new Response("<html>oops</html>", { status: 200 }));
+    const e = await failure();
+    expect([e.status, e.code]).toEqual([502, "bad_gateway"]);
+  });
+
   it("422 본문 오류(배열 detail)는 invalid_request", async () => {
     fetchMock.mockResolvedValue(json({ detail: [{ loc: ["body"], msg: "Field required" }] }, 422));
     const e = await failure();

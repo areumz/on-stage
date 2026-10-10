@@ -20,9 +20,10 @@ function toClient(body: { status: string; progress: number | null; error: string
 
 const DONE = { status: "done", progress: 1, error: null } as const;
 
+// 조회 오류와 "없음"을 구분한다. 일시적인 DB 오류가 "없는 곡"으로 보이면 안 된다.
 async function loadTrack(supabase: SupabaseClient, id: string) {
-  const { data } = await supabase.from("audio_tracks").select("*").eq("id", id).maybeSingle();
-  return (data as AudioTrackRow | null) ?? null;
+  const { data, error } = await supabase.from("audio_tracks").select("*").eq("id", id).maybeSingle();
+  return { track: (data as AudioTrackRow | null) ?? null, failed: !!error };
 }
 
 const DB_STATUS: Record<string, AnalysisStatus> = { queued: "pending", running: "running", error: "error" };
@@ -31,6 +32,8 @@ const DB_STATUS: Record<string, AnalysisStatus> = { queued: "pending", running: 
 // 반영하지 못하면 응답을 만들지 않고 Response 를 돌려준다.
 async function sync(supabase: SupabaseClient, track: AudioTrackRow, body: AnalyzeBody): Promise<Response | null> {
   let patch: Record<string, unknown> | null = null;
+  // done 인데 결과가 없으면 성공처럼 넘기지 않는다 (다음 단계가 analysis_not_ready 로 막힌다)
+  if (body.status === "done" && !body.result) return jsonError("internal_error", 502);
   if (body.status === "done" && body.result) {
     patch = {
       analysis: body.result.analysis,
@@ -58,7 +61,8 @@ export async function POST(_req: NextRequest, ctx: RouteContext<"/api/audio-trac
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
 
-  const track = await loadTrack(supabase, id);
+  const { track, failed } = await loadTrack(supabase, id);
+  if (failed) return jsonError("internal_error", 500);
   if (!track) return jsonError("not_found", 404);
   // 시드 곡과 이미 끝난 곡은 Python 을 부르지 않는다
   if (track.analysis_status === "done" && track.analysis) return Response.json(DONE);
@@ -66,6 +70,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext<"/api/audio-trac
   // 서명 URL 은 요청마다 새로 만들어 Python 에만 보낸다 (저장·로그 금지)
   const audioUrl = await signAudioUrl(supabase, track.storage_path);
   if (!audioUrl) {
+    // 기록은 최선만 한다(시드 곡은 RLS 로 0행). 어느 쪽이든 화면에는 같은 오류를 보여 준다.
     await supabase.from("audio_tracks").update({ analysis_status: "error" }).eq("id", id);
     return Response.json({ status: "error", progress: null, error: "audio_unavailable" });
   }
@@ -85,7 +90,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/audio-track
   if (!auth) return jsonError("unauthorized", 401);
   const { supabase } = auth;
 
-  const track = await loadTrack(supabase, id);
+  const { track, failed } = await loadTrack(supabase, id);
+  if (failed) return jsonError("internal_error", 500);
   if (!track) return jsonError("not_found", 404);
   if (track.analysis_status === "done" && track.analysis) return Response.json(DONE);
 

@@ -17,7 +17,12 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/sequences/[
   const resume = parseResumeBody(await req.json().catch(() => null));
   if (!resume) return jsonError("bad_request", 400);
 
-  const { data } = await supabase.from("stage_sequences").select("status, feedback_count").eq("id", id).maybeSingle();
+  const { data, error: loadError } = await supabase
+    .from("stage_sequences")
+    .select("status, feedback_count")
+    .eq("id", id)
+    .maybeSingle();
+  if (loadError) return jsonError("internal_error", 500);
   const row = data as Pick<StageSequenceRow, "status" | "feedback_count"> | null;
   if (!row) return jsonError("not_found", 404);
   if (row.status !== "draft") return jsonError("not_waiting_input", 409);

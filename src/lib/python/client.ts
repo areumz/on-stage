@@ -55,7 +55,13 @@ export async function pythonFetch<T>(path: string, init: Init = {}): Promise<T> 
     const status = res.status === 401 ? 500 : res.status >= 500 || code === "bad_gateway" ? 502 : res.status;
     throw new PythonError(status, res.status === 401 ? "internal_error" : code, message);
   }
-  return (await res.json()) as T;
+  // 200 인데 JSON 이 아니거나 본문을 읽다가 끊긴 경우도 연결 문제로 본다 (500 으로 새지 않게)
+  try {
+    return (await res.json()) as T;
+  } catch {
+    console.error(`[python] ${method} ${path} -> 응답 본문을 읽지 못했다`);
+    throw new PythonError(502, "bad_gateway");
+  }
 }
 
 const seg = encodeURIComponent;
