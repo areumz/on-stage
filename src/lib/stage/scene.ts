@@ -20,7 +20,11 @@ export const sampleSrc = (id: SampleId) => `/backdrops/${id}.svg`;
 
 export const UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
 export const UPLOAD_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
-export const UPLOADS_PER_SEQUENCE = 3;
+// 제품 한도는 두지 않는다(구간이 여러 개라 3장은 부족하다). 아래 값은 스토리지 남용을 막는 안전 상한일 뿐이다.
+export const UPLOADS_PER_SEQUENCE = 50;
+// 기존 "무대 연출" 메뉴는 연출(시퀀스)이 없어서 사용자 폴더의 고정 하위 폴더 <user_id>/studio/ 에 올린다.
+export const STUDIO_FOLDER = "studio";
+export const UPLOADS_PER_STUDIO = 50;
 
 // 구간마다 붙는 선택 필드 (계약의 items[i].backdrop/dust/reflection). null·없음 = 정하지 않음
 export type SectionScene = { backdrop?: Backdrop | null; dust?: number | null; reflection?: number | null };
@@ -37,16 +41,17 @@ export type SceneEdit = {
   props?: PropKey[];
 };
 
-// 기존 "무대 연출" 메뉴와 stage_presets.scene 에 쓰는 단일 장면(구간이 없다). 이미지는 샘플만.
+// 기존 "무대 연출" 메뉴와 stage_presets.scene 에 쓰는 단일 장면(구간이 없다).
+// image 는 샘플 또는 내 업로드(<user_id>/studio/…). 값이 있으면 backdrop 대신 이미지를 뒤 벽에 띄운다.
 export type PresetScene = {
   backdrop: Backdrop;
   dust: number;
   reflection: number;
   props: PropKey[];
-  sampleImage: SampleId | null; // 값이 있으면 backdrop 대신 이미지를 뒤 벽에 띄운다
+  image: ImageRef | null;
 };
 
-export const DEFAULT_PRESET_SCENE: PresetScene = { backdrop: "none", dust: 0, reflection: 0, props: [], sampleImage: null };
+export const DEFAULT_PRESET_SCENE: PresetScene = { backdrop: "none", dust: 0, reflection: 0, props: [], image: null };
 
 // StageScene 이 그리는 최종 값. 계산은 resolveScene / presetToRender 에서 끝낸다.
 export type RenderScene = {
@@ -126,15 +131,16 @@ export function parseSceneEdit(v: unknown, sectionCount: number): SceneEdit | nu
 }
 
 export function parsePresetScene(v: unknown): PresetScene {
-  if (typeof v !== "object" || v === null) return DEFAULT_PRESET_SCENE;
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return DEFAULT_PRESET_SCENE;
   const o = v as Record<string, unknown>;
-  const sample = SAMPLE_IMAGES.find((s) => s.id === o.sampleImage);
+  // 예전 모양({ sampleImage: "<id>" })도 읽는다
+  const legacy = SAMPLE_IMAGES.find((s) => s.id === o.sampleImage);
   return {
     backdrop: parseBackdrop(o.backdrop) ?? "none",
     dust: parseLevel(o.dust) ?? 0,
     reflection: parseLevel(o.reflection) ?? 0,
     props: parseProps(o.props) ?? [],
-    sampleImage: sample ? sample.id : null,
+    image: parseImage(o.image) ?? (legacy ? { kind: "sample", id: legacy.id } : null),
   };
 }
 
@@ -195,14 +201,15 @@ export function resolveScene(i: ResolveInput): RenderScene {
   };
 }
 
-export function presetToRender(s: PresetScene): RenderScene {
-  const sample = s.sampleImage;
+// uploadUrl: image 가 내 업로드일 때 호출자가 만든 서명 URL. 못 만들었으면 이미지 없이 backdrop 효과로 그린다.
+export function presetToRender(s: PresetScene, uploadUrl: string | null = null): RenderScene {
+  const imageUrl = s.image?.kind === "sample" ? sampleSrc(s.image.id) : s.image?.kind === "upload" ? uploadUrl : null;
   return {
-    backdrop: sample ? "none" : s.backdrop,
+    backdrop: imageUrl ? "none" : s.backdrop,
     dust: s.dust,
     reflection: s.reflection,
     props: s.props,
-    imageUrl: sample ? sampleSrc(sample) : null,
+    imageUrl,
     activity: 0.5,
   };
 }

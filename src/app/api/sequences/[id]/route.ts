@@ -6,6 +6,8 @@ import type { StageSequenceRow } from "@/lib/director/types";
 import { PythonError, python } from "@/lib/python/client";
 import type { RunResult } from "@/lib/python/contract";
 import { forbiddenIfNoRows } from "@/lib/routeHelpers";
+import { parseProps } from "@/lib/stage/scene";
+import { BACKDROP_BUCKET, folderOf, listAll } from "../backdropStorage";
 
 export const maxDuration = 60;
 
@@ -17,6 +19,13 @@ const STARTUP_GRACE_MS = 90_000;
 async function loadSequence(supabase: SupabaseClient, id: string) {
   const { data, error } = await supabase.from("stage_sequences").select("*").eq("id", id).maybeSingle();
   return { row: (data as StageSequenceRow | null) ?? null, failed: !!error };
+}
+
+// null(정하지 않음)과 [](소품 없음)을 구별해 저장한다. 다만 비어 있지 않은데 아는 키가 하나도 없으면
+// (예: ["guitar"]) AI 가 "없음"을 뜻한 게 아니라 모르는 말을 한 것이므로 null 로 둔다.
+function savedProps(v: unknown) {
+  const p = parseProps(v);
+  return p && p.length === 0 && Array.isArray(v) && v.length > 0 ? null : p;
 }
 
 // 승인된 결과를 검증하고 저장한다. 같은 결과로 몇 번을 불러도 같은 상태가 된다(멱등).
@@ -41,7 +50,7 @@ async function saveApproved(supabase: SupabaseClient, row: StageSequenceRow, res
 
   const { data, error } = await supabase
     .from("stage_sequences")
-    .update({ status: "approved", items: checked.items, approved_at: new Date().toISOString() })
+    .update({ status: "approved", items: checked.items, props: savedProps(result.props), approved_at: new Date().toISOString() })
     .eq("id", row.id)
     .eq("status", "draft")
     .select("id");
@@ -100,5 +109,20 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext<"/api/sequence
   if (error) return jsonError("internal_error", 500);
   const forbidden = forbiddenIfNoRows(data);
   if (forbidden) return forbidden;
+  await removeBackdropImages(auth.supabase, auth.user.id, id);
   return new Response(null, { status: 204 });
+}
+
+// 연출을 지우면 그 폴더의 배경 이미지도 지운다. 실패해도 삭제 응답은 성공이고, 로그엔 코드만 남긴다(경로·URL 금지).
+async function removeBackdropImages(supabase: SupabaseClient, userId: string, id: string) {
+  try {
+    const folder = folderOf(userId, id);
+    const names = await listAll(supabase, folder);
+    if (names?.length) {
+      const { error } = await supabase.storage.from(BACKDROP_BUCKET).remove(names.map((n) => `${folder}/${n}`));
+      if (error) console.error("[sequences] 배경 이미지 삭제 실패");
+    } else if (!names) console.error("[sequences] 배경 이미지 목록 실패");
+  } catch {
+    console.error("[sequences] 배경 이미지 삭제 예외");
+  }
 }

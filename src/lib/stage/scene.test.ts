@@ -41,8 +41,11 @@ describe("parse", () => {
     });
   });
   it("프리셋 scene 은 깨져도 기본값", () => {
-    expect(parsePresetScene(null)).toEqual({ backdrop: "none", dust: 0, reflection: 0, props: [], sampleImage: null });
-    expect(parsePresetScene({ backdrop: "tunnel", dust: 30, sampleImage: "nope" }).sampleImage).toBeNull();
+    expect(parsePresetScene(null)).toEqual({ backdrop: "none", dust: 0, reflection: 0, props: [], image: null });
+    expect(parsePresetScene({ backdrop: "tunnel", dust: 30, sampleImage: "nope" }).image).toBeNull();
+    expect(parsePresetScene({ sampleImage: "galaxy" }).image).toEqual({ kind: "sample", id: "galaxy" }); // 예전 모양
+    expect(parsePresetScene({ image: { kind: "upload", path: "u/studio/a.png" } }).image).toEqual({ kind: "upload", path: "u/studio/a.png" });
+    expect(parsePresetScene([]).image).toBeNull();
   });
 });
 
@@ -83,10 +86,10 @@ describe("energy", () => {
     expect(autoBackdrop(1)).toBe("bars");
   });
   it("프리셋 장면 → 렌더 값", () => {
-    expect(presetToRender({ backdrop: "cube", dust: 10, reflection: 20, props: ["amp"], sampleImage: "galaxy" })).toMatchObject({
-      backdrop: "none",
-      imageUrl: "/backdrops/galaxy.svg",
-      props: ["amp"],
-    });
+    const base = { backdrop: "cube" as const, dust: 10, reflection: 20, props: ["amp" as const] };
+    expect(presetToRender({ ...base, image: { kind: "sample", id: "galaxy" } })).toMatchObject({ backdrop: "none", imageUrl: "/backdrops/galaxy.svg", props: ["amp"] });
+    const up = { ...base, image: { kind: "upload" as const, path: "u/studio/a.png" } };
+    expect(presetToRender(up, "https://signed")).toMatchObject({ backdrop: "none", imageUrl: "https://signed" });
+    expect(presetToRender(up)).toMatchObject({ backdrop: "cube", imageUrl: null }); // URL 을 못 만들면 효과로 폴백
   });
 });

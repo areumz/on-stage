@@ -5,6 +5,7 @@ import SmokeControls from "@/components/staff/SmokeControls";
 import SpotControls from "@/components/staff/SpotControls";
 import { useThrottledChange } from "@/lib/hooks";
 import type { StageState } from "@/lib/stageState";
+import type { PresetScene } from "@/lib/stage/scene";
 import type { Artist } from "@/lib/types";
 
 const SPOTS = [
@@ -19,11 +20,16 @@ const CAMERAS = [
   ["top", "탑 뷰 (Top)"],
 ] as const;
 
-export default function StageControls({ artists, artistSlug, state, onChange }: {
+export default function StageControls({ artists, artistSlug, state, onChange, scene, onSceneChange, onOpenScene, sceneButtonRef, hasUpload }: {
   artists: Artist[];
   artistSlug: string;
   state: StageState;
   onChange: (s: StageState) => void;
+  scene: PresetScene; // 저장된 장면. 프리셋 저장·불러오기에 같이 쓴다
+  onSceneChange: (s: PresetScene) => void;
+  onOpenScene: () => void;
+  sceneButtonRef: React.RefObject<HTMLButtonElement | null>;
+  hasUpload: (path: string) => boolean; // 프리셋의 내 이미지가 아직 있는지
 }) {
   // 자유 색상 피커만 스로틀 대상 — 아티스트 스와치는 클릭이라 제외. 드래그 중 계속
   // input을 쏘는 건 range 슬라이더와 같은 부류라 같은 훅으로 묶음 (hooks.ts 주석 참고)
@@ -94,9 +100,22 @@ export default function StageControls({ artists, artistSlug, state, onChange }: 
       </section>
 
       <section>
+        <p className="text-sm text-white/50">배경 · 소품</p>
+        <button
+          ref={sceneButtonRef}
+          type="button"
+          aria-haspopup="dialog"
+          onClick={onOpenScene}
+          className="mt-3 w-full rounded-lg border border-white/25 py-2.5 text-sm text-white/80 hover:border-white"
+        >
+          배경 설정
+        </button>
+      </section>
+
+      <section>
         <p className="text-sm text-white/50">프리셋</p>
         <div className="mt-3">
-          <PresetPanel artistSlug={artistSlug} state={state} onChange={onChange} />
+          <PresetPanel artistSlug={artistSlug} state={state} onChange={onChange} scene={scene} onSceneChange={onSceneChange} hasUpload={hasUpload} />
         </div>
       </section>
     </aside>

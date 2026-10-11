@@ -7,6 +7,7 @@ import burnSequence from "@/data/director/Burn-it-up.sequence.json";
 import smallAnalysis from "@/data/director/Small-universe.json";
 import smallSequence from "@/data/director/Small-universe.sequence.json";
 import type { SequenceItem } from "@/lib/python/contract";
+import { parseProps, type PropKey } from "@/lib/stage/scene";
 
 type DemoMeta = (typeof demos)[number];
 
@@ -18,12 +19,13 @@ export type Demo = {
   durationSec: number;
   items: SequenceItem[];
   energyCurve: number[];
+  aiProps: PropKey[] | null; // 시퀀스 JSON 의 result.props (AI 제안 소품, 없으면 null)
 };
 
 // JSON import 는 literal 타입으로 좁혀져 SequenceItem 과 바로 맞지 않는다. 모양은 sequenceValidate 로 테스트가 보장한다.
-const DATA: Record<string, { analysis: { durationSec: number; analysis: { energyCurve: number[] } }; items: SequenceItem[] }> = {
-  "Burn-it-up": { analysis: burnAnalysis, items: burnSequence.result.items as unknown as SequenceItem[] },
-  "Small-universe": { analysis: smallAnalysis, items: smallSequence.result.items as unknown as SequenceItem[] },
+const DATA: Record<string, { analysis: { durationSec: number; analysis: { energyCurve: number[] } }; items: SequenceItem[]; props: unknown }> = {
+  "Burn-it-up": { analysis: burnAnalysis, items: burnSequence.result.items as unknown as SequenceItem[], props: (burnSequence.result as { props?: unknown }).props },
+  "Small-universe": { analysis: smallAnalysis, items: smallSequence.result.items as unknown as SequenceItem[], props: (smallSequence.result as { props?: unknown }).props },
 };
 
 function toDemo(meta: DemoMeta): Demo | undefined {
@@ -37,6 +39,7 @@ function toDemo(meta: DemoMeta): Demo | undefined {
     durationSec: data.analysis.durationSec,
     items: data.items,
     energyCurve: data.analysis.analysis.energyCurve,
+    aiProps: parseProps(data.props),
   };
 }
 

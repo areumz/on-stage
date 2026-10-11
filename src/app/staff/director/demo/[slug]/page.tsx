@@ -40,6 +40,9 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
       durationSec={demo.durationSec}
       items={demo.items}
       energyCurve={demo.energyCurve}
+      sequenceId={null}
+      aiProps={demo.aiProps}
+      initialEdit={null}
     />
   );
 }

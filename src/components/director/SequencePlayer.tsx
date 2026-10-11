@@ -1,10 +1,13 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import SceneSettingsPanel from "@/components/scene/SceneSettingsPanel";
+import { useSequenceScene } from "@/components/scene/useSequenceScene";
 import StageScene from "@/components/three/StageScene";
 import { labelKo } from "@/lib/director/labels";
 import { energyBars, formatTime, sectionIndexAt, stateAt } from "@/lib/director/playback";
 import type { SequenceItem } from "@/lib/python/contract";
+import type { PropKey, SceneEdit } from "@/lib/stage/scene";
 
 const CAMERA_KO = { front: "정면 (front)", audience: "객석 (audience)", top: "위에서 (top)" } as const;
 const SPOTS = [["left", "Left"], ["center", "Center"], ["right", "Right"]] as const;
@@ -24,6 +27,9 @@ type Props = {
   durationSec: number;
   items: SequenceItem[];
   energyCurve: number[];
+  sequenceId: string | null; // 데모 곡은 null — 배경 설정을 서버에 저장하지 않는다
+  aiProps: PropKey[] | null; // AI 가 제안한 소품 (stage_sequences.props)
+  initialEdit: SceneEdit | null; // 저장된 사용자 값 (stage_sequences.scene_edit)
 };
 
 const btn = "flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-brand";
@@ -36,7 +42,7 @@ export default function SequencePlayer(props: Props) {
   return <Player {...props} />;
 }
 
-function Player({ audioTrackId, title, artistName, accent, durationSec, items, energyCurve }: Props) {
+function Player({ audioTrackId, title, artistName, accent, durationSec, items, energyCurve, sequenceId, aiProps, initialEdit }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const lineRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -62,6 +68,15 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
   const bars = useMemo(() => energyBars(energyCurve, BAR_COUNT), [energyCurve]);
   const idx = sectionIndexAt(items, time);
   const cur = items[idx];
+  // 구간이 바뀔 때만 값이 달라지고, 같으면 같은 참조라 MemoScene 이 다시 그려지지 않는다
+  const sceneCtl = useSequenceScene({ sequenceId, items, energyCurve, aiProps, initialEdit, index: idx });
+  const openerRef = useRef<HTMLButtonElement>(null); // 패널을 닫을 때 포커스를 돌려줄 버튼
+  const stageBoxRef = useRef<HTMLDivElement>(null);
+  const openScene = () => {
+    sceneCtl.openPanel();
+    // 모바일은 패널이 하단 시트라 3D 와 재생 버튼이 위쪽에 보이도록 스크롤한다
+    if (window.matchMedia("(max-width: 767px)").matches) stageBoxRef.current?.scrollIntoView({ block: "start" });
+  };
   const pct = (t: number) => `${Math.min(100, Math.max(0, (t / durationSec) * 100))}%`;
 
   // 위치선·tRef 는 즉시, React 상태는 COMMIT_MS 로 눌러서 갱신. 눌린 마지막 값은 trailing 타이머로 반드시 반영.
@@ -338,9 +353,24 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
           </div>
         </section>
 
-        <div className="h-60 overflow-hidden rounded-2xl border border-white/10 bg-bg-dark md:h-[360px]">
-          <MemoScene state={stage} controls={false} />
+        <div ref={stageBoxRef} className="h-60 scroll-mt-2 overflow-hidden rounded-2xl border border-white/10 bg-bg-dark md:h-[360px]">
+          <MemoScene state={stage} controls={false} scene={sceneCtl.scene} />
         </div>
+
+        <div className="flex items-center justify-end gap-3">
+          {sceneCtl.imageNote && <p role="status" className="text-xs text-white/60">{sceneCtl.imageNote}</p>}
+          <button
+            ref={openerRef}
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={sceneCtl.open}
+            onClick={openScene}
+            className="min-h-10 rounded-full border border-white/15 bg-white/10 px-5 text-sm font-semibold text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-brand"
+          >
+            배경 설정
+          </button>
+        </div>
+        {sceneCtl.open && <SceneSettingsPanel title={title} accent={accent} returnFocusRef={openerRef} {...sceneCtl.panel} />}
 
         {(silent || tapAgain) && (
           <p role="status" className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white">

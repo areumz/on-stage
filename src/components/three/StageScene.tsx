@@ -4,6 +4,11 @@ import { useThree } from "@react-three/fiber";
 import { Cloud, Clouds, OrbitControls, SpotLight } from "@react-three/drei";
 import { useEffect } from "react";
 import Scene3D from "@/components/three/Scene3D";
+import StageBackdrop from "@/components/three/stage/Backdrop";
+import Dust from "@/components/three/stage/Dust";
+import Floor from "@/components/three/stage/Floor";
+import StageProps from "@/components/three/stage/Props";
+import { NO_SCENE, type RenderScene } from "@/lib/stage/scene";
 import type { SpotState, StageState } from "@/lib/stageState";
 
 const CAMERA_PRESETS: Record<StageState["camera"], [number, number, number]> = {
@@ -66,17 +71,14 @@ function Spot({ x, color, spot }: { x: number; color: string; spot: SpotState })
   );
 }
 
-export default function StageScene({ state, controls = true }: { state: StageState; controls?: boolean }) {
+export default function StageScene({ state, controls = true, scene = NO_SCENE }: { state: StageState; controls?: boolean; scene?: RenderScene }) {
   return (
     <Scene3D shadows notifyContextLoss dpr={[1, 1.5]} camera={{ position: CAMERA_PRESETS.front, fov: 50 }}>
       <CameraRig cameraAngle={state.camera} />
       <ambientLight intensity={0.15} />
       {/* 바닥 — 30×30이라 먼 가장자리가 카메라에서 아주 먼 상태. 안개를 그대로 적용하면 지평선이
           순백으로 뻗어나가 버려서(스모그가 아니라 바닥이 사라지는 것처럼 보임) fog를 끔*/}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#0b0818" fog={false} />
-      </mesh>
+      <Floor reflection={scene.reflection} />
       {/* 연단 */}
       <mesh position={[0, 0.4, 0]} receiveShadow castShadow>
         <boxGeometry args={[8, 0.8, 4]} />
@@ -87,6 +89,9 @@ export default function StageScene({ state, controls = true }: { state: StageSta
         <boxGeometry args={[9, 5.5, 0.3]} />
         <meshStandardMaterial color="#13102a" />
       </mesh>
+      <StageBackdrop backdrop={scene.backdrop} imageUrl={scene.imageUrl} activity={scene.activity} />
+      <Dust dust={scene.dust} />
+      <StageProps props={scene.props} />
       <Smoke smoke={state.smoke} />
       <Spot x={-3} color={state.color} spot={state.spots.left} />
       <Spot x={0} color={state.color} spot={state.spots.center} />
