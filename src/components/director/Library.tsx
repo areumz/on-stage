@@ -40,8 +40,8 @@ export default function Library({ tracks, sequences, onDelete = deleteSequence }
 
   const groups = groupByTrack(tracks, sequences);
 
-  async function remove(id: string, message: string, confirmLabel: string) {
-    if (!(await confirm(message, { confirmLabel }))) return;
+  async function remove(id: string, message: string, confirmLabel: string, title?: string) {
+    if (!(await confirm(message, { confirmLabel, title }))) return;
     startTransition(async () => {
       const res = await onDelete(id);
       // 404 는 이미 지워진 것이라 조용히 성공으로 보고 목록만 새로고침한다.
@@ -116,7 +116,7 @@ export default function Library({ tracks, sequences, onDelete = deleteSequence }
                         <button
                           type="button"
                           disabled={busy}
-                          onClick={() => remove(s.id, `“${name}” 연출을 삭제할까요? 삭제하면 되돌릴 수 없어요. 곡당 저장 가능 개수(${APPROVED_LIMIT}개)에서 1개가 줄어들어요.`, "삭제")}
+                          onClick={() => remove(s.id, "삭제하면 되돌릴 수 없어요. 저장된 연출이 한 개 줄어들어서, 이 곡에 연출을 하나 더 저장할 수 있게 돼요.", "삭제", `“${name}” 연출을 삭제할까요?`)}
                           className={dangerBtn}
                         >
                           삭제

@@ -2,16 +2,18 @@
 
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 
-type Labels = { confirmLabel?: string; cancelLabel?: string };
+type Labels = { confirmLabel?: string; cancelLabel?: string; title?: string };
 
 function Dialog({
   message,
+  title,
   confirmLabel = "확인",
   cancelLabel = "취소",
   onConfirm,
   onCancel,
 }: { message: string; onConfirm: () => void; onCancel: () => void } & Labels) {
   const messageId = useId();
+  const titleId = useId();
 
   // 키보드로도 닫을 수 있어야 한다 (Esc = 취소)
   useEffect(() => {
@@ -28,9 +30,15 @@ function Dialog({
         role="dialog"
         aria-modal="true"
         aria-describedby={messageId}
+        aria-labelledby={title ? titleId : undefined}
         onClick={(e) => e.stopPropagation()}
         className="w-80 rounded-xl bg-white p-5 text-center shadow-xl"
       >
+        {title && (
+          <p id={titleId} className="mb-2 text-base font-semibold text-gray-900">
+            {title}
+          </p>
+        )}
         <p id={messageId} className="text-sm text-gray-900">
           {message}
         </p>
@@ -77,6 +85,7 @@ export function useConfirm(): { confirm: (message: string, labels?: Labels) => P
     dialog: pending ? (
       <Dialog
         message={pending.message}
+        title={pending.title}
         confirmLabel={pending.confirmLabel}
         cancelLabel={pending.cancelLabel}
         onConfirm={() => respond(true)}

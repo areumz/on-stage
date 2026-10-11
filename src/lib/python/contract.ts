@@ -1,5 +1,6 @@
 // Python 서비스(stage-director-agent) API 계약의 타입. 기준은 인수 문서(on-stage-handoff) §2~§5.
 // 키는 모두 camelCase. Python 은 Supabase 를 읽지 않으므로 필요한 값은 전부 요청 본문에 싣는다.
+import type { Backdrop, PropKey } from "@/lib/stage/scene";
 import type { StageState } from "@/lib/stageState";
 import type { ShaderPattern } from "@/lib/types";
 
@@ -39,6 +40,10 @@ export type SequenceItem = {
   transitionMs: number;
   state: StageState;
   rationale: string;
+  // 선택 필드(부록 G). 없거나 null 이면 "정하지 않음"
+  backdrop?: Backdrop | null;
+  dust?: number | null;
+  reflection?: number | null;
 };
 
 export type Issue = { rule: string; message: string; idx: number | null };
@@ -56,11 +61,12 @@ export type ReviewInterrupt = {
   kind: "review";
   items: SequenceItem[];
   issues: Issue[];
+  props?: PropKey[] | null;
 };
 
 export type Interrupt = ConfirmSectionsInterrupt | ReviewInterrupt;
 
-export type RunResult = { sections: Section[]; items: SequenceItem[]; issues: Issue[] };
+export type RunResult = { sections: Section[]; items: SequenceItem[]; issues: Issue[]; props?: PropKey[] | null };
 
 export type RunBody = {
   threadId: string;

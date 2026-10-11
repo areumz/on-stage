@@ -2,6 +2,7 @@
 // 경계 비교에는 ±0.001초 허용 오차를 둔다 — Python 게이트와 같은 오차를 쓰지 않으면
 // Python 이 통과시킨 시퀀스가 여기서 거절될 수 있다.
 import type { SequenceItem } from "@/lib/python/contract";
+import { parseBackdrop, parseLevel } from "@/lib/stage/scene";
 import { defaultStageState, mergeStageState } from "@/lib/stageState";
 
 const EPS = 0.001;
@@ -34,6 +35,10 @@ export function validateSequence(items: unknown, durationSec: number, fallbackCo
       // 깨진 필드는 기본 상태로 채워 저장한다 — 재생 화면이 깨진 값을 만나지 않게 한다
       state: mergeStageState(it.state, fallback),
       rationale: typeof it.rationale === "string" ? it.rationale : "",
+      // 선택 필드: 허용값이 아니면 에러 없이 null (계약 부록 G)
+      backdrop: parseBackdrop(it.backdrop),
+      dust: parseLevel(it.dust),
+      reflection: parseLevel(it.reflection),
     });
   }
 

@@ -2,7 +2,7 @@
   "fileName": "Burn-it-up.mp3",
   "fileHash": "b77f9d23fab4e8bf3574d56a92af1035053a80b1199f9995fe0830e271480f43",
   "durationSec": 173.819,
-  "artistSlug": "aurora",
+  "artistSlug": "nova",
   "generatedBy": "rule-based example (no LLM)",
   "result": {
     "sections": [
@@ -18,7 +18,7 @@
         "endSec": 62.0,
         "transitionMs": 2000,
         "state": {
-          "color": "#9F77DD",
+          "color": "#D4537E",
           "spots": {
             "left": { "on": true, "intensity": 780.0, "angle": 0.5, "penumbra": 0.6 },
             "center": { "on": true, "intensity": 780.0, "angle": 0.5, "penumbra": 0.6 },
@@ -35,7 +35,7 @@
         "endSec": 114.0,
         "transitionMs": 2000,
         "state": {
-          "color": "#9F77DD",
+          "color": "#D4537E",
           "spots": {
             "left": { "on": true, "intensity": 860.0, "angle": 0.5, "penumbra": 0.6 },
             "center": { "on": true, "intensity": 860.0, "angle": 0.5, "penumbra": 0.6 },
@@ -52,7 +52,7 @@
         "endSec": 129.0,
         "transitionMs": 2000,
         "state": {
-          "color": "#9F77DD",
+          "color": "#D4537E",
           "spots": {
             "left": { "on": false, "intensity": 390.0, "angle": 0.5, "penumbra": 0.6 },
             "center": { "on": true, "intensity": 390.0, "angle": 0.5, "penumbra": 0.6 },
@@ -69,7 +69,7 @@
         "endSec": 173.819,
         "transitionMs": 2000,
         "state": {
-          "color": "#9F77DD",
+          "color": "#D4537E",
           "spots": {
             "left": { "on": true, "intensity": 810.0, "angle": 0.5, "penumbra": 0.6 },
             "center": { "on": true, "intensity": 810.0, "angle": 0.5, "penumbra": 0.6 },

@@ -1,5 +1,6 @@
 // DB 행 타입 (supabase/migrations/20261009000000_stage_director.sql 과 1:1)
 import type { Analysis, SequenceItem } from "@/lib/python/contract";
+import type { PropKey, SceneEdit } from "@/lib/stage/scene";
 
 export type AnalysisStatus = "pending" | "running" | "done" | "error";
 
@@ -28,6 +29,8 @@ export type StageSequenceRow = {
   status: "draft" | "approved";
   items: SequenceItem[] | null; // 승인 전 null
   feedback_count: number;
+  props: PropKey[] | null; // AI 가 제안한 소품. null = 정하지 않음, [] = 소품 없음
+  scene_edit: SceneEdit | null; // 사용자가 재생 화면에서 고친 값. AI 값보다 우선
   approved_at: string | null;
   created_at: string;
 };
