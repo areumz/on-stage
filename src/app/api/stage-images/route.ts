@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { authed, jsonError } from "@/lib/director/http";
 import { STUDIO_FOLDER, UPLOAD_LIMIT_BYTES, UPLOAD_MIME, UPLOADS_PER_STUDIO } from "@/lib/stage/scene";
-import { BACKDROP_BUCKET, listAll, ownFileName } from "../sequences/backdropStorage";
+import { BACKDROP_BUCKET, listAll, ownFileName, signImages } from "../sequences/backdropStorage";
 
 // "무대 연출" 메뉴(/staff/stage)용 내 이미지. 연출과 무관해서 <uid>/studio/<uuid>.<ext> 한 폴더에 안전 상한(UPLOADS_PER_STUDIO)까지.
 // 규칙은 /api/sequences/[id]/backdrop-images 와 같다(서명 URL 은 <img>/텍스처에만, no-store, 로그 금지).
@@ -18,12 +18,7 @@ export async function GET() {
   const names = await listAll(supabase, folder);
   if (!names) return jsonError("internal_error", 500);
 
-  const images: { path: string; name: string; url: string }[] = [];
-  for (const name of names.slice(0, UPLOADS_PER_STUDIO)) {
-    const path = `${folder}/${name}`;
-    const { data } = await supabase.storage.from(BACKDROP_BUCKET).createSignedUrl(path, 3600);
-    if (data) images.push({ path, name, url: data.signedUrl });
-  }
+  const images = await signImages(supabase, folder, names.slice(0, UPLOADS_PER_STUDIO));
   return Response.json({ images }, { headers: NO_STORE });
 }
 

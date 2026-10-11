@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { authed, isUuid, jsonError } from "@/lib/director/http";
 import { parseSceneEdit, UPLOAD_LIMIT_BYTES, UPLOAD_MIME, UPLOADS_PER_SEQUENCE } from "@/lib/stage/scene";
-import { BACKDROP_BUCKET, folderOf, listAll, ownFileName } from "../../backdropStorage";
+import { BACKDROP_BUCKET, folderOf, listAll, ownFileName, signImages } from "../../backdropStorage";
 
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -27,12 +27,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/sequences/[
   const names = await listAll(supabase, folder);
   if (!names) return jsonError("internal_error", 500);
 
-  const images: { path: string; name: string; url: string }[] = [];
-  for (const name of names.slice(0, UPLOADS_PER_SEQUENCE)) {
-    const path = `${folder}/${name}`;
-    const { data } = await supabase.storage.from(BACKDROP_BUCKET).createSignedUrl(path, 3600);
-    if (data) images.push({ path, name, url: data.signedUrl }); // 못 만든 한 장은 건너뛴다
-  }
+  const images = await signImages(supabase, folder, names.slice(0, UPLOADS_PER_SEQUENCE));
   return Response.json({ images }, { headers: NO_STORE });
 }
 

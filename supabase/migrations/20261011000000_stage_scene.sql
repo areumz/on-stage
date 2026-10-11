@@ -26,7 +26,8 @@ values ('stage-backdrops', 'stage-backdrops', false,
 on conflict (id) do update set public = false, allowed_mime_types = excluded.allowed_mime_types, file_size_limit = excluded.file_size_limit;
 
 -- 업로드는 (a) "내 승인된 연출"의 폴더 <uid>/<sequence_id>/ 또는 (b) 기존 "무대 연출" 메뉴용 <uid>/studio/ 에만,
--- 폴더당 50장까지(제품 한도가 아니라 스토리지 남용 방지용 안전 상한). API 의 검사와 별개로 여기가 최종 방어선이다(Storage 를 JWT 로 직접 부르는 경우까지 막는다).
+-- 폴더당 약 50장까지(제품 한도가 아니라 스토리지 남용 방지용 대략적 상한). API 의 검사와 별개로 Storage 를 JWT 로 직접 부르는 경우도 막는다.
+-- 업로드가 끝난 객체만 세므로 동시에 여러 URL 을 받으면 조금 넘을 수 있다.
 -- 경로는 정확히 두 단계 폴더다. 'studio' 는 uuid 가 아니라서 연출 id 와 겹치지 않는다.
 drop policy if exists "backdrop own upload" on storage.objects;
 create policy "backdrop own upload" on storage.objects for insert to authenticated

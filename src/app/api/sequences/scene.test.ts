@@ -30,7 +30,7 @@ function fake(cfg: Cfg) {
     removed: [] as string[],
     uploadPaths: [] as string[],
     eqs: [] as string[], // "<op> <col>=<val>" — fake 가 필터를 적용하진 않으니 쿼리에 쓰인 조건을 기록해 확인한다
-    lists: [] as { folder: string; opts: { limit?: number; offset?: number; search?: string } }[],
+    lists: [] as { folder: string; opts: { limit?: number; offset?: number; search?: string; sortBy?: unknown } }[],
   };
   const row = cfg.row === undefined ? { status: "approved", items: [{}, {}] } : cfg.row;
   const from = (table: string) => {
@@ -53,14 +53,14 @@ function fake(cfg: Cfg) {
   };
   const storage = {
     from: () => ({
-      list: async (folder: string, opts: { limit?: number; offset?: number; search?: string } = {}) => {
+      list: async (folder: string, opts: { limit?: number; offset?: number; search?: string; sortBy?: unknown } = {}) => {
         log.lists.push({ folder, opts });
         if (cfg.listError) return { data: null, error: { message: "x" } };
         const all = (cfg.files ?? []).filter((n) => !opts.search || n.includes(opts.search));
         return { data: all.slice(opts.offset ?? 0, (opts.offset ?? 0) + (opts.limit ?? 100)).map((name) => ({ name })), error: null };
       },
       remove: async (paths: string[]) => (log.removed.push(...paths), { data: [], error: cfg.removeError ? { message: "x" } : null }),
-      createSignedUrl: async (p: string) => ({ data: { signedUrl: `https://signed/${p}` }, error: null }),
+      createSignedUrls: async (ps: string[]) => ({ data: ps.map((p) => ({ path: p, signedUrl: `https://signed/${p}`, error: null })), error: null }),
       createSignedUploadUrl: async (p: string) => (log.uploadPaths.push(p), { data: { signedUrl: `https://up/${p}` }, error: null }),
     }),
   };
@@ -183,9 +183,10 @@ describe("backdrop-images", () => {
 
   const many = (n: number) => Array.from({ length: n }, (_, i) => `f${i}.png`);
   it("GET: 서명 URL 목록, no-store, 상한까지 모두", async () => {
-    fake({ files: many(UPLOADS_PER_SEQUENCE + 2) });
+    const log = fake({ files: many(UPLOADS_PER_SEQUENCE + 2) });
     const res = await getImages(req("GET"), ctx);
     const { images } = await res.json();
+    expect(log.lists[0].opts.sortBy).toEqual({ column: "created_at", order: "desc" });
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(images).toHaveLength(UPLOADS_PER_SEQUENCE);
     expect(images[0]).toEqual({ path: `${FOLDER}/f0.png`, name: "f0.png", url: `https://signed/${FOLDER}/f0.png` });

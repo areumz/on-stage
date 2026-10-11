@@ -11,7 +11,7 @@ const FOLDER = "u1/studio";
 type Cfg = { files?: string[]; listError?: boolean; removeError?: boolean; used?: { id: string; scene: unknown }[] };
 
 function fake(cfg: Cfg = {}) {
-  const log = { updates: [] as { v: unknown; eqs: string[] }[], removed: [] as string[], uploadPaths: [] as string[], lists: [] as string[], filters: [] as string[], selectEqs: [] as string[] };
+  const log = { updates: [] as { v: unknown; eqs: string[] }[], removed: [] as string[], uploadPaths: [] as string[], lists: [] as string[], listOpts: [] as unknown[], filters: [] as string[], selectEqs: [] as string[] };
   const from = (table: string) => {
     let op = "select";
     let cur: { v: unknown; eqs: string[] } | null = null;
@@ -26,12 +26,13 @@ function fake(cfg: Cfg = {}) {
   };
   const storage = {
     from: () => ({
-      list: async (folder: string) => {
+      list: async (folder: string, opts: unknown) => {
         log.lists.push(folder);
+        log.listOpts.push(opts);
         return cfg.listError ? { data: null, error: { message: "x" } } : { data: (cfg.files ?? []).map((name) => ({ name })), error: null };
       },
       remove: async (p: string[]) => (log.removed.push(...p), { data: [], error: cfg.removeError ? { message: "x" } : null }),
-      createSignedUrl: async (p: string) => ({ data: { signedUrl: `https://signed/${p}` }, error: null }),
+      createSignedUrls: async (ps: string[]) => ({ data: ps.map((p) => ({ path: p, signedUrl: `https://signed/${p}`, error: null })), error: null }),
       createSignedUploadUrl: async (p: string) => (log.uploadPaths.push(p), { data: { signedUrl: `https://up/${p}` }, error: null }),
     }),
   };
@@ -55,6 +56,7 @@ describe("/api/stage-images", () => {
     const res = await GET();
     const { images } = await res.json();
     expect(new Set(log.lists)).toEqual(new Set([FOLDER]));
+    expect(log.listOpts[0]).toMatchObject({ sortBy: { column: "created_at", order: "desc" } });
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(images).toHaveLength(UPLOADS_PER_STUDIO);
     expect(images[0]).toEqual({ path: `${FOLDER}/f0.png`, name: "f0.png", url: `https://signed/${FOLDER}/f0.png` });
