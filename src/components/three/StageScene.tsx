@@ -79,15 +79,15 @@ export default function StageScene({ state, controls = true, scene = NO_SCENE }:
       {/* 바닥 — 30×30이라 먼 가장자리가 카메라에서 아주 먼 상태. 안개를 그대로 적용하면 지평선이
           순백으로 뻗어나가 버려서(스모그가 아니라 바닥이 사라지는 것처럼 보임) fog를 끔*/}
       <Floor reflection={scene.reflection} />
-      {/* 연단 — 색이 거의 검정(#1a1533)이면 스모그가 없을 때 스포트라이트가 닿아도 면이 안 보여서 한 단계 밝혔다 */}
+      {/* 연단 — 색이 거의 검정(#1a1533)이면 스모그가 없을 때 스포트라이트가 닿아도 면이 안 보여서 한 단계 밝혔다. 색은 보라가 아니라 무채색에 가까운 어두운 회색으로 둬서 조명 색이 주인공이 되게 한다 */}
       <mesh position={[0, 0.4, 0]} receiveShadow castShadow>
         <boxGeometry args={[8, 0.8, 4]} />
-        <meshStandardMaterial color="#4a3d88" emissive="#4a3d88" emissiveIntensity={0.35} />
+        <meshStandardMaterial color="#3a3842" emissive="#3a3842" emissiveIntensity={0.3} />
       </mesh>
       {/* 배경 패널 */}
       <mesh position={[0, 3, -2.4]} receiveShadow>
         <boxGeometry args={[9, 5.5, 0.3]} />
-        <meshStandardMaterial color="#1c1840" />
+        <meshStandardMaterial color="#24232c" emissive="#24232c" emissiveIntensity={0.2} />
       </mesh>
       <StageBackdrop backdrop={scene.backdrop} imageUrl={scene.imageUrl} activity={scene.activity} />
       <Dust dust={scene.dust} />
