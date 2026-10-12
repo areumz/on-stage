@@ -155,15 +155,15 @@ describe("POST /api/sequences", () => {
     setup({ claim: false });
     const res = await call();
     expect([res.status, (await res.json()).error]).toEqual([429, "daily_limit"]);
-    expect(calls).toEqual(["insert", "rpc claim_daily_run 2", "delete"]);
+    expect(calls).toEqual(["insert", "rpc claim_daily_run 5", "delete"]);
     expect(startRun).not.toHaveBeenCalled();
   });
 
   it("한도 값은 DAILY_RUN_LIMIT 환경변수를 따른다", async () => {
-    vi.stubEnv("DAILY_RUN_LIMIT", "5");
+    vi.stubEnv("DAILY_RUN_LIMIT", "7");
     setup();
     await call();
-    expect(calls).toContain("rpc claim_daily_run 5");
+    expect(calls).toContain("rpc claim_daily_run 7");
   });
 
   // 보낼 값을 못 모으는 실패는 하루 횟수를 쓰기 전에 일어나야 한다
@@ -177,7 +177,7 @@ describe("POST /api/sequences", () => {
   it("claim 호출이 오류면 500 으로 막고 초안을 되돌린다", async () => {
     setup({ claimError: true });
     expect((await call()).status).toBe(500);
-    expect(calls).toEqual(["insert", "rpc claim_daily_run 2", "delete"]);
+    expect(calls).toEqual(["insert", "rpc claim_daily_run 5", "delete"]);
   });
 
   // 알려진 허용 사항: 차감 뒤 Python 호출이 실패해도 횟수는 돌려주지 않는다 (환불 함수는 한도 우회 경로가 된다)
@@ -186,14 +186,14 @@ describe("POST /api/sequences", () => {
     setup();
     const res = await call();
     expect([res.status, (await res.json()).error]).toEqual([502, "connection_failed"]);
-    expect(calls).toEqual(["insert", "rpc claim_daily_run 2", "delete"]);
+    expect(calls).toEqual(["insert", "rpc claim_daily_run 5", "delete"]);
   });
 
   it("성공하면 201 과 초안 id, 순서는 초안 예약 → 한도 → Python", async () => {
     setup();
     const res = await call();
     expect([res.status, await res.json()]).toEqual([201, { id: "draft-1", status: "queued" }]);
-    expect(calls).toEqual(["insert", "rpc claim_daily_run 2"]);
+    expect(calls).toEqual(["insert", "rpc claim_daily_run 5"]);
     expect(startRun).toHaveBeenCalledWith("draft-1", context);
   });
 });
