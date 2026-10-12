@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { renameSequence, type Result } from "@/lib/director/api";
 import { SEQUENCE_NAME_MAX } from "@/lib/director/format";
-import { checkName, nameLength, renameErrorKo } from "@/lib/director/rename";
+import { checkName, nameCount, renameErrorKo } from "@/lib/director/rename";
 
 type Props = {
   sequenceId: string;
@@ -24,15 +24,24 @@ export default function RenameField({ sequenceId, name, defaultName, as: Tag = "
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null); // 저장 직후 새로고침이 끝나기 전까지 보여 줄 이름
+  // 새 name prop 이 오면(새로고침 완료) 옛 saved 를 버린다 — 렌더 중 파생 상태 패턴
+  const [seenName, setSeenName] = useState(name);
+  if (seenName !== name) {
+    setSeenName(name);
+    setSaved(null);
+  }
   const inputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(false);
   const shown = saved ?? name;
 
+  // 편집이 시작되면 입력으로, 끝나면(저장·취소 모두) 눌렀던 버튼으로 포커스를 옮긴다 — 닫은 직후엔 버튼이 아직 없어서 effect 에서 한다
   useEffect(() => {
     if (editing) {
       inputRef.current?.focus();
       inputRef.current?.select();
-    }
+    } else if (wasEditing.current) openRef.current?.focus();
+    wasEditing.current = editing;
   }, [editing]);
 
   function open() {
@@ -44,7 +53,6 @@ export default function RenameField({ sequenceId, name, defaultName, as: Tag = "
   function close() {
     setEditing(false);
     setError(null);
-    queueMicrotask(() => openRef.current?.focus()); // 눌렀던 버튼으로 포커스 복귀
   }
 
   async function save(e: React.FormEvent) {
@@ -63,7 +71,7 @@ export default function RenameField({ sequenceId, name, defaultName, as: Tag = "
     router.refresh();
   }
 
-  const len = nameLength(value);
+  const count = nameCount(value);
 
   if (!editing) {
     return (
@@ -90,22 +98,22 @@ export default function RenameField({ sequenceId, name, defaultName, as: Tag = "
           id={`rn-${sequenceId}`}
           ref={inputRef}
           value={value}
-          disabled={saving}
+          readOnly={saving} // disabled 는 포커스를 잃게 하므로 저장 중에는 읽기 전용으로
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === "Escape" && !saving && (e.stopPropagation(), close())}
           aria-describedby={`rn-${sequenceId}-help`}
-          aria-invalid={!!error || len > SEQUENCE_NAME_MAX}
-          className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/25 bg-transparent px-3 text-base text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60 md:text-sm"
+          aria-invalid={!!error || count.over}
+          className="min-h-10 min-w-0 flex-1 rounded-lg border border-white/25 bg-transparent px-3 text-base text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-brand read-only:opacity-60 md:text-sm"
         />
-        <button type="submit" disabled={saving} className="min-h-10 rounded-full bg-brand px-4 text-sm font-semibold text-bg-dark hover:opacity-90 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-60">
+        <button type="submit" aria-disabled={saving} className="min-h-10 rounded-full bg-brand px-4 text-sm font-semibold text-bg-dark hover:opacity-90 focus-visible:outline-2 focus-visible:outline-white aria-disabled:opacity-60">
           {saving ? "저장 중…" : error ? "다시 시도" : "저장"}
         </button>
-        <button type="button" disabled={saving} onClick={close} className="min-h-10 rounded-full border border-white/20 px-4 text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60">
+        <button type="button" aria-disabled={saving} onClick={() => !saving && close()} className="min-h-10 rounded-full border border-white/20 px-4 text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand aria-disabled:opacity-60">
           취소
         </button>
       </div>
-      <p id={`rn-${sequenceId}-help`} className={`text-xs ${len > SEQUENCE_NAME_MAX ? "text-rose-300" : "text-white/60"}`}>
-        {len}/{SEQUENCE_NAME_MAX}자 · 비우고 저장하면 기본 이름(곡 제목 · 날짜 시간)으로 돌아가요
+      <p id={`rn-${sequenceId}-help`} className={`text-xs ${count.over ? "text-rose-300" : "text-white/60"}`}>
+        {count.over ? `${SEQUENCE_NAME_MAX}자를 넘었어요` : `${count.count}/${SEQUENCE_NAME_MAX}자`} · 비우고 저장하면 기본 이름(곡 제목 · 날짜 시간)으로 돌아가요
       </p>
       {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
     </form>

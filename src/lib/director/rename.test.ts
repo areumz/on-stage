@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkName, nameLength, renameErrorKo } from "./rename";
+import { checkName, nameCount, nameLength, renameErrorKo } from "./rename";
 
 describe("checkName", () => {
   it("공백을 정리하고, 비우면 기본 이름(null)으로 되돌린다", () => {
@@ -12,6 +12,24 @@ describe("checkName", () => {
   });
   it("글자 수는 코드포인트 기준(이모지 하나는 1)", () => {
     expect(nameLength("a😀")).toBe(2);
+  });
+});
+
+describe("nameCount (정리한 뒤 길이 기준)", () => {
+  it("공백이 많은 입력은 정리한 길이로 세고 저장 가능하면 over 가 아니다", () => {
+    const raw = `${"가 ".repeat(10)}      나나`; // 원본 28자 → 정리 후 "가 가 … 가 나나" 22자
+    expect(nameCount(raw)).toEqual({ over: false, count: 22 });
+    expect(nameCount("   ")).toEqual({ over: false, count: 0 });
+    expect(nameCount("가".repeat(40))).toEqual({ over: false, count: 40 });
+  });
+  it("41자 이상(정리 후)이면 over", () => {
+    expect(nameCount("가".repeat(41))).toEqual({ over: true });
+    expect(nameCount(`${"가".repeat(20)}${" ".repeat(10)}${"나".repeat(21)}`)).toEqual({ over: true }); // 정리 후 42자
+  });
+  it("원본이 40자를 넘어도 정리 후 40자 이하면 저장할 수 있다", () => {
+    const raw = `${"가".repeat(20)}${" ".repeat(30)}${"나".repeat(19)}`; // 원본 69, 정리 후 40
+    expect(nameCount(raw)).toEqual({ over: false, count: 40 });
+    expect(checkName(raw).ok).toBe(true);
   });
 });
 

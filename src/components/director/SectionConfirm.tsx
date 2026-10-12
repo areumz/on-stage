@@ -96,6 +96,7 @@ function Timeline({ rows, durationSec, energy, disabled, onMove, playTime, activ
         ref={track}
         className="relative h-24 cursor-pointer"
         onPointerDown={(e) => {
+          if (e.button !== 0) return;
           const r = track.current?.getBoundingClientRect();
           if (r) onSeek(xToSec(e.clientX, r.left, r.width, durationSec));
         }}
@@ -176,6 +177,7 @@ function Inner({ audioTrackId, interrupt, badge, submitting, error, onSubmit }: 
   const emptyMood = rows.filter((r) => r.mood.trim() === "").length;
   // 재생 위치가 속한 구간은 확정 전 편집 값(rows) 기준으로 계산한다
   const activeIdx = player.playing || player.time > 0 ? rowIndexAt(rows, player.time) : null;
+  const [scrub, setScrub] = useState<number | null>(null); // 슬라이더를 잡고 있는 동안은 100ms 갱신이 값을 덮지 않게 로컬 값을 쓴다
   const [rejected, setRejected] = useState<number | null>(null);
   const patch = (i: number, p: Partial<EditRow>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...p } : r)));
   const reason = !check.ok ? check.message ?? `고쳐야 할 구간이 ${errorCount}개 있어요` : undefined;
@@ -212,7 +214,7 @@ function Inner({ audioTrackId, interrupt, badge, submitting, error, onSubmit }: 
         <div className="flex items-center gap-3">
           <button
             type="button"
-            aria-label={player.playing ? "일시정지" : "재생"}
+            aria-label="재생"
             aria-pressed={player.playing}
             onClick={player.toggle}
             className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand text-bg-dark hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft"
@@ -226,8 +228,15 @@ function Inner({ audioTrackId, interrupt, badge, submitting, error, onSubmit }: 
             min={0}
             max={Math.floor(durationSec)}
             step={1}
-            value={Math.min(Math.floor(player.time), Math.floor(durationSec))}
-            onChange={(e) => player.seek(Number(e.target.value))}
+            value={Math.min(scrub ?? Math.floor(player.time), Math.floor(durationSec))}
+            onChange={(e) => {
+              setScrub(Number(e.target.value));
+              player.seek(Number(e.target.value));
+            }}
+            onPointerUp={() => setScrub(null)}
+            onPointerCancel={() => setScrub(null)}
+            onKeyUp={() => setScrub(null)}
+            onBlur={() => setScrub(null)}
             className="h-10 min-w-0 flex-1 accent-amber-300"
           />
           <span aria-hidden className="shrink-0 text-xs tabular-nums text-white/80">
@@ -235,7 +244,7 @@ function Inner({ audioTrackId, interrupt, badge, submitting, error, onSubmit }: 
           </span>
         </div>
         <p role="status" className="sr-only">
-          {player.playing ? `재생 중, ${(activeIdx ?? 0) + 1}번 구간` : "일시정지"}
+          {player.played ? (player.playing ? "재생 중" : "일시정지") : ""}
         </p>
         {player.failed && (
           <p role="alert" className="text-xs text-rose-300">소리를 불러오지 못했어요. 다시 눌러 시도해 주세요</p>

@@ -13,6 +13,13 @@ export function checkName(raw: string): NameCheck {
 
 export const nameLength = (raw: string): number => [...raw].length;
 
+// 글자 수 표시용: 저장될 값(정리한 뒤, 코드포인트) 기준. 정리 뒤에도 40자를 넘으면 정확한 수 없이 over 만 알린다.
+export type NameCount = { over: false; count: number } | { over: true };
+export function nameCount(raw: string): NameCount {
+  const c = checkName(raw);
+  return c.ok ? { over: false, count: c.name ? nameLength(c.name) : 0 } : { over: true };
+}
+
 export function renameErrorKo(e: ApiError): string {
   if (e.code === "invalid_name") return `이름은 ${SEQUENCE_NAME_MAX}자까지 쓸 수 있어요`;
   if (e.code === "connection_failed") return "연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요";

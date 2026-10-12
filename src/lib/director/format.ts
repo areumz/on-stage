@@ -8,16 +8,16 @@ export function sequenceName(trackTitle: string, isoDate: string, custom?: strin
   if (mine) return mine;
   const d = new Date(isoDate);
   const date = d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", timeZone: "Asia/Seoul" });
-  const time = d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" });
+  const time = d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Seoul" });
   return `${trackTitle} · ${date} ${time}`;
 }
 
 // 사용자가 입력한 이름을 저장 가능한 값으로 정리한다. 공백만 있거나 비어 있으면 null(= 기본 이름), 길면 거부(undefined).
-// 제어 문자는 제거하고 연속 공백은 하나로 줄인다.
+// 제어 문자와 제로폭·방향 제어 문자는 제거하고(이름이 비어 보이거나 표시가 뒤집히는 것을 막는다) 연속 공백은 하나로 줄인다.
 export function cleanSequenceName(raw: unknown): string | null | undefined {
   if (raw === null) return null;
   if (typeof raw !== "string") return undefined;
-  const s = raw.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  const s = raw.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g, "").replace(/\s+/g, " ").trim();
   if (!s) return null;
   return [...s].length <= SEQUENCE_NAME_MAX ? s : undefined;
 }

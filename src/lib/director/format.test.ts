@@ -25,6 +25,10 @@ describe("cleanSequenceName", () => {
     expect(cleanSequenceName(5)).toBeUndefined();
     expect(cleanSequenceName(undefined)).toBeUndefined();
   });
+  it("제로폭·방향 제어 문자만 있는 이름은 비어 있는 것으로 본다", () => {
+    expect(cleanSequenceName("\u200b\u202e")).toBeNull();
+    expect(cleanSequenceName("a\u200bb")).toBe("ab");
+  });
   it("제어 문자·연속 공백 정리, 40자 초과는 거부", () => {
     expect(cleanSequenceName("a\u0000b\n  c")).toBe("a b c");
     expect(cleanSequenceName("가".repeat(40))).toBe("가".repeat(40));

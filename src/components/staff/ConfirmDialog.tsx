@@ -35,11 +35,11 @@ function Dialog({
         className="w-80 rounded-xl bg-white p-5 text-center shadow-xl"
       >
         {title && (
-          <p id={titleId} className="mb-2 text-base font-semibold text-gray-900">
+          <p id={titleId} className="mb-2 break-words text-base font-semibold text-gray-900">
             {title}
           </p>
         )}
-        <p id={messageId} className="text-sm text-gray-900">
+        <p id={messageId} className="break-words text-sm text-gray-900">
           {message}
         </p>
         <div className="mt-4 flex justify-center gap-3">
