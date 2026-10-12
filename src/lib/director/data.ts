@@ -40,6 +40,7 @@ function toSummary(r: SequenceJoin): SequenceSummary {
     id: r.id,
     audioTrackId: r.audio_track_id,
     trackTitle: track?.title ?? "",
+    name: r.name ?? null,
     status: r.status,
     feedbackCount: r.feedback_count,
     sectionCount: r.items?.length ?? 0,
@@ -53,7 +54,7 @@ export async function getSequences(): Promise<SequenceSummary[]> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("stage_sequences")
-    .select("id, audio_track_id, status, items, feedback_count, approved_at, created_at, audio_tracks(title)")
+    .select("id, audio_track_id, name, status, items, feedback_count, approved_at, created_at, audio_tracks(title)")
     .order("created_at", { ascending: false });
   if (error) throw new Error(`getSequences: ${error.message}`);
   return ((data ?? []) as unknown as SequenceJoin[]).map(toSummary);

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import RenameField from "@/components/director/RenameField";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
-import { deleteSequence, type Result } from "@/lib/director/api";
+import { deleteSequence, renameSequence, type Result } from "@/lib/director/api";
 import { sequenceName } from "@/lib/director/format";
 import { groupByTrack } from "@/lib/director/library";
 import { APPROVED_LIMIT, FEEDBACK_LIMIT } from "@/lib/director/limits";
@@ -28,9 +29,10 @@ type Props = {
   sequences: SequenceSummary[];
   // 쇼케이스에서 실제 API 를 부르지 않기 위한 주입점
   onDelete?: (id: string) => Promise<Result<void>>;
+  onRename?: (id: string, name: string | null) => Promise<Result<{ name: string | null }>>;
 };
 
-export default function Library({ tracks, sequences, onDelete = deleteSequence }: Props) {
+export default function Library({ tracks, sequences, onDelete = deleteSequence, onRename = renameSequence }: Props) {
   const router = useRouter();
   const { confirm, dialog } = useConfirm();
   const [error, setError] = useState<string | null>(null);
@@ -104,11 +106,13 @@ export default function Library({ tracks, sequences, onDelete = deleteSequence }
                 ))}
 
                 {approved.map((s) => {
-                  const name = sequenceName(s.trackTitle, s.approvedAt ?? s.createdAt);
+                  const when = s.approvedAt ?? s.createdAt;
+                  const name = sequenceName(s.trackTitle, when, s.name);
+                  const defaultName = sequenceName(s.trackTitle, when);
                   return (
                     <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-bg-dark-2 px-4 py-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{name}</p>
+                      <div className="min-w-0 flex-1 basis-60">
+                        <RenameField sequenceId={s.id} name={name} defaultName={defaultName} onRename={onRename} />
                         <p className="text-sm text-white/70">구간 {s.sectionCount}개 · 다시 생성 {s.feedbackCount}회</p>
                       </div>
                       <div className="flex flex-wrap gap-2">

@@ -142,3 +142,25 @@ export function validateSections(sections: SectionInput[], durationSec: number):
   }
   return Object.keys(rowErrors).length || message ? { ok: false, rowErrors, rowKinds, message } : { ok: true };
 }
+
+// ---- 구간 확인 화면의 듣기(재생기) 순수 헬퍼 ----
+
+export const LISTEN_BEFORE_SEC = 2;
+export const LISTEN_AFTER_SEC = 3;
+
+// 재생 위치가 속한 행. 아직 확정 전인 편집 값(rows)을 기준으로 하고, 끝(duration)에 닿으면 마지막 행.
+export function rowIndexAt(rows: EditRow[], t: number): number {
+  const i = rows.findIndex((r) => t < r.endSec);
+  return i === -1 ? rows.length - 1 : i;
+}
+
+// 막대 위 클릭 x 좌표 → 초. 막대 밖은 0~duration 으로 잘라 낸다.
+export function xToSec(x: number, left: number, width: number, durationSec: number): number {
+  if (!(width > 0) || !(durationSec > 0)) return 0;
+  return Math.min(1, Math.max(0, (x - left) / width)) * durationSec;
+}
+
+// 경계 앞뒤 듣기 구간: 경계 2초 전부터 3초 뒤까지(곡 범위 안으로)
+export function listenWindow(boundarySec: number, durationSec: number): { from: number; to: number } {
+  return { from: Math.max(0, boundarySec - LISTEN_BEFORE_SEC), to: Math.min(durationSec, boundarySec + LISTEN_AFTER_SEC) };
+}

@@ -60,7 +60,12 @@ export const pollAnalysis = (trackId: string) => call<AnalysisPoll>(`/api/audio-
 
 export const createSequence = (audioTrackId: string) => call<{ id: string; status: RunStatus }>("/api/sequences", post({ audioTrackId }));
 export const pollSequence = (id: string) => call<SequencePoll>(`/api/sequences/${id}`);
-export const resumeSequence = (id: string, body: ResumeBody) => call<ResumeAck>(`/api/sequences/${id}/resume`, post(body));
+// 승인할 때만 선택으로 연출 이름(name)을 같이 보낸다. 비워 두면 보내지 않는다.
+export type ResumeRequest = ResumeBody & { name?: string };
+export const resumeSequence = (id: string, body: ResumeRequest) => call<ResumeAck>(`/api/sequences/${id}/resume`, post(body));
 export const retrySequence = (id: string) => call<ResumeAck>(`/api/sequences/${id}/retry`, post());
+// 연출 이름 바꾸기. name null = 기본 이름(곡 제목 · 날짜 시간)으로 되돌린다.
+export const renameSequence = (id: string, name: string | null) =>
+  call<{ name: string | null }>(`/api/sequences/${id}/name`, { method: "PATCH", body: JSON.stringify({ name }) });
 // 초안 버리기와 저장된 연출 삭제가 같은 호출이다
 export const deleteSequence = (id: string) => call<void>(`/api/sequences/${id}`, { method: "DELETE" });

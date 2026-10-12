@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SequenceFlow from "@/components/director/SequenceFlow";
 import SequencePlayer from "@/components/director/SequencePlayer";
-import { ScreenHeader } from "@/components/director/ProgressCard";
+import RenameField from "@/components/director/RenameField";
 import { getSequence, getTrackDetail } from "@/lib/director/data";
 import { listDemos } from "@/lib/director/demo";
 import { sequenceName } from "@/lib/director/format";
@@ -26,7 +26,16 @@ export default async function SequencePage({ params }: { params: Promise<{ id: s
         <Link href="/staff/director" className="self-start text-sm text-brand-soft hover:text-white">
           ← 내 연출
         </Link>
-        <ScreenHeader eyebrow="내 연출" title={sequenceName(track.title, row.approved_at ?? row.created_at)} />
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-white/60">내 연출</p>
+          <RenameField
+            sequenceId={row.id}
+            name={sequenceName(track.title, row.approved_at ?? row.created_at, row.name)}
+            defaultName={sequenceName(track.title, row.approved_at ?? row.created_at)}
+            as="h1"
+            textClass="text-2xl font-bold tracking-tight"
+          />
+        </div>
         {items.length === 0 ? (
           <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">재생할 연출이 없어요</p>
         ) : (

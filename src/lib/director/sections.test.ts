@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addSection, boundaryRange, canAdd, formatTime, canSplit, fromSections, mergeUp, moveBoundary, parseTime, setEnd, split, toInputs, validateSections,
+  addSection, boundaryRange, canAdd, formatTime, canSplit, fromSections, listenWindow, mergeUp, rowIndexAt, xToSec, moveBoundary, parseTime, setEnd, split, toInputs, validateSections,
   type EditRow,
 } from "./sections";
 
@@ -199,5 +199,30 @@ describe("경계 케이스", () => {
     expect(formatTime(59.9)).toBe("0:59");
     expect(formatTime(67)).toBe("1:07");
     expect(formatTime(600)).toBe("10:00");
+  });
+});
+
+describe("듣기 헬퍼", () => {
+  const rows = [
+    { raw: "a", text: "a", endSec: 20, mood: "" },
+    { raw: "b", text: "b", endSec: 50, mood: "" },
+  ];
+  it("rowIndexAt: 편집 값 기준, 경계는 다음 행, 끝은 마지막 행", () => {
+    expect(rowIndexAt(rows, 0)).toBe(0);
+    expect(rowIndexAt(rows, 19.9)).toBe(0);
+    expect(rowIndexAt(rows, 20)).toBe(1);
+    expect(rowIndexAt(rows, 50)).toBe(1);
+    expect(rowIndexAt(rows, 999)).toBe(1);
+  });
+  it("xToSec: 비율 변환과 범위 자르기, 폭 0 방어", () => {
+    expect(xToSec(150, 100, 200, 60)).toBe(15);
+    expect(xToSec(0, 100, 200, 60)).toBe(0);
+    expect(xToSec(900, 100, 200, 60)).toBe(60);
+    expect(xToSec(5, 0, 0, 60)).toBe(0);
+  });
+  it("listenWindow: 2초 전 ~ 3초 뒤, 곡 범위 안", () => {
+    expect(listenWindow(30, 100)).toEqual({ from: 28, to: 33 });
+    expect(listenWindow(1, 100)).toEqual({ from: 0, to: 4 });
+    expect(listenWindow(99, 100)).toEqual({ from: 97, to: 100 });
   });
 });

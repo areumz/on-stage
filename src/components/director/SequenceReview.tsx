@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
 import type { ApiError } from "@/lib/director/api";
+import { SEQUENCE_NAME_MAX } from "@/lib/director/format";
 import { FEEDBACK_LIMIT } from "@/lib/director/limits";
+import { checkName } from "@/lib/director/rename";
 import { labelKo } from "@/lib/director/labels";
 import { DEFAULT_FEEDBACK_TEXT, barPercent, cameraLabel, groupIssues, issueSectionCount, timeRange } from "@/lib/director/review";
 import type { Issue, ReviewInterrupt } from "@/lib/python/contract";
@@ -16,7 +18,7 @@ type Props = {
   submitting: boolean;
   error: ApiError | null;
   onFeedback: (text: string, targets: number[]) => void;
-  onApprove: () => void;
+  onApprove: (name?: string) => void; // 이름을 적었을 때만 name 을 넘긴다
   onDiscard: () => void;
 };
 
@@ -56,11 +58,20 @@ export default function SequenceReview(props: Props) {
 function Inner({ interrupt, badge, feedbackCount, submitting, error, onFeedback, onApprove, onDiscard }: Props) {
   const { confirm, dialog } = useConfirm();
   const [texts, setTexts] = useState<Record<number, string>>({});
+  const [seqName, setSeqName] = useState(""); // 선택 입력: 비우면 기본 이름(곡 제목 · 날짜 시간)
+  const [nameError, setNameError] = useState<string | null>(null);
   const { items, issues } = interrupt;
   const exhausted = feedbackCount >= FEEDBACK_LIMIT;
   const { bySection, whole } = groupIssues(issues, items.length);
   const issueCount = issueSectionCount(issues, items.length);
   const copy = error ? errorCopyFor(error.code) : null;
+
+  function approve() {
+    const check = checkName(seqName);
+    if (!check.ok) return setNameError(check.message);
+    setNameError(null);
+    onApprove(check.name ?? undefined); // 비어 있으면 name 을 보내지 않는다
+  }
 
   async function discard() {
     if (!(await confirm(`${DISCARD_CONFIRM.title} ${DISCARD_CONFIRM.body}`, { confirmLabel: DISCARD_CONFIRM.confirm, cancelLabel: DISCARD_CONFIRM.cancel }))) return;
@@ -165,6 +176,21 @@ function Inner({ interrupt, badge, feedbackCount, submitting, error, onFeedback,
           {" · "}
           {exhausted ? "다시 생성을 모두 썼어요. 승인하거나 새로 만들어 주세요." : `이 연출에서 다시 생성은 ${FEEDBACK_LIMIT}번까지 할 수 있어요.`}
         </p>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="seq-name" className="text-xs font-semibold text-white/70">연출 이름 (선택)</label>
+          <input
+            id="seq-name"
+            value={seqName}
+            onChange={(e) => setSeqName(e.target.value)}
+            disabled={submitting}
+            placeholder="비우면 곡 제목 · 날짜 시간"
+            aria-describedby="seq-name-help"
+            aria-invalid={!!nameError}
+            className="min-h-10 w-full rounded-lg border border-white/25 bg-transparent px-3 text-base text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-60 md:max-w-md md:text-sm"
+          />
+          <p id="seq-name-help" className="text-xs text-white/60">{SEQUENCE_NAME_MAX}자까지 · 나중에 내 연출에서 바꿀 수 있어요</p>
+          {nameError && <p role="alert" className="text-sm text-rose-300">{nameError}</p>}
+        </div>
         <div className="flex flex-col gap-2 md:flex-row">
           <button
             type="button"
@@ -177,7 +203,7 @@ function Inner({ interrupt, badge, feedbackCount, submitting, error, onFeedback,
           <button
             type="button"
             disabled={submitting}
-            onClick={onApprove}
+            onClick={approve}
             className="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-black hover:opacity-90 focus-visible:outline-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             전체 승인 →

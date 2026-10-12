@@ -15,6 +15,7 @@ import {
   resumeSequence,
   retrySequence,
   type ApiError,
+  type ResumeRequest,
 } from "@/lib/director/api";
 import { FEEDBACK_LIMIT } from "@/lib/director/limits";
 import {
@@ -29,7 +30,6 @@ import {
   type RunView,
 } from "@/lib/director/runFlow";
 import { usePolling } from "@/lib/director/usePolling";
-import type { ResumeBody } from "@/lib/python/contract";
 import { DISCARD_CONFIRM, type ActionKind } from "@/lib/python/errors";
 
 // 화면에 보여 줄 오류. job 은 Python 작업이 error 로 멈춘 경우(다시 시도 = retry API), 아니면 HTTP·연결 오류(다시 시도 = 폴링 재개).
@@ -145,7 +145,7 @@ export default function SequenceFlow({
     return () => clearTimeout(t);
   }, [approved]);
 
-  async function resume(body: ResumeBody, after: "sections" | "feedback" | "approve") {
+  async function resume(body: ResumeRequest, after: "sections" | "feedback" | "approve") {
     if (lock.current) return;
     lock.current = true;
     const g = ++gen.current;
@@ -266,6 +266,7 @@ export default function SequenceFlow({
   } else if (view?.kind === "confirm") {
     body = (
       <SectionConfirm
+        audioTrackId={trackId}
         interrupt={view.interrupt}
         badge={badge}
         submitting={submitting}
@@ -286,7 +287,7 @@ export default function SequenceFlow({
         onFeedback={(text, targets) =>
           resume({ interruptId: view.interrupt.interruptId, kind: "feedback", payload: { text, targets } }, "feedback")
         }
-        onApprove={() => resume({ interruptId: view.interrupt.interruptId, kind: "approve" }, "approve")}
+        onApprove={(name) => resume({ interruptId: view.interrupt.interruptId, kind: "approve", ...(name ? { name } : {}) }, "approve")}
         onDiscard={discard}
       />
     );

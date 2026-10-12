@@ -29,17 +29,19 @@ export type StageSequenceRow = {
   status: "draft" | "approved";
   items: SequenceItem[] | null; // 승인 전 null
   feedback_count: number;
+  name: string | null; // 사용자가 붙인 이름. null 이면 sequenceName() 의 기본 이름
   props: PropKey[] | null; // AI 가 제안한 소품. null = 정하지 않음, [] = 소품 없음
   scene_edit: SceneEdit | null; // 사용자가 재생 화면에서 고친 값. AI 값보다 우선
   approved_at: string | null;
   created_at: string;
 };
 
-// Library 목록용: 연출 이름은 "곡 제목 · 날짜"로 만들어 보여 주므로 컬럼이 없다.
+// Library 목록용: name 이 null 이면 "곡 제목 · 날짜 시간"을 sequenceName() 으로 만들어 보여 준다.
 export type SequenceSummary = {
   id: string;
   audioTrackId: string;
   trackTitle: string;
+  name: string | null;
   status: "draft" | "approved";
   feedbackCount: number;
   sectionCount: number; // 승인본만 의미 있음, 초안은 0

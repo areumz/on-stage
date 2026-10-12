@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useSectionAudio } from "@/components/director/useSectionAudio";
 import type { ApiError } from "@/lib/director/api";
 import {
-  addSection, boundaryRange, canAdd, canSplit, formatTime, fromSections, MAX_LABEL, MAX_MOOD, MAX_SECTIONS, mergeUp,
-  moveBoundary, parseTime, type RowErrorKind, setEnd, split, startOf, toInputs, validateSections, type EditRow,
+  addSection, boundaryRange, canAdd, canSplit, formatTime, fromSections, listenWindow, MAX_LABEL, MAX_MOOD, MAX_SECTIONS, mergeUp,
+  moveBoundary, parseTime, type RowErrorKind, rowIndexAt, setEnd, split, startOf, toInputs, validateSections, xToSec, type EditRow,
 } from "@/lib/director/sections";
 import type { ConfirmSectionsInterrupt, SectionInput } from "@/lib/python/contract";
 
 type Props = {
+  audioTrackId: string;
   interrupt: ConfirmSectionsInterrupt;
   badge: string;
   submitting: boolean;
@@ -60,8 +62,9 @@ function TimeInput({ value, disabled, rejected, label, describedBy, onCommit }: 
   );
 }
 
-function Timeline({ rows, durationSec, energy, disabled, onMove }: {
+function Timeline({ rows, durationSec, energy, disabled, onMove, playTime, activeIdx, onSeek }: {
   rows: EditRow[]; durationSec: number; energy: number[]; disabled: boolean; onMove: (i: number, sec: number) => void;
+  playTime: number; activeIdx: number | null; onSeek: (sec: number) => void;
 }) {
   const track = useRef<HTMLDivElement>(null);
   const max = Math.max(...energy, 0) || 1;
@@ -88,7 +91,15 @@ function Timeline({ rows, durationSec, energy, disabled, onMove }: {
 
   return (
     <div className="hidden rounded-2xl border border-white/10 bg-bg-dark-2 px-6 pb-3 pt-8 md:block">
-      <div ref={track} className="relative h-24">
+      {/* 막대 빈 곳을 누르면 그 위치로 이동한다. 경계 핸들은 pointerdown 을 막아 기존 드래그가 그대로 동작한다. */}
+      <div
+        ref={track}
+        className="relative h-24 cursor-pointer"
+        onPointerDown={(e) => {
+          const r = track.current?.getBoundingClientRect();
+          if (r) onSeek(xToSec(e.clientX, r.left, r.width, durationSec));
+        }}
+      >
         <div className="absolute inset-0 flex items-end" aria-hidden>
           {/* 소수점이 긴 퍼센트는 브라우저가 스타일을 반올림해 읽어서 서버 HTML 과 어긋난다(하이드레이션 불일치). 소수 첫째 자리로 맞춘다. */}
           {energy.map((v, k) => (
@@ -98,7 +109,7 @@ function Timeline({ rows, durationSec, energy, disabled, onMove }: {
         {rows.map((r, i) => (
           <div
             key={i}
-            className={`absolute inset-y-0 flex items-center justify-center overflow-hidden border border-white/10 text-xs text-white ${BLOCKS[i % BLOCKS.length]}`}
+            className={`absolute inset-y-0 flex items-center justify-center overflow-hidden border text-xs text-white ${BLOCKS[i % BLOCKS.length]} ${i === activeIdx ? "border-amber-300" : "border-white/10"}`}
             style={{ left: pct(startOf(rows, i)), width: pct(r.endSec - startOf(rows, i)) }}
           >
             <span className="truncate px-1">{r.text}</span>
@@ -121,6 +132,7 @@ function Timeline({ rows, durationSec, energy, disabled, onMove }: {
               onKeyDown={(e) => !disabled && key(i, e)}
               onPointerDown={(e) => {
                 if (disabled) return;
+                e.stopPropagation(); // 막대 클릭 이동으로 번지지 않게
                 e.currentTarget.setPointerCapture(e.pointerId);
                 e.currentTarget.focus();
               }}
@@ -135,6 +147,10 @@ function Timeline({ rows, durationSec, energy, disabled, onMove }: {
             </div>
           );
         })}
+        {/* 재생 위치선: 경계 핸들(흰 가는 선+원)과 다르게 굵은 호박색 선+아래 삼각형. 포인터는 통과시킨다. */}
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 z-20 -ml-[1.5px] w-[3px] bg-amber-300" style={{ left: pct(Math.min(playTime, durationSec)) }}>
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-x-[5px] border-t-[6px] border-x-transparent border-t-amber-300" />
+        </div>
       </div>
       <div className="relative mt-2 h-4 text-xs tabular-nums text-white/60" aria-hidden>
         {ticks.map((t) => (
@@ -147,8 +163,9 @@ function Timeline({ rows, durationSec, energy, disabled, onMove }: {
   );
 }
 
-function Inner({ interrupt, badge, submitting, error, onSubmit }: Props) {
+function Inner({ audioTrackId, interrupt, badge, submitting, error, onSubmit }: Props) {
   const { durationSec } = interrupt;
+  const player = useSectionAudio(audioTrackId, durationSec);
   const [rows, setRows] = useState<EditRow[]>(() => fromSections(interrupt.sections, durationSec));
   const inputs = useMemo(() => toInputs(rows), [rows]);
   const check = useMemo(() => validateSections(inputs, durationSec), [inputs, durationSec]);
@@ -157,6 +174,8 @@ function Inner({ interrupt, badge, submitting, error, onSubmit }: Props) {
   const errorCount = Object.keys(rowErrors).length;
   const blocked = !check.ok;
   const emptyMood = rows.filter((r) => r.mood.trim() === "").length;
+  // 재생 위치가 속한 구간은 확정 전 편집 값(rows) 기준으로 계산한다
+  const activeIdx = player.playing || player.time > 0 ? rowIndexAt(rows, player.time) : null;
   const [rejected, setRejected] = useState<number | null>(null);
   const patch = (i: number, p: Partial<EditRow>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...p } : r)));
   const reason = !check.ok ? check.message ?? `고쳐야 할 구간이 ${errorCount}개 있어요` : undefined;
@@ -189,7 +208,45 @@ function Inner({ interrupt, badge, submitting, error, onSubmit }: Props) {
         </p>
       )}
 
+      <section aria-label="구간 듣기" className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-bg-dark-2 p-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label={player.playing ? "일시정지" : "재생"}
+            aria-pressed={player.playing}
+            onClick={player.toggle}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand text-bg-dark hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft"
+          >
+            <span aria-hidden>{player.playing ? "❚❚" : "▶"}</span>
+          </button>
+          <input
+            type="range"
+            aria-label="재생 위치"
+            aria-valuetext={`${formatTime(player.time)} / ${formatTime(durationSec)}`}
+            min={0}
+            max={Math.floor(durationSec)}
+            step={1}
+            value={Math.min(Math.floor(player.time), Math.floor(durationSec))}
+            onChange={(e) => player.seek(Number(e.target.value))}
+            className="h-10 min-w-0 flex-1 accent-amber-300"
+          />
+          <span aria-hidden className="shrink-0 text-xs tabular-nums text-white/80">
+            {formatTime(player.time)} / {formatTime(durationSec)}
+          </span>
+        </div>
+        <p role="status" className="sr-only">
+          {player.playing ? `재생 중, ${(activeIdx ?? 0) + 1}번 구간` : "일시정지"}
+        </p>
+        {player.failed && (
+          <p role="alert" className="text-xs text-rose-300">소리를 불러오지 못했어요. 다시 눌러 시도해 주세요</p>
+        )}
+        <p className="text-xs text-white/60">재생 버튼을 눌러야 소리가 나요. 막대를 눌러 위치를 옮기고, 각 구간의 &quot;경계 듣기&quot;로 끝 경계 앞뒤를 들어 볼 수 있어요.</p>
+      </section>
+
       <Timeline
+        playTime={player.time}
+        activeIdx={activeIdx}
+        onSeek={player.seek}
         rows={rows}
         durationSec={durationSec}
         energy={interrupt.energyCurve}
@@ -227,7 +284,7 @@ function Inner({ interrupt, badge, submitting, error, onSubmit }: Props) {
             const common = { "aria-invalid": err ? true : undefined, "aria-describedby": err ? errId : undefined };
             return (
               <li key={i} className="flex flex-col gap-1">
-                <div className={`flex flex-col gap-3 rounded-2xl border bg-bg-dark-2 p-3 md:flex-row md:items-center ${err ? "border-rose-400/70" : "border-white/10"}`}>
+                <div className={`flex flex-col gap-3 rounded-2xl border bg-bg-dark-2 p-3 md:flex-row md:items-center ${err ? "border-rose-400/70" : i === activeIdx ? "border-amber-300/70" : "border-white/10"}`}>
                   <div className="flex items-center gap-3">
                     <span aria-hidden className={`size-2 shrink-0 rounded-full ${err ? "bg-rose-400" : DOTS[i % DOTS.length]}`} />
                     <input
@@ -261,6 +318,7 @@ function Inner({ interrupt, badge, submitting, error, onSubmit }: Props) {
                       />
                     )}
                     <span className="text-white/60">({Math.round(r.endSec - start)}초)</span>
+                    {i === activeIdx && <span className="rounded-full bg-amber-300/20 px-2 py-0.5 text-xs text-amber-200">{player.playing ? "재생 중" : "현재 위치"}</span>}
                   </div>
                   <input
                     {...common}
@@ -272,11 +330,24 @@ function Inner({ interrupt, badge, submitting, error, onSubmit }: Props) {
                     onChange={(e) => patch(i, { mood: e.target.value })}
                     className={`${field} min-w-0 flex-1 ${r.mood.trim() === "" ? "border-dashed border-amber-300/50" : "border-white/15"}`}
                   />
-                  <div className="flex gap-2">
-                    <button type="button" className={btn} disabled={submitting || i === 0} onClick={() => setRows((rs) => mergeUp(rs, i))}>
+                  <div className="flex flex-wrap gap-2">
+                    {!last && (
+                      <button
+                        type="button"
+                        className={`${btn} min-h-10`}
+                        aria-label={`${i + 1}번 구간 끝 경계 앞뒤 듣기`}
+                        onClick={() => {
+                          const w = listenWindow(r.endSec, durationSec);
+                          void player.playFrom(w.from, w.to);
+                        }}
+                      >
+                        경계 듣기
+                      </button>
+                    )}
+                    <button type="button" className={`${btn} min-h-10`} disabled={submitting || i === 0} onClick={() => setRows((rs) => mergeUp(rs, i))}>
                       병합
                     </button>
-                    <button type="button" className={btn} disabled={submitting || !canSplit(rows, i)} onClick={() => setRows((rs) => split(rs, i))}>
+                    <button type="button" className={`${btn} min-h-10`} disabled={submitting || !canSplit(rows, i)} onClick={() => setRows((rs) => split(rs, i))}>
                       분할
                     </button>
                   </div>
