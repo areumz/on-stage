@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { authed, isUuid, jsonError } from "@/lib/director/http";
-import { parseSceneEdit, UPLOAD_LIMIT_BYTES, UPLOAD_MIME, UPLOADS_PER_SEQUENCE } from "@/lib/stage/scene";
+import { UPLOAD_LIMIT_BYTES, UPLOAD_MIME, UPLOADS_PER_SEQUENCE } from "@/lib/stage/scene";
 import { BACKDROP_BUCKET, folderOf, listAll, ownFileName, signImages } from "../../backdropStorage";
 
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -13,6 +13,30 @@ async function guard(supabase: SupabaseClient, id: string) {
   if (error) return jsonError("internal_error", 500);
   if (!data) return jsonError("not_found", 404);
   return data.status === "approved" ? null : jsonError("not_approved", 409);
+}
+
+// 이 path 를 쓰던 곳(구간별 image, 예전 형식의 연출 전체 backdrop)만 바꾼 scene_edit 를 돌려준다. 참조가 없으면 null.
+// 원본에서 해당 키만 고친다 — 파서가 버릴 깨진 부분이나 다른 구간·필드는 조용히 지우지 않는다.
+function dropReference(raw: unknown, path: string): Record<string, unknown> | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const edit = { ...(raw as Record<string, unknown>) };
+  let changed = false;
+  const uses = (img: unknown) => (img as { kind?: string; path?: string } | null)?.kind === "upload" && (img as { path?: string }).path === path;
+  const b = edit.backdrop as { mode?: string; image?: unknown } | undefined;
+  if (b?.mode === "image" && uses(b.image)) {
+    edit.backdrop = { mode: "auto" };
+    changed = true;
+  }
+  if (Array.isArray(edit.sections)) {
+    edit.sections = edit.sections.map((s: unknown) => {
+      if (typeof s !== "object" || s === null || !uses((s as { image?: unknown }).image)) return s;
+      changed = true;
+      const rest = { ...(s as Record<string, unknown>) };
+      delete rest.image;
+      return Object.keys(rest).length ? rest : null;
+    });
+  }
+  return changed ? edit : null;
 }
 
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/sequences/[id]/backdrop-images">) {
@@ -80,12 +104,11 @@ export async function DELETE(req: NextRequest, ctx: RouteContext<"/api/sequences
   if (row.status !== "approved") return jsonError("not_approved", 409);
 
   // 먼저 참조를 끊는다. 객체 삭제가 실패해도 화면이 사라진 이미지를 가리키지 않는다.
-  const edit = parseSceneEdit(row.scene_edit, Array.isArray(row.items) ? row.items.length : 0);
-  if (edit?.backdrop?.mode === "image" && edit.backdrop.image.kind === "upload" && edit.backdrop.image.path === path) {
+  const cleaned = dropReference(row.scene_edit, path!);
+  if (cleaned) {
     const { error: resetError } = await supabase
       .from("stage_sequences")
-      // 원본 scene_edit 에서 backdrop 만 바꾼다(파서가 버린 깨진 부분까지 지우지 않는다)
-      .update({ scene_edit: { ...(row.scene_edit as object), backdrop: { mode: "auto" } } })
+      .update({ scene_edit: cleaned })
       .eq("id", id)
       .eq("status", "approved")
       .eq("user_id", user.id);

@@ -1,6 +1,6 @@
 // 재생 화면 장면 상태의 순수 reducer. 패널 열기·취소·저장·이미지 업로드/삭제가 서로 어긋나지 않게 한곳에서 정한다.
 // gen(패널 세대)은 패널을 열고 닫을 때마다 올라간다 — 업로드를 시작한 세대와 달라지면 결과를 버린다.
-import { reduceEdit, tidy, type EditCtx, type PanelAction } from "@/components/scene/model";
+import { dropImageRefs, migrateLegacy, reduceEdit, type EditCtx, type PanelAction } from "@/components/scene/model";
 import type { SceneEdit } from "@/lib/stage/scene";
 
 export type SceneState = {
@@ -15,30 +15,28 @@ export type SceneState = {
 
 export type SceneEvent =
   | { type: "open"; index: number }
+  | { type: "section"; index: number }
   | { type: "panel"; action: PanelAction; ctx: EditCtx }
   | { type: "resetAll" }
   | { type: "cancel" }
   | { type: "saving" }
   | { type: "saved"; data: SceneEdit | null }
   | { type: "saveFailed"; message: string }
-  | { type: "uploaded"; path: string; gen: number }
+  | { type: "uploaded"; path: string; gen: number; ctx: EditCtx }
   | { type: "imageRemoved"; path: string };
 
-export const initScene = (edit: SceneEdit | null): SceneState => ({ saved: edit, edit, open: false, gen: 0, index: 0, saving: false, error: null });
-
-// 지운 업로드 이미지를 가리키는 배경 설정을 걷어 낸다 (AI 제안으로 돌아간다)
-function dropImage(e: SceneEdit | null, path: string): SceneEdit | null {
-  const b = e?.backdrop;
-  if (!e || b?.mode !== "image" || b.image.kind !== "upload" || b.image.path !== path) return e;
-  const { backdrop: _drop, ...rest } = e;
-  void _drop;
-  return tidy(rest);
-}
+// 예전 형식(연출 전체 배경)은 열자마자 구간별 값으로 바꿔 둔다 — 이후 UI 는 구간 값만 다룬다
+export const initScene = (initial: SceneEdit | null, sectionCount: number): SceneState => {
+  const edit = migrateLegacy(initial, sectionCount);
+  return { saved: edit, edit, open: false, gen: 0, index: 0, saving: false, error: null };
+};
 
 export function sceneReducer(s: SceneState, ev: SceneEvent): SceneState {
   switch (ev.type) {
     case "open":
       return s.open ? s : { ...s, open: true, gen: s.gen + 1, index: ev.index, error: null };
+    case "section": // 패널 안에서 편집할 구간을 고른다 (재생 위치와 무관)
+      return s.open ? { ...s, index: ev.index } : s;
     case "panel":
       return s.open && !s.saving ? { ...s, edit: reduceEdit(s.edit, ev.action, ev.ctx) } : s;
     case "resetAll":
@@ -54,8 +52,9 @@ export function sceneReducer(s: SceneState, ev: SceneEvent): SceneState {
     case "uploaded":
       // 닫힌 패널·다른 세대의 업로드 결과가 3D 에 적용되면 안 된다
       if (!s.open || s.saving || ev.gen !== s.gen) return s;
-      return { ...s, edit: { ...s.edit, backdrop: { mode: "image", image: { kind: "upload", path: ev.path } } } };
+      // 업로드한 이미지는 패널 안에서 편집 중인 구간의 배경으로 고른다
+      return { ...s, edit: reduceEdit(s.edit, { type: "image", image: { kind: "upload", path: ev.path } }, ev.ctx) };
     case "imageRemoved":
-      return { ...s, saved: dropImage(s.saved, ev.path), edit: dropImage(s.edit, ev.path) };
+      return { ...s, saved: dropImageRefs(s.saved, ev.path), edit: dropImageRefs(s.edit, ev.path) };
   }
 }

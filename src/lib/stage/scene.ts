@@ -26,10 +26,12 @@ export const UPLOADS_PER_SEQUENCE = 50;
 export const STUDIO_FOLDER = "studio";
 export const UPLOADS_PER_STUDIO = 50;
 
-// 구간마다 붙는 선택 필드 (계약의 items[i].backdrop/dust/reflection). null·없음 = 정하지 않음
-export type SectionScene = { backdrop?: Backdrop | null; dust?: number | null; reflection?: number | null };
-
 export type ImageRef = { kind: "sample"; id: SampleId } | { kind: "upload"; path: string };
+
+// 구간마다 붙는 선택 필드. backdrop/dust/reflection 은 계약의 items[i] 필드와 같고(AI 값),
+// scene_edit.sections[i] 에서는 사용자가 그 구간만 고친 값이다. image 는 사용자가 구간에 고른 뒤 벽 이미지(AI 는 정하지 않음).
+// null·없음 = 정하지 않음
+export type SectionScene = { backdrop?: Backdrop | null; dust?: number | null; reflection?: number | null; image?: ImageRef | null };
 
 // 연출 전체의 배경 모드. auto = 구간마다 AI 제안(또는 자동 규칙)
 export type BackdropSetting = { mode: "auto" } | { mode: "fx"; fx: Effect } | { mode: "image"; image: ImageRef };
@@ -88,7 +90,9 @@ export function parseSectionScene(v: unknown): SectionScene | null {
   if (typeof v !== "object" || v === null) return null;
   const o = v as Record<string, unknown>;
   const out: SectionScene = { backdrop: parseBackdrop(o.backdrop), dust: parseLevel(o.dust), reflection: parseLevel(o.reflection) };
-  return out.backdrop === null && out.dust === null && out.reflection === null ? null : out;
+  const image = parseImage(o.image);
+  if (image) out.image = image; // 없으면 키를 만들지 않는다(AI 값 모양을 지킨다)
+  return out.backdrop === null && out.dust === null && out.reflection === null && !image ? null : out;
 }
 
 function parseImage(v: unknown): ImageRef | null {
@@ -173,24 +177,26 @@ export type ResolveInput = {
   energyRatio: number;
   aiProps: PropKey[] | null; // stage_sequences.props
   edit: SceneEdit | null; // stage_sequences.scene_edit
-  imageUrl: string | null; // edit.backdrop 이 image 일 때 호출자가 만든 URL (샘플은 sampleSrc, 업로드는 서명 URL)
+  // 이미지 참조 → 표시할 URL. 샘플은 sampleSrc, 업로드는 서명 URL 이고 아직 못 구했으면 null(그러면 효과로 그린다)
+  imageUrlFor?: (image: ImageRef) => string | null;
 };
 
+// 우선순위(배경): 구간에서 고른 이미지 > 구간에서 고른 효과 > (예전 형식) 연출 전체 모드 > AI 값 > 자동 규칙.
 export function resolveScene(i: ResolveInput): RenderScene {
   const mine = i.edit?.sections?.[i.index] ?? null;
-  const setting = i.edit?.backdrop ?? { mode: "auto" as const };
+  const whole = i.edit?.backdrop ?? { mode: "auto" as const };
   const ai = {
     backdrop: i.item.backdrop ?? autoBackdrop(i.energyRatio),
     dust: i.item.dust ?? autoDust(i.energyRatio),
     reflection: i.item.reflection ?? autoReflection(i.energyRatio),
   };
-  let backdrop: Backdrop = mine?.backdrop ?? ai.backdrop;
-  let imageUrl: string | null = null;
-  if (setting.mode === "fx") backdrop = setting.fx;
-  else if (setting.mode === "image" && i.imageUrl) {
-    imageUrl = i.imageUrl;
-    backdrop = "none";
-  }
+  const wholeImage = whole.mode === "image" ? whole.image : null;
+  const image = mine?.image ?? (mine?.backdrop ? null : wholeImage);
+  const imageUrl = image ? (i.imageUrlFor?.(image) ?? null) : null;
+  let backdrop: Backdrop = ai.backdrop;
+  if (mine?.backdrop) backdrop = mine.backdrop;
+  else if (whole.mode === "fx") backdrop = whole.fx;
+  if (imageUrl) backdrop = "none";
   return {
     backdrop,
     dust: mine?.dust ?? ai.dust,
@@ -201,7 +207,6 @@ export function resolveScene(i: ResolveInput): RenderScene {
   };
 }
 
-// uploadUrl: image 가 내 업로드일 때 호출자가 만든 서명 URL. 못 만들었으면 이미지 없이 backdrop 효과로 그린다.
 export function presetToRender(s: PresetScene, uploadUrl: string | null = null): RenderScene {
   const imageUrl = s.image?.kind === "sample" ? sampleSrc(s.image.id) : s.image?.kind === "upload" ? uploadUrl : null;
   return {

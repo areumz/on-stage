@@ -148,6 +148,35 @@ describe("PATCH /api/sequences/[id]/scene", () => {
     fake({ files: ["a.png"] });
     expect((await patch(upload(`${FOLDER}/a.png`)))[0]).toBe(200);
   });
+  const sec = (image: unknown) => ({ sections: [{ dust: 5, image }, null] });
+  it("구간별 샘플 이미지는 그대로 저장(존재 확인 없음)", async () => {
+    const log = fake({});
+    const [status, body] = await patch(sec({ kind: "sample", id: "galaxy" }));
+    expect(status).toBe(200);
+    expect(body.sceneEdit.sections[0].image).toEqual({ kind: "sample", id: "galaxy" });
+    expect(log.lists).toEqual([]);
+  });
+  it("구간별 내 업로드 이미지는 존재하면 저장", async () => {
+    fake({ files: ["a.png"] });
+    expect((await patch(sec({ kind: "upload", path: `${FOLDER}/a.png` })))[0]).toBe(200);
+  });
+  it.each([
+    ["남의 path", { kind: "upload", path: `u2/${ID}/a.png` }],
+    ["존재하지 않는 path", { kind: "upload", path: `${FOLDER}/none.png` }],
+    ["traversal", { kind: "upload", path: `${FOLDER}/../u2/a.png` }],
+    ["모르는 샘플", { kind: "sample", id: "nope" }],
+    ["모양 오류", "x"],
+  ])("구간별 image %s 는 400 invalid_scene", async (_n, image) => {
+    const log = fake({ files: ["a.png"] });
+    const res = await PATCH(req("PATCH", { edit: sec(image) }), ctx);
+    expect([res.status, (await res.json()).error]).toEqual([400, "invalid_scene"]);
+    expect(log.updates).toEqual([]);
+  });
+  it("구간 backdrop 은 none 포함 허용값만", async () => {
+    fake({});
+    expect((await patch({ sections: [{ backdrop: "none" }, null] }))[0]).toBe(200);
+    expect((await patch({ sections: [{ backdrop: "bogus", dust: 5 }, null] }))[0]).toBe(400);
+  });
   it("업로드 존재 확인은 내 폴더에서 정확한 파일명으로 찾는다", async () => {
     const log = fake({ files: ["a.png"] });
     await patch(upload(`${FOLDER}/a.png`));
@@ -248,6 +277,27 @@ describe("backdrop-images", () => {
     });
     await del(`${FOLDER}/a.png`);
     expect(log.updates[0]).toEqual({ scene_edit: { sections: broken, junk: 1, backdrop: { mode: "auto" } } });
+    expect(log.eqs).toEqual(expect.arrayContaining([`update id=${ID}`, "update status=approved", "update user_id=u1"]));
+  });
+
+  it("DELETE: 구간별 image 만 지우고 다른 구간·필드·예전 backdrop 은 보존", async () => {
+    const mine = { kind: "upload", path: `${FOLDER}/a.png` };
+    const other = { kind: "upload", path: `${FOLDER}/b.png` };
+    const log = fake({
+      row: {
+        status: "approved",
+        items: [{}, {}, {}, {}],
+        scene_edit: {
+          props: ["mic"],
+          backdrop: { mode: "image", image: mine },
+          sections: [{ dust: 5, image: mine }, { image: mine }, { image: other }, null],
+        },
+      },
+    });
+    expect((await del(`${FOLDER}/a.png`)).status).toBe(200);
+    expect(log.updates).toEqual([
+      { scene_edit: { props: ["mic"], backdrop: { mode: "auto" }, sections: [{ dust: 5 }, null, { image: other }, null] } },
+    ]);
     expect(log.eqs).toEqual(expect.arrayContaining([`update id=${ID}`, "update status=approved", "update user_id=u1"]));
   });
 

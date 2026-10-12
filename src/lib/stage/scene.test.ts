@@ -12,7 +12,8 @@ import {
   type ResolveInput,
 } from "./scene";
 
-const base: ResolveInput = { index: 1, item: {}, energyRatio: 1.2, aiProps: null, edit: null, imageUrl: null };
+const base: ResolveInput = { index: 1, item: {}, energyRatio: 1.2, aiProps: null, edit: null };
+const urlFor = (img: { kind: string; id?: string; path?: string }) => (img.kind === "sample" ? `/backdrops/${img.id}.svg` : `https://signed/${img.path}`);
 
 describe("parse", () => {
   it("모르는 값·범위 밖 값은 null", () => {
@@ -67,13 +68,28 @@ describe("resolveScene", () => {
     expect(resolveScene({ ...base, aiProps: ["amp"], edit: { props: [] } }).props).toEqual([]);
     expect(resolveScene({ ...base, aiProps: null }).props).toEqual(["mic"]);
   });
-  it("3D 효과 모드는 모든 구간을 한 효과로, 이미지 모드는 효과를 끄고 이미지를 쓴다", () => {
-    expect(resolveScene({ ...base, item: { backdrop: "bars" }, edit: { backdrop: { mode: "fx", fx: "tunnel" } } }).backdrop).toBe("tunnel");
-    const img = resolveScene({ ...base, edit: { backdrop: { mode: "image", image: { kind: "sample", id: "galaxy" } } }, imageUrl: "/backdrops/galaxy.svg" });
-    expect(img.backdrop).toBe("none");
-    expect(img.imageUrl).toBe("/backdrops/galaxy.svg");
-    // 이미지 URL 을 못 만들었으면 효과로 폴백
-    expect(resolveScene({ ...base, edit: { backdrop: { mode: "image", image: { kind: "sample", id: "galaxy" } } } }).backdrop).toBe("laser");
+  it("구간에서 고른 효과·이미지가 그 구간에만 적용된다", () => {
+    const edit = { sections: [{ backdrop: "cube" as const }, { image: { kind: "sample" as const, id: "galaxy" as const } }] };
+    const first = resolveScene({ ...base, index: 0, item: { backdrop: "bars" }, edit, imageUrlFor: urlFor });
+    expect(first.backdrop).toBe("cube");
+    expect(first.imageUrl).toBeNull();
+    const second = resolveScene({ ...base, index: 1, item: { backdrop: "bars" }, edit, imageUrlFor: urlFor });
+    expect(second).toMatchObject({ backdrop: "none", imageUrl: "/backdrops/galaxy.svg" });
+    // 고치지 않은 구간은 AI 값
+    expect(resolveScene({ ...base, index: 2, item: { backdrop: "bars" }, edit, imageUrlFor: urlFor }).backdrop).toBe("bars");
+  });
+  it("이미지 URL 을 아직 못 구했으면 AI 효과로 폴백", () => {
+    const edit = { sections: [null, { image: { kind: "upload" as const, path: "u/s/a.png" } }] };
+    expect(resolveScene({ ...base, item: { backdrop: "bars" }, edit }).backdrop).toBe("bars");
+    expect(resolveScene({ ...base, item: { backdrop: "bars" }, edit, imageUrlFor: () => null }).imageUrl).toBeNull();
+    expect(resolveScene({ ...base, item: { backdrop: "bars" }, edit, imageUrlFor: urlFor }).imageUrl).toBe("https://signed/u/s/a.png");
+  });
+  it("예전 형식(연출 전체 모드)도 구간 값이 없을 때만 적용", () => {
+    const whole = { backdrop: { mode: "fx" as const, fx: "tunnel" as const } };
+    expect(resolveScene({ ...base, item: { backdrop: "bars" }, edit: whole }).backdrop).toBe("tunnel");
+    expect(resolveScene({ ...base, item: { backdrop: "bars" }, edit: { ...whole, sections: [null, { backdrop: "cube" }] } }).backdrop).toBe("cube");
+    const wholeImg = { backdrop: { mode: "image" as const, image: { kind: "sample" as const, id: "galaxy" as const } } };
+    expect(resolveScene({ ...base, edit: wholeImg, imageUrlFor: urlFor })).toMatchObject({ backdrop: "none", imageUrl: "/backdrops/galaxy.svg" });
   });
 });
 
