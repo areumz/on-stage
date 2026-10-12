@@ -10,8 +10,8 @@ import { useRef, useState } from "react";
 // 반사 재질은 reflection>0 이 처음 나왔을 때 한 번만 마운트하고 그 뒤로는 안 내린다 — 0 이면 숨기기만 한다
 // (언마운트하면 drei 가 FBO 를 dispose 하지 않아 0↔양수를 오갈 때마다 새니까). 대신 한 번이라도 켠 뒤에는
 // 숨겨도 매 프레임 반사 패스가 돈다(drei 한계).
-// 반사 재질은 "바닥색 × 반사"에 조명(ambient 0.15뿐)을 곱해서 바닥색이 어두우면(#0b0818) 반사가 안 보여 색을 밝게 둠.
-// reflection 이 한 번도 안 켜졌거나 0 이면 기존 바닥(#0b0818 standard)과 완전히 같다.
+// 반사 재질은 "바닥색 × 반사"에 조명(ambient 0.15뿐)을 곱해서 바닥색이 어두우면(#15102e) 반사가 안 보여 색을 밝게 둠.
+// reflection 이 한 번도 안 켜졌거나 0 이면 기존 바닥(#15102e standard)과 완전히 같다.
 const FLOOR_ARGS: [number, number] = [30, 30];
 
 function ReflectiveFloor({ reflection }: { reflection: number }) {
@@ -35,7 +35,7 @@ export default function Floor({ reflection }: { reflection: number }) {
       {reflection <= 0 && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={FLOOR_ARGS} />
-          <meshStandardMaterial color="#0b0818" fog={false} />
+          <meshStandardMaterial color="#1a1438" emissive="#1a1438" emissiveIntensity={0.4} fog={false} />
         </mesh>
       )}
       {everOn && (
