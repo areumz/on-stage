@@ -22,7 +22,7 @@ function ReflectiveFloor({ reflection }: { reflection: number }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <planeGeometry args={FLOOR_ARGS} />
-      <MeshReflectorMaterial ref={mat as never} color="#d8d0ff" fog={false} resolution={256} blur={[60, 30]} mixBlur={1} mixStrength={0} mirror={0.95} roughness={1} />
+      <MeshReflectorMaterial ref={mat as never} color="#e6e4f0" fog={false} resolution={256} blur={[60, 30]} mixBlur={1} mixStrength={0} mirror={0.95} roughness={1} />
     </mesh>
   );
 }

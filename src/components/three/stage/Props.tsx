@@ -96,7 +96,6 @@ const CORNERS: V3[] = [
 function Amp() {
   return (
     <group position={[-3.2, 0.8, -1.2]} rotation={[0, 0.3, 0]}>
-      <pointLight position={[0.6, 2.2, 1.8]} intensity={9} distance={6} decay={2} />
       {/* 캐비닛 */}
       <RoundedBox args={[1.05, 1.25, 0.6]} radius={0.04} smoothness={3} position={[0, 0.65, 0]}>
         <Mat color={CAB} />
@@ -154,7 +153,6 @@ const FLOOR_TOM_LEGS = [0, 2.094, 4.188];
 function Drum() {
   return (
     <group position={[2.55, 0.8, -1.15]}>
-      <pointLight position={[-0.4, 2.4, 1.9]} intensity={9} distance={6} decay={2} />
       {/* 베이스 드럼: 축이 Z 라 눕혀서 그린다. 앞면은 헤드와 림 */}
       <group position={[0, 0.44, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <mesh>
@@ -215,7 +213,6 @@ function Drum() {
 function Mic() {
   return (
     <group position={[-1.1, 0.8, 1.1]}>
-      <pointLight position={[0.4, 2.2, 1.2]} intensity={5} distance={5} decay={2} />
       <mesh position={[0, 0.02, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.04, 20]} />
         <Mat color={CHROME} metal />
@@ -236,9 +233,20 @@ function Mic() {
   );
 }
 
+// 보조 조명은 소품이 하나라도 있으면 세 개를 항상 마운트하고 intensity 만 바꾼다.
+// 조명 개수가 바뀌면 three 가 조명을 받는 모든 재질의 셰이더를 다시 컴파일해서 토글할 때 화면이 멈칫한다.
+// (소품이 하나도 없는 상태 ↔ 있는 상태를 오갈 때만 한 번 컴파일된다)
+const FILL_LIGHTS: { key: PropKey; pos: V3; on: number }[] = [
+  { key: "amp", pos: [-2.1, 3.0, 0.34], on: 9 },
+  { key: "drum", pos: [2.15, 3.2, 0.75], on: 9 },
+  { key: "mic", pos: [-0.7, 3.0, 2.3], on: 5 },
+];
+
 export default function StageProps({ props }: { props: readonly PropKey[] }) {
   return (
     <>
+      {props.length > 0 &&
+        FILL_LIGHTS.map((l) => <pointLight key={l.key} position={l.pos} intensity={props.includes(l.key) ? l.on : 0} distance={6} decay={2} />)}
       {props.includes("amp") && <Amp />}
       {props.includes("drum") && <Drum />}
       {props.includes("mic") && <Mic />}

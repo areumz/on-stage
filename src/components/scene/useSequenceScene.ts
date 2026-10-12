@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useReducer } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 import { useBackdropImages, useStableScene } from "@/components/scene/hooks";
-import { FX_LABELS, editView, sectionEdited, sectionMode, usesUpload, type EditCtx, type PanelAction } from "@/components/scene/model";
+import { FX_LABELS, type Mode, editView, sectionEdited, sectionMode, usesUpload, type EditCtx, type PanelAction } from "@/components/scene/model";
 import { initScene, sceneReducer } from "@/components/scene/sceneState";
 import type { SceneSettingsProps } from "@/components/scene/SceneSettingsPanel";
+import { useAutoDismiss } from "@/lib/hooks";
 import { labelKo } from "@/lib/director/labels";
 import { formatTime } from "@/lib/director/playback";
 import { saveSceneEdit, sceneErrorKo, sequenceImagesUrl } from "@/lib/director/sceneApi";
@@ -43,6 +44,9 @@ export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, init
   }
 
   const close = () => uploads.clearError();
+  // 안내는 몇 초 뒤 저절로 사라진다 (setter 는 항상 같은 참조여야 한다)
+  const clearNotice = useCallback(() => send({ type: "clearNotice" }), []);
+  useAutoDismiss(s.notice, clearNotice, null, 4000);
 
   async function apply() {
     if (uploads.busy) return;
@@ -59,9 +63,10 @@ export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, init
 
   async function onUpload(file: File) {
     const gen = s.gen; // 시작한 패널 세대. 그 사이 닫히면 결과를 적용하지 않는다
+    const name = labelKo(items[panelCtx.index].sectionLabel);
     const ctx = panelCtx; // 올리기 시작한 구간 — 그 사이 다른 구간을 골라도 이 구간의 배경이 된다
     const path = await uploads.upload(file);
-    if (path) send({ type: "uploaded", path, gen, ctx });
+    if (path) send({ type: "uploaded", path, gen, ctx, name });
   }
 
   async function onRemove(path: string) {
@@ -74,8 +79,10 @@ export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, init
     view: editView(s.edit, panelCtx),
     dispatch: (action: PanelAction) => send({ type: "panel", action, ctx: panelCtx }),
     sectionLabel: labelKo(items[panelIndex].sectionLabel),
-    sections: items.map((it, i) => ({ label: `${labelKo(it.sectionLabel)} · ${formatTime(it.startSec)}`, edited: sectionEdited(s.edit, i), mode: sectionMode(s.edit, i) })),
+    sections: items.map((it, i) => ({ name: labelKo(it.sectionLabel), label: `${labelKo(it.sectionLabel)} · ${formatTime(it.startSec)}`, edited: sectionEdited(s.edit, i), mode: sectionMode(s.edit, i) })),
     sectionIndex: panelIndex,
+    tab: s.tab,
+    onTab: (tab: Mode) => send({ type: "tab", tab }),
     onSection: (i: number) => send({ type: "section", index: i }),
     aiCurrent: FX_LABELS[resolveScene({ ...panelCtx, edit: null }).backdrop],
     aiRows: items.map((it, i) => ({
@@ -86,6 +93,7 @@ export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, init
     onUpload,
     onRemove,
     imageNote,
+    notice: s.notice,
     note: sequenceId ? undefined : "데모 곡은 저장되지 않아요",
     saving: s.saving,
     error: s.error,

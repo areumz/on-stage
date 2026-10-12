@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sameScene } from "@/components/scene/model";
+import { mergeImages, sameScene } from "@/components/scene/model";
 import { deleteBackdropImage, listBackdropImages, precheckImage, uploadBackdropImage, uploadErrorKo, type BackdropImage } from "@/lib/director/sceneApi";
 import { UPLOADS_PER_SEQUENCE, type RenderScene } from "@/lib/stage/scene";
 
@@ -38,17 +38,17 @@ export function useBackdropImages(url: string | null, enabled: boolean, limit: n
   useEffect(() => {
     if (!url || !enabled) return;
     let cancelled = false;
-    const load = (first: boolean) =>
+    const load = (first: boolean, force: boolean) =>
       listBackdropImages(url).then((r) => {
         if (cancelled) return;
         if (r.ok) {
-          setImages(r.data);
+          setImages((prev) => mergeImages(prev, r.data, force));
           setLoaded(true);
           setLoadFailed(false);
         } else if (first) setLoadFailed(true);
       });
-    load(true);
-    const timer = setInterval(() => load(false), 45 * 60 * 1000);
+    load(true, false);
+    const timer = setInterval(() => load(false, true), 45 * 60 * 1000); // 만료 전에 새 URL 로 교체
     return () => {
       cancelled = true;
       clearInterval(timer);
@@ -59,12 +59,12 @@ export function useBackdropImages(url: string | null, enabled: boolean, limit: n
   const reload = useCallback(() => {
     if (!url || Date.now() - lastReload.current < 10000) return; // 실패가 반복돼도 10초에 한 번만
     lastReload.current = Date.now();
-    listBackdropImages(url).then((r) => r.ok && setImages(r.data));
+    listBackdropImages(url).then((r) => r.ok && setImages(r.data)); // 로드 실패 = 만료 가능성이라 새 URL 로 교체
   }, [url]);
 
   const refresh = useCallback(async (id: string) => {
     const r = await listBackdropImages(id);
-    if (r.ok) setImages(r.data);
+    if (r.ok) setImages((prev) => mergeImages(prev, r.data, false));
     return r.ok;
   }, []);
 

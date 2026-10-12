@@ -8,7 +8,7 @@ const upScene: PresetScene = { ...DEFAULT_PRESET_SCENE, image: { kind: "upload",
 
 describe("프리셋 장면 reducer (이미지)", () => {
   it("이미지 탭에서 샘플과 내 업로드를 모두 고를 수 있다", () => {
-    const s = reducePreset(DEFAULT_PRESET_SCENE, { type: "mode", mode: "image" });
+    const s = reducePreset(DEFAULT_PRESET_SCENE, { type: "image", image: { kind: "sample", id: "neon-city" } });
     expect(presetView(s).image).toEqual({ kind: "sample", id: "neon-city" });
     expect(reducePreset(s, { type: "image", image: upScene.image! }).image).toEqual(upScene.image);
     expect(reducePreset(upScene, { type: "fx", fx: "bars" })).toMatchObject({ backdrop: "bars", image: null });
@@ -20,6 +20,15 @@ describe("프리셋 장면 reducer (이미지)", () => {
 });
 
 describe("studioReducer", () => {
+  it("탭은 보기일 뿐이라 탭을 바꿔도 draft 가 그대로이고, 열 때는 값에 맞는 탭으로 시작한다", () => {
+    const opened = run({ type: "open", saved: DEFAULT_PRESET_SCENE });
+    expect(opened.tab).toBe("fx");
+    const t = studioReducer(opened, { type: "tab", tab: "image" });
+    expect(t.draft).toBe(opened.draft);
+    expect(t.tab).toBe("image");
+    expect(run({ type: "open", saved: upScene }).tab).toBe("image");
+  });
+
   it("취소하면 draft 가 사라진다(저장값은 건드리지 않음)", () => {
     expect(run({ type: "open", saved: DEFAULT_PRESET_SCENE }, { type: "panel", action: { type: "dust", dir: 1 } }, { type: "close" }).draft).toBeNull();
   });

@@ -57,7 +57,7 @@ describe("연출 편집", () => {
   it("아무것도 안 남으면 null (AI 값으로 완전히 복귀)", () => {
     const e = reduceEdit(null, { type: "dust", dir: 1 }, ctx);
     expect(reduceEdit(e, { type: "resetElements" }, ctx)).toBeNull();
-    expect(reduceEdit(reduceEdit(null, { type: "mode", mode: "fx" }, ctx), { type: "mode", mode: "auto" }, ctx)).toBeNull();
+    expect(reduceEdit(reduceEdit(null, { type: "fx", fx: "bars" }, ctx), { type: "resetBackdrop" }, ctx)).toBeNull();
   });
 
   it("효과·이미지는 선택한 구간에만 적용되고 서로 배타적이다", () => {
@@ -66,7 +66,6 @@ describe("연출 편집", () => {
     expect(fx.backdrop).toBeUndefined(); // 연출 전체 모드는 쓰지 않는다
     const img = reduceEdit(fx, { type: "image", image: { kind: "upload", path: "a/b.png" } }, ctx)!;
     expect(img.sections).toEqual([null, { image: { kind: "upload", path: "a/b.png" } }, null]);
-    expect(reduceEdit(img, { type: "mode", mode: "image" }, { ...ctx, index: 0 })!.sections![0]).toEqual({ image: { kind: "sample", id: "neon-city" } });
   });
 
   it("탭 표시는 그 구간의 실제 상태(이미지 > 효과 > AI 제안)", () => {
@@ -75,18 +74,18 @@ describe("연출 편집", () => {
     expect([0, 1, 2].map((i) => sectionMode(e, i))).toEqual(["auto", "fx", "image"]);
     expect(editView(e, { ...ctx, index: 2 })).toMatchObject({ mode: "image", image: { kind: "sample", id: "galaxy" } });
     expect(editView(e, { ...ctx, index: 0 }).mode).toBe("auto");
-    expect(reduceEdit(e, { type: "mode", mode: "auto" }, ctx)).toEqual({ sections: [null, null, { image: { kind: "sample", id: "galaxy" } }] });
+    expect(reduceEdit(e, { type: "resetBackdrop" }, ctx)).toEqual({ sections: [null, null, { image: { kind: "sample", id: "galaxy" } }] });
   });
 
-  it("모든 구간에 적용: 효과/이미지를 복사하고 먼지·반사는 각자 유지, AI 제안 상태에선 아무 일도 없다", () => {
+  it("모든 구간에 적용: 효과/이미지를 복사하고 먼지·반사는 각자 유지, 이미지가 없는 이미지 탭에선 아무 일도 없다", () => {
     let e = reduceEdit(null, { type: "dust", dir: 1 }, { ...ctx, index: 0 });
     e = reduceEdit(e, { type: "fx", fx: "bars" }, ctx);
-    const all = reduceEdit(e, { type: "applyAll" }, ctx)!;
+    const all = reduceEdit(e, { type: "applyAll", tab: "fx" }, ctx)!;
     expect(all.sections!.map((s) => s?.backdrop)).toEqual(["bars", "bars", "bars"]);
     expect(all.sections![0]!.dust).toBe(80);
-    expect(reduceEdit(null, { type: "applyAll" }, ctx)).toBeNull();
+    expect(reduceEdit(null, { type: "applyAll", tab: "image" }, ctx)).toBeNull();
     const img = reduceEdit(all, { type: "image", image: { kind: "sample", id: "galaxy" } }, { ...ctx, index: 2 })!;
-    expect(reduceEdit(img, { type: "applyAll" }, { ...ctx, index: 2 })!.sections!.map((s) => s?.image?.kind)).toEqual(["sample", "sample", "sample"]);
+    expect(reduceEdit(img, { type: "applyAll", tab: "image" }, { ...ctx, index: 2 })!.sections!.map((s) => s?.image?.kind)).toEqual(["sample", "sample", "sample"]);
   });
 
   it("삭제: 모든 구간의 그 이미지 참조와 예전 backdrop 참조를 지운다", () => {
@@ -118,9 +117,49 @@ describe("연출 편집", () => {
   });
 });
 
+describe("탭은 보기일 뿐이고 값은 항목을 눌러야 바뀐다", () => {
+  const cube: EditCtx = { ...ctx, item: { backdrop: "cube", dust: 70, reflection: 60 } };
+  const gyro: EditCtx = { ...ctx, item: { backdrop: "gyro" } };
+
+  it("③ 3D 효과 탭은 AI 가 cube 인 구간에서 cube 가 선택돼 있고 AI 제안 값으로 표시된다", () => {
+    const v = editView(null, cube);
+    expect(v).toMatchObject({ fx: "cube", aiFx: "cube", backdropEdited: false, mode: "auto" });
+  });
+
+  it("이미지 탭은 이미지 값이 없으면 '없음'(image null)이 기본이고, AI 가 gyro 여도 샘플이 선택되지 않는다", () => {
+    expect(editView(null, gyro)).toMatchObject({ image: null, aiFx: "gyro", fx: "gyro" });
+  });
+
+  it("④ 효과 '없음'은 backdrop none 으로 저장되고 그 구간 배경이 사라진다", () => {
+    const e = reduceEdit(null, { type: "fx", fx: "none" }, cube)!;
+    expect(e.sections).toEqual([null, { backdrop: "none" }, null]);
+    expect(editView(e, cube)).toMatchObject({ fx: "none", mode: "fx", backdropEdited: true });
+    expect(resolveScene({ ...cube, edit: e }).backdrop).toBe("none");
+  });
+
+  it("③ 이미지 '없음'은 구간 image 만 지우고 효과는 유지한다", () => {
+    let e = reduceEdit(null, { type: "fx", fx: "tunnel" }, cube);
+    e = reduceEdit({ ...e, sections: [null, { backdrop: "tunnel", image: { kind: "sample", id: "galaxy" } }, null] }, { type: "clearImage" }, cube);
+    expect(e!.sections).toEqual([null, { backdrop: "tunnel" }, null]);
+    expect(reduceEdit(reduceEdit(null, { type: "image", image: { kind: "sample", id: "galaxy" } }, cube), { type: "clearImage" }, cube)).toBeNull();
+  });
+
+  it("AI 배경 되돌리기는 효과·이미지만 지우고 먼지·반사는 남긴다", () => {
+    let e = reduceEdit(null, { type: "dust", dir: 1 }, cube);
+    e = reduceEdit(e, { type: "image", image: { kind: "sample", id: "galaxy" } }, cube);
+    expect(reduceEdit(e, { type: "resetBackdrop" }, cube)!.sections).toEqual([null, { dust: 80 }, null]);
+  });
+
+  it("모든 구간에 적용: fx 탭은 AI 제안 값도 복사하고, 이미지 탭은 이미지가 없으면 아무 일도 없다", () => {
+    const all = reduceEdit(null, { type: "applyAll", tab: "fx" }, cube)!;
+    expect(all.sections!.map((s) => s?.backdrop)).toEqual(["cube", "cube", "cube"]);
+    expect(reduceEdit(null, { type: "applyAll", tab: "image" }, cube)).toBeNull();
+  });
+});
+
 describe("프리셋 편집", () => {
   it("이미지 모드는 샘플·내 업로드 모두 고를 수 있고, 효과를 고르면 이미지가 풀린다", () => {
-    const img = reducePreset(DEFAULT_PRESET_SCENE, { type: "mode", mode: "image" });
+    const img = reducePreset(DEFAULT_PRESET_SCENE, { type: "image", image: { kind: "sample", id: "neon-city" } });
     expect(presetView(img)).toMatchObject({ mode: "image", image: { kind: "sample", id: "neon-city" } });
     expect(reducePreset(img, { type: "image", image: { kind: "upload", path: "x" } }).image).toEqual({ kind: "upload", path: "x" });
     expect(reducePreset(img, { type: "fx", fx: "bars" })).toMatchObject({ backdrop: "bars", image: null });

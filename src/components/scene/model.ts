@@ -2,10 +2,8 @@
 // 컴포넌트 밖에 둔 이유: reducer 모양이라 테스트하기 쉽고, 연출(SceneEdit)과 프리셋(PresetScene) 두 곳이 같은 패널을 쓴다.
 import {
   PROP_KEYS,
-  SAMPLE_IMAGES,
   resolveScene,
   type Backdrop,
-  type Effect,
   type ImageRef,
   type PresetScene,
   type PropKey,
@@ -17,8 +15,10 @@ import {
 export type Mode = "auto" | "fx" | "image";
 
 export type PanelView = {
-  mode: Mode;
-  fx: Backdrop; // 3D 효과 탭에서 고른 값 (프리셋은 "none" = 없음 포함)
+  mode: Mode; // 이 구간의 실제 상태(이미지 > 효과 > AI 제안). 탭(보기)과는 별개다
+  fx: Backdrop; // 3D 효과 탭에서 선택돼 보일 값: 사용자 값, 없으면 AI 제안 값 ("none" = 배경 효과 없음)
+  aiFx: Backdrop | null; // AI 가 이 구간에 제안한 효과 (프리셋은 null)
+  backdropEdited: boolean; // 이 구간에 사용자가 고른 효과·이미지가 있는지
   image: ImageRef | null;
   dust: number;
   reflection: number;
@@ -28,14 +28,15 @@ export type PanelView = {
 };
 
 export type PanelAction =
-  | { type: "mode"; mode: Mode }
   | { type: "fx"; fx: Backdrop }
   | { type: "image"; image: ImageRef }
   | { type: "dust" | "reflection"; dir: 1 | -1 }
   | { type: "prop"; key: PropKey }
   | { type: "resetElements" } // 연출: 선택한 구간의 먼지·반사만 / 프리셋: 요소 전체
   | { type: "resetProps" }
-  | { type: "applyAll" }; // 연출: 이 구간의 효과/이미지를 모든 구간에 (프리셋엔 없음) // 연출: 곡 전체 소품의 사용자 값만
+  | { type: "applyAll"; tab: Mode } // 연출: 보고 있는 탭의 효과/이미지를 모든 구간에 (프리셋엔 없음)
+  | { type: "clearImage" } // 이미지 탭의 "없음": 구간 이미지만 지운다 (효과는 그대로)
+  | { type: "resetBackdrop" }; // AI 제안 탭의 되돌리기: 구간의 효과·이미지 사용자 값을 지운다 // 연출: 이 구간의 효과/이미지를 모든 구간에 (프리셋엔 없음) // 연출: 곡 전체 소품의 사용자 값만
 
 export const FX_LABELS: Record<Backdrop, string> = {
   bars: "음악 막대",
@@ -55,8 +56,6 @@ export function stepLevel(v: number, dir: 1 | -1): number {
   return Math.min(100, Math.max(0, next));
 }
 
-const DEFAULT_FX: Effect = "gyro";
-const firstSample = (): ImageRef => ({ kind: "sample", id: SAMPLE_IMAGES[0].id });
 const toggleProp = (props: PropKey[], key: PropKey) => PROP_KEYS.filter((k) => (k === key ? !props.includes(k) : props.includes(k)));
 
 // ── 연출(SceneEdit): 구간 하나를 편집 ───────────────────────────────────────────────
@@ -83,10 +82,13 @@ const effective = (edit: SceneEdit | null, c: EditCtx) =>
 
 export function editView(edit: SceneEdit | null, c: EditCtx): PanelView {
   const r = effective(edit, c);
+  const aiFx = effective(null, c).backdrop;
   const mine = edit?.sections?.[c.index];
   return {
     mode: sectionMode(edit, c.index),
-    fx: mine?.backdrop ?? DEFAULT_FX,
+    fx: mine?.backdrop ?? aiFx,
+    aiFx,
+    backdropEdited: !!(mine?.backdrop || mine?.image),
     image: mine?.image ?? null,
     dust: r.dust,
     reflection: r.reflection,
@@ -157,21 +159,27 @@ export function reduceEdit(edit: SceneEdit | null, a: PanelAction, c: EditCtx): 
   const mine = edit?.sections?.[c.index];
   const cur = effective(edit, c);
   switch (a.type) {
-    case "mode":
-      if (a.mode === "auto") setSection({ backdrop: null, image: null });
-      else if (a.mode === "fx") setSection({ backdrop: mine?.backdrop ?? DEFAULT_FX, image: null });
-      else setSection({ image: mine?.image ?? firstSample(), backdrop: null });
-      break;
     case "fx":
-      if (a.fx !== "none") setSection({ backdrop: a.fx, image: null });
+      setSection({ backdrop: a.fx, image: null }); // "none" 도 사용자 값이다(배경 효과 없음)
       break;
     case "image":
       setSection({ image: a.image, backdrop: null });
       break;
+    case "clearImage":
+      setSection({ image: null });
+      break;
+    case "resetBackdrop":
+      setSection({ backdrop: null, image: null });
+      break;
     case "applyAll": {
-      // 선택한 구간의 효과/이미지를 모든 구간에 복사(먼지·반사는 각자 유지). AI 제안 상태면 할 일이 없다.
-      if (!mine?.backdrop && !mine?.image) break;
-      next.sections = list().map((s) => ({ ...s, backdrop: mine.backdrop ?? null, image: mine.image ?? null }));
+      // 보고 있는 탭의 값을 모든 구간에 복사(먼지·반사는 각자 유지). 이미지 탭에서 이미지가 없으면 할 일이 없다.
+      if (a.tab === "image") {
+        if (!mine?.image) break;
+        next.sections = list().map((s) => ({ ...s, backdrop: null, image: mine.image }));
+      } else if (a.tab === "fx") {
+        const fx = mine?.backdrop ?? cur.backdrop; // 사용자 값, 없으면 AI 제안 값
+        next.sections = list().map((s) => ({ ...s, backdrop: fx, image: null }));
+      }
       break;
     }
     case "dust":
@@ -198,6 +206,8 @@ export function presetView(s: PresetScene): PanelView {
   return {
     mode: s.image ? "image" : "fx",
     fx: s.backdrop,
+    aiFx: null,
+    backdropEdited: false,
     image: s.image,
     dust: s.dust,
     reflection: s.reflection,
@@ -209,8 +219,6 @@ export function presetView(s: PresetScene): PanelView {
 
 export function reducePreset(s: PresetScene, a: PanelAction): PresetScene {
   switch (a.type) {
-    case "mode":
-      return a.mode === "image" ? { ...s, image: s.image ?? firstSample() } : { ...s, image: null };
     case "fx":
       return { ...s, backdrop: a.fx, image: null };
     case "image":
@@ -226,7 +234,10 @@ export function reducePreset(s: PresetScene, a: PanelAction): PresetScene {
     case "resetProps":
       return { ...s, props: [] };
     case "applyAll":
+    case "resetBackdrop":
       return s;
+    case "clearImage":
+      return { ...s, image: null };
   }
 }
 
@@ -256,4 +267,14 @@ export function onAccent(hex: string): string {
   const n = parseInt(m[1], 16);
   const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
   return lum > 0.55 ? "#0B0B10" : "#FFFFFF";
+}
+
+// 목록을 다시 받았을 때 같은 이미지(path)는 이전 서명 URL 을 유지한다 — URL 문자열이 바뀌면 3D 텍스처를 다시 받아 깜빡이기 때문이다.
+// 새 URL 로 바꾸는 건 force(만료 갱신·썸네일 로드 실패)일 때뿐이다.
+export function mergeImages<T extends { path: string; url: string }>(prev: T[], next: T[], force: boolean): T[] {
+  if (force) return next;
+  return next.map((n) => {
+    const old = prev.find((o) => o.path === n.path);
+    return old ? { ...n, url: old.url } : n;
+  });
 }

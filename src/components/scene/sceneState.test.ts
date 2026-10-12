@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SceneEdit } from "@/lib/stage/scene";
-import { onAccent, type EditCtx } from "./model";
+import { mergeImages, onAccent, type EditCtx } from "./model";
 import { initScene, sceneReducer, type SceneEvent, type SceneState } from "./sceneState";
 
 const ctx: EditCtx = { index: 1, sectionCount: 3, item: {}, energyRatio: 1, aiProps: null };
@@ -45,14 +45,14 @@ describe("sceneReducer", () => {
     const opened = run(init(), { type: "open", index: 0 });
     const gen = opened.gen;
     const closed = run(opened, { type: "cancel" });
-    expect(run(closed, { type: "uploaded", path: "a/1.png", gen, ctx }).edit).toBeNull();
+    expect(run(closed, { type: "uploaded", path: "a/1.png", gen, ctx, name: "인트로" }).edit).toBeNull();
     // 다시 열어도 이전 세대의 결과는 버린다
-    expect(run(closed, { type: "open", index: 0 }, { type: "uploaded", path: "a/1.png", gen, ctx }).edit).toBeNull();
+    expect(run(closed, { type: "open", index: 0 }, { type: "uploaded", path: "a/1.png", gen, ctx, name: "인트로" }).edit).toBeNull();
   });
 
   it("같은 세대의 업로드는 배경으로 적용된다", () => {
     const s = run(init(), { type: "open", index: 0 });
-    expect(run(s, { type: "uploaded", path: "a/1.png", gen: s.gen, ctx }).edit).toEqual(up("a/1.png"));
+    expect(run(s, { type: "uploaded", path: "a/1.png", gen: s.gen, ctx, name: "인트로" }).edit).toEqual(up("a/1.png"));
   });
 
   it("이미지 삭제는 저장값과 편집값의 같은 참조를 AI 제안으로 정리한다", () => {
@@ -66,6 +66,41 @@ describe("sceneReducer", () => {
     const after = run(picked, { type: "imageRemoved", path: "a/1.png" });
     expect(after.edit).toEqual(up("a/2.png"));
     expect(after.saved).toBeNull();
+  });
+});
+
+describe("탭과 안내", () => {
+  const img: SceneEdit = { sections: [null, { image: { kind: "sample", id: "galaxy" } }, { backdrop: "cube" }] };
+  it("탭 전환은 값을 바꾸지 않는다", () => {
+    const s = run(init(img), { type: "open", index: 0 });
+    const t = sceneReducer(s, { type: "tab", tab: "image" });
+    expect(t.edit).toBe(s.edit);
+    expect(t.tab).toBe("image");
+  });
+  it("열 때·구간을 고를 때 탭이 그 구간의 실제 상태로 맞춰진다", () => {
+    let s = run(init(img), { type: "open", index: 0 });
+    expect(s.tab).toBe("auto");
+    s = run(s, { type: "tab", tab: "image" }, { type: "section", index: 2 });
+    expect(s.tab).toBe("fx");
+    expect(run(s, { type: "section", index: 1 }).tab).toBe("image");
+  });
+  it("보고 있는 구간과 다른 구간에서 시작한 업로드가 끝나면 안내가 뜨고, 같은 구간이면 없다", () => {
+    const s = run(init(), { type: "open", index: 0 }, { type: "section", index: 2 });
+    const other = sceneReducer(s, { type: "uploaded", path: "p", gen: s.gen, ctx: { ...ctx, index: 0 }, name: "인트로" });
+    expect(other.notice).toBe("인트로 구간에 이미지를 넣었어요");
+    expect(other.edit?.sections?.[0]?.image).toEqual({ kind: "upload", path: "p" });
+    expect(sceneReducer(other, { type: "clearNotice" }).notice).toBeNull();
+    const same = sceneReducer(s, { type: "uploaded", path: "p", gen: s.gen, ctx: { ...ctx, index: 2 }, name: "아웃트로" });
+    expect(same.notice).toBeNull();
+  });
+});
+
+describe("mergeImages", () => {
+  it("같은 path 는 이전 URL 을 유지하고, force 일 때만 새 URL 로 바꾼다", () => {
+    const prev = [{ path: "a", name: "a", url: "old" }];
+    const next = [{ path: "a", name: "a", url: "new" }, { path: "b", name: "b", url: "nb" }];
+    expect(mergeImages(prev, next, false).map((x) => x.url)).toEqual(["old", "nb"]);
+    expect(mergeImages(prev, next, true).map((x) => x.url)).toEqual(["new", "nb"]);
   });
 });
 

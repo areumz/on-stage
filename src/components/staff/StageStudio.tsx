@@ -113,6 +113,8 @@ export default function StageStudio({
           returnFocusRef={sceneButtonRef}
           tabs={["fx", "image"]}
           view={presetView(draft)}
+          tab={studio.tab}
+          onTab={(tab) => send({ type: "tab", tab })}
           dispatch={(action: PanelAction) => send({ type: "panel", action })}
           uploads={uploads}
           onUpload={onUpload}

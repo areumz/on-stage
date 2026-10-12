@@ -9,8 +9,7 @@ import { PROP_KEYS, SAMPLE_IMAGES, sampleSrc, type Backdrop, type ImageRef } fro
 const MODE_LABEL: Record<Mode, string> = { auto: "AI 제안", fx: "3D 효과", image: "이미지" };
 const PINK = "#D4537E";
 const ACCEPT = "image/jpeg,image/png,image/webp";
-const SEQ_FX: Backdrop[] = ["bars", "tunnel", "laser", "gyro", "cube"];
-const PRESET_FX: Backdrop[] = [...SEQ_FX, "none"];
+const FX_LIST: Backdrop[] = ["bars", "tunnel", "laser", "gyro", "cube", "none"]; // "none" = 배경 효과 없음
 
 export type SceneSettingsProps = {
   variant: "sequence" | "preset"; // 연출(구간별, AI 제안 있음) / 무대 연출 메뉴(단일 값)
@@ -20,7 +19,10 @@ export type SceneSettingsProps = {
   view: PanelView;
   dispatch: (a: PanelAction) => void;
   sectionLabel?: string; // "요소 · {구간} 구간"
-  sections?: { label: string; edited: boolean; mode: Mode }[]; // 연출: 구간 선택 줄 (프리셋은 없음)
+  tab: Mode; // 보고 있는 탭 (보기일 뿐, 탭을 바꿔도 값은 그대로)
+  onTab: (m: Mode) => void;
+  notice?: string | null; // 짧은 안내 (다른 구간을 보는 동안 업로드가 끝난 경우 등)
+  sections?: { name: string; label: string; edited: boolean; mode: Mode }[]; // 연출: 구간 선택 줄 (프리셋은 없음)
   sectionIndex?: number;
   onSection?: (i: number) => void;
   aiCurrent?: string; // 선택한 구간의 AI 제안 효과 이름
@@ -49,7 +51,6 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
 
   const { confirm, dialog } = useConfirm();
   const [announce, setAnnounce] = useState(""); // 사용자가 ± 를 눌렀을 때만 읽어 주는 알림
-  const memory = useRef<{ idx?: number; fx?: Backdrop; image?: ImageRef }>({ idx: p.sectionIndex, fx: view.mode === "fx" ? view.fx : undefined, image: view.image ?? undefined }); // 탭을 오가도 (구간별로) 마지막 선택을 기억
   const blocked = p.saving || !!uploads?.busy; // 저장·업로드·삭제 중에는 닫기·적용을 막는다
 
   // 열릴 때 제목으로 포커스를 옮기고, 닫히면 열었던 버튼으로 돌려준다
@@ -71,19 +72,18 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
   }, [blocked, p.onCancel]); // eslint-disable-line react-hooks/exhaustive-deps -- p 전체가 아니라 onCancel 만 쓴다
 
   function act(a: PanelAction) {
-    if (memory.current.idx !== p.sectionIndex) memory.current = { idx: p.sectionIndex, fx: view.mode === "fx" ? view.fx : undefined, image: view.image ?? undefined }; // 구간이 바뀌면 그 구간 값부터
-    if (a.type === "fx") memory.current.fx = a.fx;
-    if (a.type === "image") memory.current.image = a.image;
     if (a.type === "dust" || a.type === "reflection") {
       const cur = a.type === "dust" ? view.dust : view.reflection;
       setAnnounce(`${a.type === "dust" ? "먼지" : "바닥 반사"} ${stepLevel(cur, a.dir)}%`);
     }
-    if (a.type === "mode" && a.mode === "fx" && memory.current.fx) return p.dispatch({ type: "fx", fx: memory.current.fx });
-    if (a.type === "mode" && a.mode === "image") {
-      const m = memory.current.image;
-      if (m && (m.kind === "sample" || uploads?.images.some((x) => x.path === m.path))) return p.dispatch({ type: "image", image: m });
-    }
     p.dispatch(a);
+  }
+
+  // 구간을 고르면 탭이 그 구간의 실제 상태로 바뀐다 — 스크린리더에도 알린다(포커스는 눌렀던 버튼에 그대로)
+  function pickSection(i: number) {
+    const sec = p.sections?.[i];
+    if (sec) setAnnounce(`${sec.name} 구간: ${MODE_LABEL[sec.mode]}`);
+    p.onSection?.(i);
   }
 
   const on = (selected: boolean) => ({
@@ -99,7 +99,7 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
     e.preventDefault();
     const n = (i + d + p.tabs.length) % p.tabs.length;
     tabRefs.current[n]?.focus();
-    act({ type: "mode", mode: p.tabs[n] });
+    p.onTab(p.tabs[n]);
   }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -118,9 +118,9 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
     headingRef.current?.focus();
   }
 
-  const fxList = p.variant === "sequence" ? SEQ_FX : PRESET_FX;
+  const fxList = FX_LIST;
   const tag = view.edited ? "내가 수정함" : p.variant === "sequence" ? "AI 제안" : "기본값";
-  const resetLabel = p.variant === "sequence" ? "이 구간만 AI 제안으로 되돌리기" : "기본값으로 되돌리기";
+  const resetLabel = p.variant === "sequence" ? "이 구간 먼지·반사 되돌리기" : "기본값으로 되돌리기";
   const meters = [
     { key: "dust", label: "먼지", value: view.dust },
     { key: "reflection", label: "바닥 반사", value: view.reflection },
@@ -143,6 +143,38 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
         {p.note && <p className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white">{p.note}</p>}
         {p.imageNote && <p role="status" className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white">{p.imageNote}</p>}
         <p role="status" className="sr-only">{announce}</p>
+        {p.notice && <p role="status" className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white">{p.notice}</p>}
+
+        {p.sections && (
+          <div className="flex flex-col gap-1.5">
+            <p id={`${uid}-sec`} className="text-[11px] font-semibold tracking-wide text-white/60">고칠 구간</p>
+            <div role="group" aria-labelledby={`${uid}-sec`} className="flex flex-wrap gap-2">
+              {p.sections.map((sec, i) => {
+                const sel = p.sectionIndex === i;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-pressed={sel}
+                    onClick={() => pickSection(i)}
+                    style={on(sel)}
+                    className={`min-h-10 rounded-full border px-3.5 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-brand ${sel ? "text-white" : "text-white/70"}`}
+                  >
+                    {sel && <span aria-hidden>✓ </span>}
+                    {sec.label}
+                    {sec.mode !== "auto" && <span className="ml-1.5 text-[11px] font-normal text-white/60">{sec.mode === "fx" ? "효과" : "이미지"}</span>}
+                    {sec.edited && (
+                      <>
+                        <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ background: "#E8A23B" }} aria-hidden />
+                        <span className="sr-only"> (수정함)</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div role="tablist" aria-label="배경 모드" className="flex gap-2">
           {p.tabs.map((m, i) => (
@@ -152,39 +184,44 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
               type="button"
               role="tab"
               id={`${uid}-t-${m}`}
-              aria-selected={view.mode === m}
+              aria-selected={p.tab === m}
               aria-controls={`${uid}-p`}
-              tabIndex={view.mode === m ? 0 : -1}
-              onClick={() => act({ type: "mode", mode: m })}
+              tabIndex={p.tab === m ? 0 : -1}
+              onClick={() => p.onTab(m)}
               onKeyDown={(e) => onTabKey(e, i)}
-              style={on(view.mode === m)}
+              style={on(p.tab === m)}
               className="min-h-10 flex-1 rounded-full border px-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand"
             >
-              {view.mode === m && <span aria-hidden>✓ </span>}
+              {p.tab === m && <span aria-hidden>✓ </span>}
               {MODE_LABEL[m]}
             </button>
           ))}
         </div>
 
-        <div role="tabpanel" id={`${uid}-p`} aria-labelledby={`${uid}-t-${view.mode}`} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-          {view.mode === "auto" && (
+        <div role="tabpanel" id={`${uid}-p`} aria-labelledby={`${uid}-t-${p.tab}`} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+          {p.tab === "auto" && (
             <>
               <p className="text-[15px] font-bold">{p.aiCurrent ? `이 구간은 AI가 "${p.aiCurrent}"로 골랐어요` : "AI가 곡 분위기에 맞춰 먼저 골랐어요"}</p>
               <p className="text-[13px] leading-relaxed text-white/70">
-                이 구간에는 AI 제안이 쓰여요. 마음에 들면 그대로 두고, 아니면 &quot;3D 효과&quot;나 &quot;이미지&quot;로 이 구간만 바꿀 수 있어요. 아래는 구간별 AI 제안이에요. 누르면 그 구간으로 이동해요.
+                {view.backdropEdited ? "이 구간은 내가 고른 배경이 쓰여요. AI 제안으로 돌리려면 아래 버튼을 눌러요." : "이 구간에는 AI 제안이 쓰여요. 마음에 들면 그대로 두고, 아니면 \"3D 효과\"나 \"이미지\"에서 이 구간만 바꿀 수 있어요."} 아래는 구간별 AI 제안이에요. 누르면 그 구간으로 이동해요.
               </p>
+              {p.variant === "sequence" && view.backdropEdited && (
+                <button type="button" onClick={() => act({ type: "resetBackdrop" })} className="min-h-10 self-start rounded-full border px-4 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-brand" style={{ borderColor: accent, color: accent }}>
+                  이 구간 배경을 AI 제안으로 되돌리기
+                </button>
+              )}
               <ul className="flex flex-col gap-2">
                 {p.aiRows?.map((r, i) => (
                   <li key={i}>
                     <button
                       type="button"
                       aria-pressed={p.sectionIndex === i}
-                      onClick={() => p.onSection?.(i)}
+                      onClick={() => pickSection(i)}
                       className="flex min-h-10 w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-left text-[13px] focus-visible:outline-2 focus-visible:outline-brand"
                       style={p.sectionIndex === i ? { borderColor: accent } : undefined}
                     >
                       <span className="h-2.5 w-2.5 shrink-0 rounded" style={{ background: accent }} aria-hidden />
-                      <span className="flex-1 truncate text-white/70">{p.sectionIndex === i ? "✓ " : ""}{r.label}</span>
+                      <span className="flex-1 truncate text-white/70">{p.sectionIndex === i && <span aria-hidden>✓ </span>}{r.label}</span>
                       <span className="font-semibold">{r.what}</span>
                     </button>
                   </li>
@@ -193,7 +230,7 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
             </>
           )}
 
-          {view.mode === "fx" && (
+          {p.tab === "fx" && (
             <>
               <p className="text-[15px] font-bold">{p.variant === "sequence" ? "이 구간의 3D 효과를 골라요" : "3D 효과를 골라요"}</p>
               <p className="text-[13px] leading-relaxed text-white/70">
@@ -205,7 +242,10 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
                   return (
                     <button key={f} type="button" aria-pressed={sel} onClick={() => act({ type: "fx", fx: f })} style={on(sel)} className={`${tile} min-h-10 p-2 text-[13px]`}>
                       <span className="h-12 w-full rounded-lg border border-white/10" style={{ background: fxThumb(f, accent) }} aria-hidden />
-                      {FX_LABELS[f]}
+                      <span>
+                        {FX_LABELS[f]}
+                        {p.variant === "sequence" && view.aiFx === f && <span className="ml-1.5 rounded-full border border-white/25 px-1.5 py-0.5 text-[10px] font-semibold text-white/80">AI 제안</span>}
+                      </span>
                       {sel && check}
                     </button>
                   );
@@ -214,12 +254,17 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
             </>
           )}
 
-          {view.mode === "image" && (
+          {p.tab === "image" && (
             <>
               <p className="text-[15px] font-bold">이미지를 뒤 벽에 띄워요</p>
               <p className="text-[13px] leading-relaxed text-white/70">{uploads ? "샘플 이미지를 고르거나, 내 이미지를 올려 쓸 수 있어요." : "샘플 이미지를 골라요."}</p>
               <p className="text-[11px] font-semibold tracking-wide text-white/60">샘플 이미지</p>
               <div className="grid grid-cols-3 gap-2">
+                <button type="button" aria-pressed={!view.image} onClick={() => act({ type: "clearImage" })} style={on(!view.image)} className={`${tile} min-h-10`}>
+                  <span className="flex h-14 w-full items-center justify-center rounded-lg border border-dashed border-white/25 text-white/60" aria-hidden>∅</span>
+                  없음
+                  {!view.image && check}
+                </button>
                 {SAMPLE_IMAGES.map((s) => {
                   const ref: ImageRef = { kind: "sample", id: s.id };
                   const sel = same(view.image, ref);
@@ -286,43 +331,12 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
               )}
             </>
           )}
-          {p.variant === "sequence" && (view.mode === "fx" || view.mode === "image") && (
-            <button type="button" onClick={() => act({ type: "applyAll" })} className="min-h-10 self-start rounded-full border border-white/20 px-4 text-[13px] font-semibold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand">
+          {p.variant === "sequence" && (p.tab === "fx" || (p.tab === "image" && !!view.image)) && (
+            <button type="button" onClick={() => act({ type: "applyAll", tab: p.tab })} className="min-h-10 self-start rounded-full border border-white/20 px-4 text-[13px] font-semibold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand">
               모든 구간에 적용
             </button>
           )}
         </div>
-
-        {p.sections && (
-          <div className="flex flex-col gap-1.5">
-            <p id={`${uid}-sec`} className="text-[11px] font-semibold tracking-wide text-white/60">고칠 구간</p>
-            <div role="group" aria-labelledby={`${uid}-sec`} className="flex flex-wrap gap-2">
-              {p.sections.map((sec, i) => {
-                const sel = p.sectionIndex === i;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-pressed={sel}
-                    onClick={() => p.onSection?.(i)}
-                    style={on(sel)}
-                    className={`min-h-10 rounded-full border px-3.5 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-brand ${sel ? "text-white" : "text-white/70"}`}
-                  >
-                    {sel && <span aria-hidden>✓ </span>}
-                    {sec.label}
-                    {sec.mode !== "auto" && <span className="ml-1.5 text-[11px] font-normal text-white/60">{sec.mode === "fx" ? "효과" : "이미지"}</span>}
-                    {sec.edited && (
-                      <>
-                        <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ background: "#E8A23B" }} aria-hidden />
-                        <span className="sr-only"> (수정함)</span>
-                      </>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         <div className="flex flex-col gap-2.5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5">
           <div className="flex items-center justify-between gap-2">
@@ -359,6 +373,7 @@ export default function SceneSettingsPanel(p: SceneSettingsProps) {
             <button type="button" onClick={() => act({ type: "resetElements" })} className="min-h-10 text-[13px] font-semibold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand" style={{ color: accent }}>
               {resetLabel}
             </button>
+            {p.variant === "sequence" && <span className="w-full text-[11px] text-white/60">배경(효과·이미지)은 위의 &quot;AI 제안&quot; 탭에서 되돌려요</span>}
             {p.variant === "sequence" && view.propsEdited && (
               <button type="button" onClick={() => act({ type: "resetProps" })} className="min-h-10 text-[13px] font-semibold text-white/70 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand">
                 소품도 AI 제안으로
