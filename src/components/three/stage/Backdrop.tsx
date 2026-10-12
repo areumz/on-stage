@@ -170,9 +170,9 @@ function Cube({ activity }: { activity: number }) {
 
 // 이미지 벽 — imageUrl 은 서명 URL(비밀)이라 로그를 남기지 않는다. 로드 실패·지연이면 아무것도 안 그린다.
 // url 이 바뀌면 새 이미지가 올 때까지 이전 이미지를 유지하고, 교체된 뒤에 이전 텍스처를 dispose 한다.
-// 평면은 이미지 비율대로 벽(8.6×4.84) 안에 contain 으로 맞춘다.
-const WALL_W = 8.6;
-const WALL_H = 4.84;
+// 이미지는 뒤 벽(9×5.5) 전체를 cover 로 채운다: 비율이 다르면 넘치는 쪽을 가운데 기준으로 잘라 낸다(늘어나지 않음).
+const WALL_W = 9;
+const WALL_H = 5.5;
 type Loaded = { tex: Texture; w: number; h: number };
 function ImageWall({ url }: { url: string }) {
   const [shown, setShown] = useState<Loaded | null>(null);
@@ -184,8 +184,16 @@ function ImageWall({ url }: { url: string }) {
         if (cancelled) return t.dispose();
         t.colorSpace = SRGBColorSpace;
         const img = t.image as { width: number; height: number };
-        const k = Math.min(WALL_W / img.width, WALL_H / img.height);
-        setShown({ tex: t, w: img.width * k, h: img.height * k });
+        const wall = WALL_W / WALL_H;
+        const ratio = img.width / img.height;
+        if (ratio > wall) {
+          t.repeat.set(wall / ratio, 1);
+          t.offset.set((1 - wall / ratio) / 2, 0);
+        } else {
+          t.repeat.set(1, ratio / wall);
+          t.offset.set(0, (1 - ratio / wall) / 2);
+        }
+        setShown({ tex: t, w: WALL_W, h: WALL_H });
       },
       undefined,
       () => {},
