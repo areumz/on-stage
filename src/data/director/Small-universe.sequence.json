@@ -6,113 +6,333 @@
   "generatedBy": "rule-based example (no LLM)",
   "result": {
     "sections": [
-      { "label": "intro", "startSec": 0.0, "endSec": 46.0, "mood": "" },
-      { "label": "chorus", "startSec": 46.0, "endSec": 67.0, "mood": "" },
-      { "label": "chorus", "startSec": 67.0, "endSec": 112.0, "mood": "" },
-      { "label": "verse", "startSec": 112.0, "endSec": 124.0, "mood": "" },
-      { "label": "chorus", "startSec": 124.0, "endSec": 146.0, "mood": "" },
-      { "label": "outro", "startSec": 146.0, "endSec": 160.522, "mood": "" }
+      {
+        "label": "인트로",
+        "startSec": 0.0,
+        "endSec": 10.0,
+        "mood": ""
+      },
+      {
+        "label": "verse1",
+        "startSec": 10.0,
+        "endSec": 45.0,
+        "mood": ""
+      },
+      {
+        "label": "chorus",
+        "startSec": 45.0,
+        "endSec": 67.0,
+        "mood": ""
+      },
+      {
+        "label": "verse2",
+        "startSec": 67.0,
+        "endSec": 90.0,
+        "mood": ""
+      },
+      {
+        "label": "chorus",
+        "startSec": 90.0,
+        "endSec": 112.0,
+        "mood": ""
+      },
+      {
+        "label": "bridge",
+        "startSec": 112.0,
+        "endSec": 124.0,
+        "mood": ""
+      },
+      {
+        "label": "final chorus",
+        "startSec": 124.0,
+        "endSec": 146.0,
+        "mood": ""
+      },
+      {
+        "label": "아웃트로",
+        "startSec": 146.0,
+        "endSec": 160.522,
+        "mood": ""
+      }
     ],
     "items": [
       {
-        "sectionLabel": "intro",
+        "sectionLabel": "인트로",
         "startSec": 0.0,
-        "endSec": 46.0,
+        "endSec": 10.0,
         "transitionMs": 2000,
         "state": {
           "color": "#378ADD",
           "spots": {
-            "left": { "on": false, "intensity": 430.0, "angle": 0.5, "penumbra": 0.6 },
-            "center": { "on": true, "intensity": 430.0, "angle": 0.5, "penumbra": 0.6 },
-            "right": { "on": false, "intensity": 430.0, "angle": 0.5, "penumbra": 0.6 }
+            "left": {
+              "on": false,
+              "intensity": 430.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 430.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": false,
+              "intensity": 430.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
           },
           "camera": "front",
-          "smoke": { "density": 0.33, "color": "#ffffff" }
+          "smoke": {
+            "density": 0.33,
+            "color": "#ffffff"
+          }
         },
         "rationale": "에너지 비 0.78: 곡 평균 대비 잔잔한 구간이라 밝기를 430 로 한다. (규칙 기반 예시)"
       },
       {
+        "sectionLabel": "verse1",
+        "startSec": 10.0,
+        "endSec": 45.0,
+        "transitionMs": 2000,
+        "state": {
+          "color": "#378ADD",
+          "spots": {
+            "left": {
+              "on": false,
+              "intensity": 410.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 410.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": false,
+              "intensity": 410.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
+          },
+          "camera": "front",
+          "smoke": {
+            "density": 0.31,
+            "color": "#ffffff"
+          }
+        },
+        "rationale": "에너지 비 0.72: 곡 평균 대비 잔잔한 구간이라 밝기를 410 로 한다. (규칙 기반 예시)"
+      },
+      {
         "sectionLabel": "chorus",
-        "startSec": 46.0,
+        "startSec": 45.0,
         "endSec": 67.0,
         "transitionMs": 2000,
         "state": {
           "color": "#378ADD",
           "spots": {
-            "left": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 },
-            "center": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 },
-            "right": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 }
+            "left": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
           },
           "camera": "audience",
-          "smoke": { "density": 0.5, "color": "#ffffff" }
+          "smoke": {
+            "density": 0.5,
+            "color": "#ffffff"
+          }
         },
         "rationale": "에너지 비 1.32: 곡 평균 대비 강한 구간이라 밝기를 900 로 한다. (규칙 기반 예시)"
       },
       {
-        "sectionLabel": "chorus",
+        "sectionLabel": "verse2",
         "startSec": 67.0,
+        "endSec": 90.0,
+        "transitionMs": 2000,
+        "state": {
+          "color": "#378ADD",
+          "spots": {
+            "left": {
+              "on": false,
+              "intensity": 430.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 430.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": false,
+              "intensity": 430.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
+          },
+          "camera": "front",
+          "smoke": {
+            "density": 0.33,
+            "color": "#ffffff"
+          }
+        },
+        "rationale": "에너지 비 0.78: 곡 평균 대비 잔잔한 구간이라 밝기를 430 로 한다. (규칙 기반 예시)"
+      },
+      {
+        "sectionLabel": "chorus",
+        "startSec": 90.0,
         "endSec": 112.0,
         "transitionMs": 2000,
         "state": {
           "color": "#378ADD",
           "spots": {
-            "left": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 },
-            "center": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 },
-            "right": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 }
+            "left": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
           },
           "camera": "top",
-          "smoke": { "density": 0.46, "color": "#ffffff" }
+          "smoke": {
+            "density": 0.46,
+            "color": "#ffffff"
+          }
         },
         "rationale": "에너지 비 1.21: 곡 평균 대비 강한 구간이라 밝기를 900 로 한다. (규칙 기반 예시)"
       },
       {
-        "sectionLabel": "verse",
+        "sectionLabel": "bridge",
         "startSec": 112.0,
         "endSec": 124.0,
         "transitionMs": 2000,
         "state": {
           "color": "#378ADD",
           "spots": {
-            "left": { "on": false, "intensity": 410.0, "angle": 0.5, "penumbra": 0.6 },
-            "center": { "on": true, "intensity": 410.0, "angle": 0.5, "penumbra": 0.6 },
-            "right": { "on": false, "intensity": 410.0, "angle": 0.5, "penumbra": 0.6 }
+            "left": {
+              "on": false,
+              "intensity": 410.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 410.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": false,
+              "intensity": 410.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
           },
           "camera": "front",
-          "smoke": { "density": 0.31, "color": "#ffffff" }
+          "smoke": {
+            "density": 0.31,
+            "color": "#ffffff"
+          }
         },
         "rationale": "에너지 비 0.72: 곡 평균 대비 잔잔한 구간이라 밝기를 410 로 한다. (규칙 기반 예시)"
       },
       {
-        "sectionLabel": "chorus",
+        "sectionLabel": "final chorus",
         "startSec": 124.0,
         "endSec": 146.0,
         "transitionMs": 2000,
         "state": {
           "color": "#378ADD",
           "spots": {
-            "left": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 },
-            "center": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 },
-            "right": { "on": true, "intensity": 900.0, "angle": 0.5, "penumbra": 0.6 }
+            "left": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": true,
+              "intensity": 900.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
           },
           "camera": "audience",
-          "smoke": { "density": 0.51, "color": "#ffffff" }
+          "smoke": {
+            "density": 0.51,
+            "color": "#ffffff"
+          }
         },
         "rationale": "에너지 비 1.37: 곡 평균 대비 강한 구간이라 밝기를 900 로 한다. (규칙 기반 예시)"
       },
       {
-        "sectionLabel": "outro",
+        "sectionLabel": "아웃트로",
         "startSec": 146.0,
         "endSec": 160.522,
         "transitionMs": 2000,
         "state": {
           "color": "#378ADD",
           "spots": {
-            "left": { "on": false, "intensity": 280.0, "angle": 0.5, "penumbra": 0.6 },
-            "center": { "on": true, "intensity": 280.0, "angle": 0.5, "penumbra": 0.6 },
-            "right": { "on": false, "intensity": 280.0, "angle": 0.5, "penumbra": 0.6 }
+            "left": {
+              "on": false,
+              "intensity": 280.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "center": {
+              "on": true,
+              "intensity": 280.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            },
+            "right": {
+              "on": false,
+              "intensity": 280.0,
+              "angle": 0.5,
+              "penumbra": 0.6
+            }
           },
           "camera": "top",
-          "smoke": { "density": 0.18, "color": "#ffffff" }
+          "smoke": {
+            "density": 0.18,
+            "color": "#ffffff"
+          }
         },
         "rationale": "에너지 비 0.28: 곡 평균 대비 잔잔한 구간이라 밝기를 280 로 한다. (규칙 기반 예시)"
       }
