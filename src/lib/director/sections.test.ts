@@ -24,7 +24,7 @@ describe("parseTime", () => {
 describe("fromSections / toInputs", () => {
   it("고치지 않은 행은 raw label, 고친 행은 trim 한 입력값을 보낸다", () => {
     const rows = base();
-    expect(rows[0].text).toBe("인트로");
+    expect(rows[0].text).toBe("intro");
     rows[1] = { ...rows[1], text: "  드롭 " };
     const out = toInputs(rows);
     expect(out.map((s) => s.label)).toEqual(["intro", "드롭", "chorus", "outro"]);
@@ -34,11 +34,11 @@ describe("fromSections / toInputs", () => {
 });
 
 describe("고치지 않은 행", () => {
-  it("지웠다 같은 한글로 되돌리면 raw 를 보낸다", () => {
+  it("지웠다 같은 이름으로 되돌리면 raw 를 보낸다", () => {
     const rows = base();
     rows[0] = { ...rows[0], text: "" };
     expect(toInputs(rows)[0].label).toBe("");
-    rows[0] = { ...rows[0], text: "인트로" };
+    rows[0] = { ...rows[0], text: "intro" };
     expect(toInputs(rows)[0].label).toBe("intro");
   });
   it("서버가 유효하다고 준 구간은 그대로 검증을 통과한다", () => {
@@ -171,7 +171,7 @@ describe("경계 케이스", () => {
   });
   it("분할 뒤 조각은 raw/text 를 물려받고 mood 는 비운다", () => {
     const out = split(base(), 1);
-    expect(out[1]).toMatchObject({ raw: "verse", text: "버스", mood: "" });
+    expect(out[1]).toMatchObject({ raw: "verse", text: "verse", mood: "" });
     expect(toInputs(out)[2].label).toBe("verse");
   });
   it("마지막 구간 소수 endSec 의 분할", () => {

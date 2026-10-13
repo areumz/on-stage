@@ -6,7 +6,6 @@ import type { ApiError } from "@/lib/director/api";
 import { SEQUENCE_NAME_MAX } from "@/lib/director/format";
 import { FEEDBACK_LIMIT } from "@/lib/director/limits";
 import { checkName } from "@/lib/director/rename";
-import { labelKo } from "@/lib/director/labels";
 import { DEFAULT_FEEDBACK_TEXT, barPercent, cameraLabel, groupIssues, issueSectionCount, timeRange } from "@/lib/director/review";
 import type { Issue, ReviewInterrupt } from "@/lib/python/contract";
 import { DISCARD_CONFIRM, errorCopyFor } from "@/lib/python/errors";
@@ -112,7 +111,7 @@ function Inner({ interrupt, badge, feedbackCount, submitting, error, onFeedback,
             <section key={i} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-bg-dark-2 p-4" style={warned ? { borderColor: `${ROSE}55` } : undefined}>
               <div className="flex items-center gap-2">
                 <span className="h-3.5 w-3.5 rounded-[3px] border border-white/20" style={{ background: item.state.color }} aria-hidden="true" />
-                <h2 className="text-sm font-semibold">{labelKo(item.sectionLabel)}</h2>
+                <h2 className="text-sm font-semibold">{item.sectionLabel}</h2>
                 <span className="ml-auto text-xs text-white/60">{timeRange(item.startSec, item.endSec)}</span>
               </div>
               <div className="grid grid-cols-3 gap-1.5" aria-hidden="true">
@@ -129,7 +128,7 @@ function Inner({ interrupt, badge, feedbackCount, submitting, error, onFeedback,
                 {item.rationale}
               </p>
               {mine.map((m, k) => <IssueChip key={k} issue={m} />)}
-              <label htmlFor={fid} className="sr-only">{labelKo(item.sectionLabel)} 피드백</label>
+              <label htmlFor={fid} className="sr-only">{item.sectionLabel} 피드백</label>
               <input
                 id={fid}
                 type="text"

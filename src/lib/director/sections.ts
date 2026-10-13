@@ -1,6 +1,5 @@
 // 구간 확인 화면의 편집 로직(순수 함수). 서버 resume 규칙(contract.ts)을 화면에서 미리 막는 용도라
 // 같은 규칙을 한 곳에 모은다. 시간은 정수 초로 편집하고, 마지막 구간 끝만 durationSec(소수 가능) 그대로 둔다.
-import { labelKo } from "@/lib/director/labels";
 import type { Section, SectionInput } from "@/lib/python/contract";
 
 export const MIN_SECTION_SEC = 8;
@@ -10,13 +9,13 @@ export const MAX_MOOD = 200;
 const EPS = 0.001;
 
 // 시작 시간은 따로 들고 있지 않다 — 앞 구간 끝과 항상 같아야 하니 행에는 끝만 두면 어긋날 수 없다.
-// raw 는 Python 이 준 label, text 는 입력창 값. text 가 labelKo(raw) 와 같으면(고치지 않았거나 되돌렸으면) raw 를 그대로 보낸다.
+// raw 는 Python 이 준 label, text 는 입력창 값. text 가 raw 와 같으면(고치지 않았거나 되돌렸으면) raw 를 그대로 보낸다.
 export type EditRow = { raw: string; text: string; endSec: number; mood: string };
 
 export function fromSections(sections: Section[], durationSec: number): EditRow[] {
   return sections.map((s, i) => ({
     raw: s.label,
-    text: labelKo(s.label),
+    text: s.label,
     // 서버가 유효하다고 준 구간은 한 글자도 안 건드리면 검증을 통과해야 해서 반올림하지 않는다(8.5초 경계 등).
     // 정수 규칙은 사용자가 편집하는 값(setEnd·moveBoundary·split)에만 적용한다.
     endSec: i === sections.length - 1 ? durationSec : s.endSec,
@@ -28,7 +27,7 @@ export const startOf = (rows: EditRow[], i: number) => (i === 0 ? 0 : rows[i - 1
 
 export function toInputs(rows: EditRow[]): SectionInput[] {
   return rows.map((r, i) => ({
-    label: r.text === labelKo(r.raw) ? r.raw : r.text.trim(),
+    label: r.text === r.raw ? r.raw : r.text.trim(),
     startSec: startOf(rows, i),
     endSec: r.endSec,
     mood: r.mood,

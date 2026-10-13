@@ -7,7 +7,7 @@
   "result": {
     "sections": [
       {
-        "label": "인트로",
+        "label": "intro",
         "startSec": 0.0,
         "endSec": 12.0,
         "mood": ""
@@ -61,7 +61,7 @@
         "mood": ""
       },
       {
-        "label": "아웃트로",
+        "label": "outro",
         "startSec": 155.0,
         "endSec": 173.819,
         "mood": ""
@@ -69,7 +69,7 @@
     ],
     "items": [
       {
-        "sectionLabel": "인트로",
+        "sectionLabel": "intro",
         "startSec": 0.0,
         "endSec": 12.0,
         "transitionMs": 2000,
@@ -384,7 +384,7 @@
         "rationale": "에너지 비 1.12: 곡 평균 대비 강한 구간이라 밝기를 860 로 한다. (규칙 기반 예시)"
       },
       {
-        "sectionLabel": "아웃트로",
+        "sectionLabel": "outro",
         "startSec": 155.0,
         "endSec": 173.819,
         "transitionMs": 2000,

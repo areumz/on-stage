@@ -6,7 +6,6 @@ import { FX_LABELS, type Mode, editView, sectionEdited, sectionMode, usesUpload,
 import { initScene, sceneReducer } from "@/components/scene/sceneState";
 import type { SceneSettingsProps } from "@/components/scene/SceneSettingsPanel";
 import { useAutoDismiss } from "@/lib/hooks";
-import { labelKo } from "@/lib/director/labels";
 import { formatTime } from "@/lib/director/playback";
 import { saveSceneEdit, sceneErrorKo, sequenceImagesUrl } from "@/lib/director/sceneApi";
 import type { SequenceItem } from "@/lib/python/contract";
@@ -23,7 +22,6 @@ type Input = {
 
 // 재생 화면의 장면 상태. 상태 전이는 sceneReducer(순수, 테스트됨)가 정하고 여기선 서버 호출과 값 계산만 한다.
 export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, initialEdit, index }: Input) {
-  const lk = (label: string) => labelKo(label, sequenceId === null); // 데모 곡은 적힌 이름 그대로
   const [s, send] = useReducer(sceneReducer, null, () => initScene(initialEdit, items.length));
   const ratios = useMemo(() => sectionEnergyRatios(energyCurve, items), [energyCurve, items]);
   const uploads = useBackdropImages(sequenceId ? sequenceImagesUrl(sequenceId) : null, s.open || usesUpload(s.edit));
@@ -64,7 +62,7 @@ export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, init
 
   async function onUpload(file: File) {
     const gen = s.gen; // 시작한 패널 세대. 그 사이 닫히면 결과를 적용하지 않는다
-    const name = lk(items[panelCtx.index].sectionLabel);
+    const name = items[panelCtx.index].sectionLabel;
     const ctx = panelCtx; // 올리기 시작한 구간 — 그 사이 다른 구간을 골라도 이 구간의 배경이 된다
     const path = await uploads.upload(file);
     if (path) send({ type: "uploaded", path, gen, ctx, name });
@@ -79,15 +77,15 @@ export function useSequenceScene({ sequenceId, items, energyCurve, aiProps, init
     tabs: ["auto", "fx", "image"],
     view: editView(s.edit, panelCtx),
     dispatch: (action: PanelAction) => send({ type: "panel", action, ctx: panelCtx }),
-    sectionLabel: lk(items[panelIndex].sectionLabel),
-    sections: items.map((it, i) => ({ name: lk(it.sectionLabel), label: `${lk(it.sectionLabel)} · ${formatTime(it.startSec)}`, edited: sectionEdited(s.edit, i), mode: sectionMode(s.edit, i) })),
+    sectionLabel: items[panelIndex].sectionLabel,
+    sections: items.map((it, i) => ({ name: it.sectionLabel, label: `${it.sectionLabel} · ${formatTime(it.startSec)}`, edited: sectionEdited(s.edit, i), mode: sectionMode(s.edit, i) })),
     sectionIndex: panelIndex,
     tab: s.tab,
     onTab: (tab: Mode) => send({ type: "tab", tab }),
     onSection: (i: number) => send({ type: "section", index: i }),
     aiCurrent: FX_LABELS[resolveScene({ ...panelCtx, edit: null }).backdrop],
     aiRows: items.map((it, i) => ({
-      label: `${lk(it.sectionLabel)} · ${formatTime(it.startSec)}`,
+      label: `${it.sectionLabel} · ${formatTime(it.startSec)}`,
       what: FX_LABELS[resolveScene({ ...ctxAt(i), edit: null }).backdrop],
     })),
     uploads: sequenceId ? uploads : null,
