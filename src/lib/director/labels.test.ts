@@ -11,6 +11,10 @@ describe("labelKo", () => {
     expect(labelKo("드롭")).toBe("드롭");
   });
 
+  it("raw 면 자동 라벨도 적힌 그대로(데모 곡의 직접 붙인 이름)", () => {
+    expect([labelKo("chorus", true), labelKo("intro", true), labelKo("verse1", true)]).toEqual(["chorus", "intro", "verse1"]);
+  });
+
   // 프로토타입 키가 라벨로 들어와도 표에서 찾지 않는다
   it("프로토타입 키는 그대로", () => {
     expect(labelKo("toString")).toBe("toString");

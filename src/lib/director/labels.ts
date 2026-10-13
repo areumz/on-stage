@@ -3,6 +3,8 @@
 // 표시에만 쓴다 — Python 으로 보내는 값은 원래 label 이다(사용자가 고치지 않았다면 그대로).
 const KO: Record<string, string> = { intro: "인트로", verse: "버스", chorus: "코러스", outro: "아웃트로" };
 
-export function labelKo(label: string): string {
-  return Object.hasOwn(KO, label) ? KO[label] : label;
+// raw: 데모 곡처럼 구간 이름을 사람이 직접 정해 둔 경우, 한글로 바꾸지 않고 적힌 그대로 보여 준다
+// (verse1·chorus·final chorus 처럼 영문을 섞어 쓴 이름이 한 곳만 한글로 바뀌어 보이지 않게).
+export function labelKo(label: string, raw = false): string {
+  return !raw && Object.hasOwn(KO, label) ? KO[label] : label;
 }

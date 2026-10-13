@@ -69,6 +69,7 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
   const idx = sectionIndexAt(items, time);
   const cur = items[idx];
   // 구간이 바뀔 때만 값이 달라지고, 같으면 같은 참조라 MemoScene 이 다시 그려지지 않는다
+  const lk = (label: string) => labelKo(label, sequenceId === null); // 데모 곡은 적힌 이름 그대로
   const sceneCtl = useSequenceScene({ sequenceId, items, energyCurve, aiProps, initialEdit, index: idx });
   const openerRef = useRef<HTMLButtonElement>(null); // 패널을 닫을 때 포커스를 돌려줄 버튼
   const stageBoxRef = useRef<HTMLDivElement>(null);
@@ -279,7 +280,7 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
 
         <section className="rounded-2xl border border-white/10 bg-bg-dark-2 p-4" aria-live="polite">
           <p className="text-xs font-semibold tracking-wide text-white/60">현재 구간</p>
-          <p className="mt-1 text-lg font-bold text-white">{labelKo(cur.sectionLabel)}</p>
+          <p className="mt-1 text-lg font-bold text-white">{lk(cur.sectionLabel)}</p>
           <p className="text-sm text-white/60">
             {formatTime(cur.startSec)}–{formatTime(cur.endSec)} · {Math.round(cur.endSec - cur.startSec)}초
           </p>
@@ -326,7 +327,7 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
             aria-valuemin={0}
             aria-valuemax={Math.round(durationSec)}
             aria-valuenow={Math.floor(time)}
-            aria-valuetext={`${formatTime(time)} / ${formatTime(durationSec)}, ${labelKo(cur.sectionLabel)}`}
+            aria-valuetext={`${formatTime(time)} / ${formatTime(durationSec)}, ${lk(cur.sectionLabel)}`}
             onKeyDown={onKey}
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); seekFromPointer(e); }}
             onPointerMove={(e) => e.buttons === 1 && seekFromPointer(e)}
@@ -399,7 +400,7 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
                 className={`rounded-full border px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-brand ${i === idx ? "border-brand bg-brand/20 font-semibold text-white" : "border-white/10 text-white/60 hover:text-white"}`}
               >
                 <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: it.state.color }} aria-hidden />
-                {labelKo(it.sectionLabel)} · {formatTime(it.startSec)}
+                {lk(it.sectionLabel)} · {formatTime(it.startSec)}
               </button>
             </li>
           ))}
