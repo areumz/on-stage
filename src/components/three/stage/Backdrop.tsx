@@ -1,5 +1,6 @@
 "use client";
 
+import { setOpacity } from "@/components/three/stage/material";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { DoubleSide, MeshBasicMaterial, SRGBColorSpace, TextureLoader, type Group, type Mesh, type Texture } from "three";
@@ -21,10 +22,6 @@ function useSmoothActivity(target: number) {
   return v;
 }
 
-// react-hooks/immutability 가 훅이 돌려준 three 객체를 프레임 콜백에서 직접 고치는 걸 막아서, 값 갱신은 이 헬퍼로 할 것
-export const setOpacity = (m: { opacity: number }, v: number) => {
-  m.opacity = v;
-};
 
 // 효과 하나가 쓰는 재질 n개. 언마운트 때 dispose.
 function useFxMaterials(n: number, wireframeFirst = false) {

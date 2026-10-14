@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { setOpacity } from "@/components/three/stage/Backdrop";
+import { setOpacity } from "@/components/three/stage/material";
 import { BufferAttribute, BufferGeometry, PointsMaterial } from "three";
 
 const MAX = 300;

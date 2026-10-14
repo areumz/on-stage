@@ -35,25 +35,38 @@ export function useSectionAudio(audioTrackId: string, durationSec: number) {
     return true;
   }, []);
 
+  // 오디오에 단 리스너를 정리할 수 있게 해제 함수를 같이 들고 있는다(언마운트 때 호출).
+  const dispose = useRef<(() => void) | null>(null);
+
   const get = useCallback(() => {
     if (audio.current) return audio.current;
     const a = new Audio();
     a.preload = "metadata";
-    a.addEventListener("pause", () => setPlaying(false));
-    a.addEventListener("timeupdate", () => stopIfDue(a));
-    a.addEventListener("ended", () => {
+    const onPause = () => setPlaying(false);
+    const onTimeUpdate = () => stopIfDue(a);
+    const onEnded = () => {
       pos.current = 0;
       a.currentTime = 0;
       setTime(0);
       setPlaying(false);
-    });
+    };
     // 재생 중 만료·디코드 오류: 다음 재생 때 URL 을 새로 받도록 표시하고 안내만 보인다
-    a.addEventListener("error", () => {
+    const onError = () => {
       if (!ready.current) return;
       ready.current = false;
       setPlaying(false);
       setFailed(true);
-    });
+    };
+    a.addEventListener("pause", onPause);
+    a.addEventListener("timeupdate", onTimeUpdate);
+    a.addEventListener("ended", onEnded);
+    a.addEventListener("error", onError);
+    dispose.current = () => {
+      a.removeEventListener("pause", onPause);
+      a.removeEventListener("timeupdate", onTimeUpdate);
+      a.removeEventListener("ended", onEnded);
+      a.removeEventListener("error", onError);
+    };
     audio.current = a;
     return a;
   }, [stopIfDue]);
@@ -174,6 +187,8 @@ export function useSectionAudio(audioTrackId: string, durationSec: number) {
       pending.current = null;
       const a = audio.current;
       audio.current = null;
+      dispose.current?.();
+      dispose.current = null;
       if (a) {
         a.pause();
         a.removeAttribute("src");
