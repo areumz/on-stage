@@ -94,3 +94,25 @@ export function useThrottledChange<T extends object>(current: T, onChange: (valu
     }, 100);
   }, []);
 }
+
+// 무대 연출 메뉴의 장면(배경·먼지·반사·소품) — stage-state 와 별도 키(StageState 모양을 지키기 위해), 같은 구독 패턴.
+const sceneListeners = new Set<() => void>();
+const sceneStorageKey = (slug: string) => `stage-scene:${slug}`;
+
+function subscribeScene(listener: () => void) {
+  sceneListeners.add(listener);
+  return () => sceneListeners.delete(listener);
+}
+
+export function writeScene(slug: string, value: string) {
+  localStorage.setItem(sceneStorageKey(slug), value);
+  sceneListeners.forEach((listener) => listener());
+}
+
+export function useSceneSnapshot(slug: string): string | null {
+  return useSyncExternalStore(
+    subscribeScene,
+    () => localStorage.getItem(sceneStorageKey(slug)),
+    () => null,
+  );
+}

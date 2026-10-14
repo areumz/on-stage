@@ -22,7 +22,7 @@ const ARTIST_SELECT = "*, tracks(*), shows(*), gallery_images(*)";
 // 진실 공급원으로 삼아 정렬 — DB 스캔 순서에 기대면 UPDATE 등으로 물리적 순서가 바뀔 때마다 목록이 흔들릴 수 있음.
 const ARTIST_DISPLAY_ORDER = ["aurora", "velvet", "nova", "halo", "lumen", "echo"];
 
-function byArtistDisplayOrder<T extends { slug: string }>(rows: T[]): T[] {
+export function byArtistDisplayOrder<T extends { slug: string }>(rows: T[]): T[] {
   // indexOf가 -1(목록에 없는 슬러그)이면 맨 뒤로 보낸다 — 그대로 두면 -1이 모든 실제 인덱스보다
   // 작아서 이 배열을 안 고친 채 새 아티스트가 추가됐을 때 맨 앞으로 온다.
   // 추후에 아티스트 추가가 늘어날시 하드코딩 배열을 제거하고 DB에 정렬 컬럼을 추가하는 방식을 고려한다

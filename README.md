@@ -121,6 +121,23 @@ As of phase 2, auth, the database, and image storage all run on [Supabase](https
 
 ---
 
+## 무대 연출 디렉터 / Stage Director
+
+B탭의 `/staff/director`에서 곡 한 곡의 무대 연출을 만드는 도구입니다. 곡을 올리면 구간(인트로·벌스·코러스 등)을 분석하고, AI가 구간별 조명·카메라·스모크 연출을 제안하면 사람이 확인·수정해 승인합니다.
+
+- **흐름** — 업로드 → 분석 → 구간 확인(경계·이름·분위기 수정) → 검토(구간별 다시 생성) → 승인·저장 → 3D 무대에서 오디오와 함께 재생
+- **데모 곡 2곡**은 미리 분석·승인되어 있어 AI를 호출하지 않고 바로 열립니다
+- **구간 확인에서 음악 듣기** — 구간 경계를 고칠 때 재생 버튼으로 곡을 들으며(자동 재생 없음) 막대를 눌러 위치를 옮기고, 각 구간의 "경계 듣기"로 끝 경계 앞뒤를 들어 볼 수 있습니다
+- **연출 이름** — 저장된 연출에 이름을 붙일 수 있습니다(승인할 때 입력하거나 내 연출·재생 화면에서 바꾸기). 비워 두면 "곡 제목 · 10월 12일 14:30"으로 보입니다
+- **장면 설정** — 재생 화면의 "배경 설정"에서 구간마다 배경(막대·터널·레이저·자이로·큐브·없음, 또는 이미지), 먼지, 바닥 반사를 고르고 소품(앰프·드럼·마이크)은 곡 전체로 고릅니다. AI가 정한 값이 기본이고, 고친 값은 AI 값을 덮어쓰지 않고 따로 저장되어 언제든 "AI 제안으로 되돌리기"가 됩니다. 같은 패널이 기존 "무대 연출"(`/staff/stage`)에도 있고 프리셋에 함께 저장됩니다. 내 이미지(jpg·png·webp, 5MB 이하)는 비공개 버킷 `stage-backdrops`에 두고 서명 URL로만 보여 줍니다
+- **제한** — 음원은 mp3·wav·flac·ogg, 30MB·5분 이하. 곡당 동시 초안 1개, 곡당 저장 5개, 연출당 다시 생성 3회, 서비스 전체 하루 "연출 만들기" `DAILY_RUN_LIMIT`회(기본 5, Gemini 호출 비용과 속도 한도 보호)
+- **구조** — 분석·연출 생성은 별도 Python 서비스(Cloud Run)가 맡고, Next.js 서버 라우트만 그 서비스를 부릅니다(`PYTHON_SERVICE_URL`, `INTERNAL_API_KEY` — 둘 다 서버 전용이라 브라우저로 나가지 않음). 음원은 비공개 버킷 `audio-tracks`에 두고, 서명 URL은 Python 서비스와 `<audio>`에만 씁니다
+- **로컬에서 켜려면** — `npx supabase db push`로 마이그레이션을 적용하고, 데모 음원을 Storage `audio-tracks/seed/`에 올린 뒤 `npm run seed:director`. Python 서비스가 없어도 데모 곡 재생과 화면은 동작하고, 곡 분석과 연출 만들기만 막힙니다
+
+The Stage Director (`/staff/director`, B tab) builds the lighting sequence for a single song: upload a track, it is analyzed into sections, an AI proposes per-section lights, camera, and smoke, and a person reviews, edits, and approves it. Flow: upload → analysis → section confirmation (edit boundaries, names, mood) → review (regenerate individual sections) → approve and save → playback on the 3D stage with the audio. From the playback screen's "background settings" you can change the backdrop (bars, tunnel, laser, gyro, cube, or an image), dust, floor reflection, and props; the AI's values are the default, your edits are stored separately so you can always reset to the AI suggestion, and the same panel is available (and saved with presets) in the existing stage tool. Uploaded images (jpg/png/webp, up to 5MB) live in the private `stage-backdrops` bucket. Two demo tracks are pre-analyzed and pre-approved, so they open without calling the AI. Limits: mp3/wav/flac/ogg up to 30MB and 5 minutes; one in-progress draft per song, five saved sequences per song, three regenerations per sequence, and a service-wide daily cap on "create sequence" (`DAILY_RUN_LIMIT`, default 5, to bound Gemini cost and rate-limit pressure). Analysis and generation run in a separate Python service (Cloud Run) that only Next.js server routes call (`PYTHON_SERVICE_URL` and `INTERNAL_API_KEY` are server-only and never reach the browser). Audio lives in the private `audio-tracks` bucket, and signed URLs are used only for the Python service and the `<audio>` element. To enable it locally: apply migrations with `npx supabase db push`, upload the demo audio to Storage `audio-tracks/seed/`, then run `npm run seed:director`. Without the Python service, the screens and demo playback still work; only analysis and sequence creation are unavailable.
+
+---
+
 ## 개발 프로세스 / Development Process
 
 이 프로젝트는 [Superpowers](https://github.com/obra/superpowers) 워크플로우를 따라 AI 에이전트와 협업해 만들었습니다. 다만 각 단계의 결과물을 그대로 받아들이지 않고, 설계와 코드를 실제로 검증하고 판단하는 과정을 거쳤습니다.
@@ -155,8 +172,9 @@ src/
 │   ├── staff/
 │   │   ├── login/        # B탭: 로그인
 │   │   ├── stage/        # B탭: 무대 연출 3D 툴
+│   │   ├── director/     # B탭: 무대 연출 디렉터 (업로드·분석·구간 확인·검토·재생·배경 설정)
 │   │   └── (console)/    # B탭: 사이드바 공유 라우트 그룹 (대시보드 등)
-│   └── api/               # /api/artists, /api/metrics, /api/login
+│   └── api/               # /api/artists, /api/metrics, /api/login, /api/audio-tracks, /api/sequences
 ├── components/
 │   ├── common/            # 헤더, A/B 탭 토글
 │   ├── fans/               # A탭 전용 컴포넌트
@@ -177,7 +195,7 @@ The core layout: `app/` holds routes for both tabs (fans pages, `staff/` for log
 - 회원가입/비밀번호 재설정 기능 없음 (Supabase Auth의 이메일·비밀번호 로그인만 지원, 계정은 시드로만 생성)
 - 다국어(i18n) 미지원
 - 실제 결제/예매 기능 없음
-- 백엔드 서버 분리 없음
+- 백엔드 서버는 분리하지 않았지만, 무대 연출 디렉터의 분석·연출 생성만 별도 Python 서비스에 의존함(없으면 해당 기능만 동작하지 않음)
 - **권장 브라우저: Chrome 최신, Safari 16.4+.** 그 외 환경(구형 Safari 등 WebGL 미지원·구형 브라우저)에서는
   3D 콘텐츠가 보이지 않을 수 있습니다
 
@@ -228,6 +246,8 @@ Remaining: refined gallery imagery. See [docs/design-v2.md](docs/design-v2.md) f
 
 ## 라이선스 / License
 
-이 프로젝트는 [MIT License](LICENSE)를 따릅니다.
+이 프로젝트의 코드는 [MIT License](LICENSE)를 따릅니다.
 
-This project is licensed under the [MIT License](LICENSE).
+데모 곡 음원은 AI로 생성한 것이며 **MIT 라이선스 대상이 아닙니다.** 저장소에는 음원 파일을 포함하지 않았고(Supabase Storage에만 있음), 분석 결과 JSON(`src/data/director/`)만 들어 있습니다.
+
+The code in this project is licensed under the [MIT License](LICENSE). The demo audio tracks are AI-generated and are **not covered by the MIT License**; the repository contains no audio files (they live only in Supabase Storage), just the analysis result JSON under `src/data/director/`.

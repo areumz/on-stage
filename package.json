@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "doctor": "npx react-doctor@latest",
-    "seed": "node --env-file=.env.local scripts/seed.mjs"
+    "seed": "node --env-file=.env.local scripts/seed.mjs",
+    "seed:director": "node --env-file=.env.local scripts/seed-director.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

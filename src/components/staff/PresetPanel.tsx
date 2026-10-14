@@ -3,26 +3,30 @@
 import { useEffect, useState } from "react";
 import { useConfirm } from "@/components/staff/ConfirmDialog";
 import { writeStageState } from "@/lib/hooks";
+import { parsePresetScene, type PresetScene } from "@/lib/stage/scene";
 import { mergeStageState, type StageState } from "@/lib/stageState";
 
-type Preset = { id: string; name: string; state: StageState };
+type Preset = { id: string; name: string; state: StageState; scene?: PresetScene | null }; // scene null = 장면 없이 저장된 프리셋
 
 function sortedByName(presets: Preset[]): Preset[] {
   return [...presets].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-async function postPreset(artistSlug: string, name: string, state: StageState, overwrite: boolean) {
+async function postPreset(artistSlug: string, name: string, state: StageState, scene: PresetScene, overwrite: boolean) {
   return fetch("/api/stage-presets", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ artistSlug, name, state, overwrite }),
+    body: JSON.stringify({ artistSlug, name, state, scene, overwrite }),
   });
 }
 
-export default function PresetPanel({ artistSlug, state, onChange }: {
+export default function PresetPanel({ artistSlug, state, onChange, scene, onSceneChange, hasUpload }: {
   artistSlug: string;
   state: StageState;
   onChange: (next: StageState) => void;
+  scene: PresetScene;
+  onSceneChange: (next: PresetScene) => void;
+  hasUpload: (path: string) => boolean;
 }) {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +68,13 @@ export default function PresetPanel({ artistSlug, state, onChange }: {
     const merged = mergeStageState(preset.state, state);
     writeStageState(artistSlug, JSON.stringify(merged));
     onChange(merged);
+    // 장면 없이 저장된 프리셋(null)은 지금 장면을 건드리지 않는다
+    if (preset.scene) {
+      const next = parsePresetScene(preset.scene);
+      // 그 사이 지워진 내 이미지를 가리키면 이미지 없이(효과로) 적용한다
+      const gone = next.image?.kind === "upload" && !hasUpload(next.image.path);
+      onSceneChange(gone ? { ...next, image: null } : next);
+    }
   }
 
   async function handleSave() {
@@ -72,14 +83,14 @@ export default function PresetPanel({ artistSlug, state, onChange }: {
     setSaving(true);
     setError(null);
     try {
-      let res = await postPreset(artistSlug, trimmed, state, false);
+      let res = await postPreset(artistSlug, trimmed, state, scene, false);
       if (res.status === 409) {
         if (!(await confirm("이미 있는 이름입니다. 덮어쓸까요?"))) return;
-        res = await postPreset(artistSlug, trimmed, state, true);
+        res = await postPreset(artistSlug, trimmed, state, scene, true);
       }
       if (!res.ok) throw new Error(`저장 실패 (${res.status})`);
       const { id } = await res.json();
-      setPresets((prev) => sortedByName([...prev.filter((p) => p.name !== trimmed), { id, name: trimmed, state }]));
+      setPresets((prev) => sortedByName([...prev.filter((p) => p.name !== trimmed), { id, name: trimmed, state, scene }]));
       setName("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "저장 실패");
