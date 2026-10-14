@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 // 분석·연출 진행을 일정 간격으로 확인한다 (계약서: 2~3초 간격).
 // tick 이 true 를 돌려주면 멈춘다(끝났거나 사람의 확인을 기다리는 상태). enabled 가 false 가 되거나
@@ -10,27 +10,35 @@ export function usePolling(
   tick: () => Promise<boolean | void>,
   { enabled, intervalMs = 2500, resetKey }: { enabled: boolean; intervalMs?: number; resetKey?: unknown },
 ): void {
-  // 호출부가 매 렌더 새 함수를 넘겨도 타이머가 다시 시작되지 않게 최신 함수만 ref 로 들고 있는다 (hooks.ts 와 같은 패턴)
-  const latest = useRef(tick);
-  useEffect(() => {
-    latest.current = tick;
-  });
+  // 호출부가 매 렌더 새 함수를 넘겨도 타이머가 다시 시작되지 않게 Effect Event 로 감싼다.
+  // 항상 최신 tick 을 부르지만 effect 의 의존성에는 들어가지 않는다.
+  const latestTick = useEffectEvent(tick);
 
   useEffect(() => {
     if (!enabled) return;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const run = async () => {
-      const done = await latest.current();
-      if (cancelled || done === true) return;
-      timer = setTimeout(run, intervalMs);
-    };
-    void run();
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
+    const ctrl = new AbortController();
+    void (async () => {
+      while (!ctrl.signal.aborted) {
+        const done = await latestTick();
+        if (ctrl.signal.aborted || done === true) return;
+        await sleep(intervalMs, ctrl.signal);
+      }
+    })();
+    return () => ctrl.abort(); // 대기 중인 타이머도 같이 멈춘다
   }, [enabled, intervalMs, resetKey]);
+}
+
+// signal 이 중단되면 기다리던 타이머를 지우고 바로 끝난다
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
 }
