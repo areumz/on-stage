@@ -49,7 +49,7 @@ function DustPoints({ dust }: { dust: number }) {
   return <points geometry={geo} material={mat} frustumCulled={false} />;
 }
 
-// dust 0 이면 훅·geometry·useFrame 이 아예 없게 바깥 래퍼에서 막는다(NO_SCENE 에 CPU 비용 없음)
+// dust 0 이면 훅·geometry·useFrame 이 아예 없게 바깥 래퍼에서 막음
 export default function Dust({ dust }: { dust: number }) {
   if (dust <= 0) return null;
   return <DustPoints dust={dust} />;

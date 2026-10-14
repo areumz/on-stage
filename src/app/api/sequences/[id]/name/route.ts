@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { authed, isUuid, jsonError } from "@/lib/director/http";
 import { cleanSequenceName } from "@/lib/director/format";
 
-// 연출 이름 바꾸기. 초안·승인본 모두 가능하다. 공백이거나 null 이면 기본 이름으로 되돌린다(name = null).
+// 연출 이름 바꾸기. (초안·승인본 모두 가능) 공백이거나 null 이면 기본 이름으로 되돌림(name = null).
 // body { name: string | null } → { name: 정리된 값 }
 export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/sequences/[id]/name">) {
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);

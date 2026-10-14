@@ -12,7 +12,7 @@ import { usePolling } from "@/lib/director/usePolling";
 import { DISCARD_CONFIRM, type ActionKind } from "@/lib/python/errors";
 
 const WAKING_AFTER_MS = 2000; // 이보다 오래 응답이 없으면 서버가 자고 있다고 본다
-const MAX_POLL_FAILURES = 3; // 연결 실패는 이 횟수까지 조용히 다시 시도한다
+const MAX_POLL_FAILURES = 3; // 연결 실패는 이 횟수까지 조용히 다시 시도
 
 type Shown = AnalysisPhase | "starting"; // starting: 첫 응답 전(2초 안). 목업에 없어 running 으로 그린다
 type Failure = { code: string; stage: "analysis" | "create"; since: number; draftId?: string | null };

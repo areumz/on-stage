@@ -1,6 +1,6 @@
 // 무대 장면 확장: 배경(backdrop)·먼지(dust)·바닥 반사(reflection)·소품(props).
-// StageState 와 따로 둔다 — Python 계약이 state 밖에 두었고, stage_presets.state 의 모양을 지키기 위해서다.
-// 이 파일은 순수 함수만 둔다(서버·클라이언트 공용, 렌더링 코드 없음).
+// StageState 와 따로 둔다 — Python 계약이 state 밖에 두었고, stage_presets.state 의 모양을 지키기 위함
+// 순수 함수(서버·클라이언트 공용, 렌더링 코드 없음).
 
 export const BACKDROPS = ["bars", "tunnel", "laser", "gyro", "cube", "none"] as const;
 export type Backdrop = (typeof BACKDROPS)[number];
@@ -20,9 +20,9 @@ export const sampleSrc = (id: SampleId) => `/backdrops/${id}.svg`;
 
 export const UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
 export const UPLOAD_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
-// 제품 한도는 두지 않는다(구간이 여러 개라 3장은 부족하다). 아래 값은 스토리지 남용을 막는 안전 상한일 뿐이다.
+// 제품 한도는 두지 않는다(구간이 여러 개라 3장은 부족). 아래 값은 스토리지 남용을 막는 안전 상한
 export const UPLOADS_PER_SEQUENCE = 50;
-// 기존 "무대 연출" 메뉴는 연출(시퀀스)이 없어서 사용자 폴더의 고정 하위 폴더 <user_id>/studio/ 에 올린다.
+// 기존 "무대 연출" 메뉴는 연출(시퀀스)이 없어서 사용자 폴더의 고정 하위 폴더 <user_id>/studio/ 에 올림
 export const STUDIO_FOLDER = "studio";
 export const UPLOADS_PER_STUDIO = 50;
 
@@ -36,15 +36,15 @@ export type SectionScene = { backdrop?: Backdrop | null; dust?: number | null; r
 // 연출 전체의 배경 모드. auto = 구간마다 AI 제안(또는 자동 규칙)
 export type BackdropSetting = { mode: "auto" } | { mode: "fx"; fx: Effect } | { mode: "image"; image: ImageRef };
 
-// 사용자가 고친 값(stage_sequences.scene_edit). 키가 없으면 고치지 않은 것이라 AI 값을 쓴다.
+// 사용자가 고친 값(stage_sequences.scene_edit). 키가 없으면 고치지 않은 것이라 AI 값 사용
 export type SceneEdit = {
   backdrop?: BackdropSetting;
   sections?: (SectionScene | null)[]; // items 와 같은 길이
   props?: PropKey[];
 };
 
-// 기존 "무대 연출" 메뉴와 stage_presets.scene 에 쓰는 단일 장면(구간이 없다).
-// image 는 샘플 또는 내 업로드(<user_id>/studio/…). 값이 있으면 backdrop 대신 이미지를 뒤 벽에 띄운다.
+// 기존 "무대 연출" 메뉴와 stage_presets.scene 에 쓰는 단일 장면(구간이 x).
+// image 는 샘플 또는 내 업로드(<user_id>/studio/…). 값이 있으면 backdrop 대신 이미지를 뒤 벽에 띄움.
 export type PresetScene = {
   backdrop: Backdrop;
   dust: number;
@@ -55,13 +55,13 @@ export type PresetScene = {
 
 export const DEFAULT_PRESET_SCENE: PresetScene = { backdrop: "none", dust: 0, reflection: 0, props: [], image: null };
 
-// StageScene 이 그리는 최종 값. 계산은 resolveScene / presetToRender 에서 끝낸다.
+// StageScene 이 그리는 최종 값. 계산은 resolveScene / presetToRender 에서 끝냄
 export type RenderScene = {
   backdrop: Backdrop;
   dust: number; // 0~100
   reflection: number; // 0~100
   props: PropKey[];
-  imageUrl: string | null; // 있으면 뒤 벽에 이미지를 띄우고 backdrop 효과는 그리지 않는다
+  imageUrl: string | null; // 있으면 뒤 벽에 이미지를 띄우고 backdrop 효과는 그리지 x
   activity: number; // 0~1, 효과의 속도·밝기 (잔잔 0 → 격함 1)
 };
 
@@ -99,7 +99,7 @@ function parseImage(v: unknown): ImageRef | null {
   if (typeof v !== "object" || v === null) return null;
   const o = v as Record<string, unknown>;
   if (o.kind === "sample" && SAMPLE_IMAGES.some((s) => s.id === o.id)) return { kind: "sample", id: o.id as SampleId };
-  // 경로는 서버가 소유자 폴더와 맞는지 따로 검사한다. 여기서는 모양만 본다.
+  // 경로는 서버가 소유자 폴더와 맞는지 따로 검사. 여기서는 모양만 봄
   if (o.kind === "upload" && typeof o.path === "string" && o.path.length > 0 && o.path.length <= 200 && !o.path.includes("..")) {
     return { kind: "upload", path: o.path };
   }
@@ -121,7 +121,7 @@ export function parseBackdropSetting(v: unknown): BackdropSetting | null {
   return null;
 }
 
-// 저장된 scene_edit 를 읽는다(DB 값이라 모양이 깨졌을 수 있다). 깨진 부분은 없는 것으로 본다.
+// 저장된 scene_edit 를 읽는다(DB 값이라 모양이 깨졌을 수 있음). 깨진 부분은 없는 것으로 봄
 export function parseSceneEdit(v: unknown, sectionCount: number): SceneEdit | null {
   if (typeof v !== "object" || v === null) return null;
   const o = v as Record<string, unknown>;

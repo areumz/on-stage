@@ -33,7 +33,7 @@ type Props = {
 
 const btn = "flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-brand";
 
-// 훅 순서 때문에 가드는 바깥 래퍼에서 한다(빈 items·길이 0 이면 stateAt/pct 가 깨진다)
+// 훅 순서 때문에 가드는 바깥 래퍼에서 함. (빈 items·길이 0 이면 stateAt/pct 가 깨진다)
 export default function SequencePlayer(props: Props) {
   if (props.items.length === 0 || !(props.durationSec > 0)) {
     return <p className="rounded-2xl border border-white/10 bg-bg-dark-2 p-6 text-center text-sm text-white/60">재생할 연출이 없어요</p>;
@@ -67,7 +67,7 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
   const bars = useMemo(() => energyBars(energyCurve, BAR_COUNT), [energyCurve]);
   const idx = sectionIndexAt(items, time);
   const cur = items[idx];
-  // 구간이 바뀔 때만 값이 달라지고, 같으면 같은 참조라 MemoScene 이 다시 그려지지 않는다
+  // 구간이 바뀔 때만 값이 달라지고, 같으면 같은 참조라 MemoScene 이 다시 그려지지 x
   const sceneCtl = useSequenceScene({ sequenceId, items, energyCurve, aiProps, initialEdit, index: idx });
   const openerRef = useRef<HTMLButtonElement>(null); // 패널을 닫을 때 포커스를 돌려줄 버튼
   const stageBoxRef = useRef<HTMLDivElement>(null);
@@ -119,8 +119,8 @@ function Player({ audioTrackId, title, artistName, accent, durationSec, items, e
     setSilent(true);
   }, []);
 
-  // 서명 URL 을 새로 받아 audio.src 에만 설정하고 메타데이터가 올 때까지 기다린 뒤 위치를 맞춘다
-  // (src 설정 직후 play 하면 0초 소리가 먼저 나온다).
+  // 서명 URL 을 새로 받아 audio.src 에만 설정하고 메타데이터가 올 때까지 기다린 뒤 위치를 맞춤
+  // (src 설정 직후 play 하면 0초 소리가 먼저 나옴).
   const attach = useCallback(async (a: HTMLAudioElement, t: number) => {
     attaching.current = true;
     srcReady.current = false;

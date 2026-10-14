@@ -148,7 +148,7 @@ function Timeline({ rows, durationSec, energy, disabled, onMove, playTime, activ
             </div>
           );
         })}
-        {/* 재생 위치선: 경계 핸들(흰 가는 선+원)과 다르게 굵은 호박색 선+아래 삼각형. 포인터는 통과시킨다. */}
+        {/* 재생 위치선: 경계 핸들(흰 가는 선+원)과 다르게 굵은 호박색 선+아래 삼각형. 포인터는 통과시킴. */}
         <div aria-hidden className="pointer-events-none absolute inset-y-0 z-20 -ml-[1.5px] w-[3px] bg-amber-300" style={{ left: pct(Math.min(playTime, durationSec)) }}>
           <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-x-[5px] border-t-[6px] border-x-transparent border-t-amber-300" />
         </div>

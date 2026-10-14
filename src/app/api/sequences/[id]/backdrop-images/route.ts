@@ -15,8 +15,8 @@ async function guard(supabase: SupabaseClient, id: string) {
   return data.status === "approved" ? null : jsonError("not_approved", 409);
 }
 
-// 이 path 를 쓰던 곳(구간별 image, 예전 형식의 연출 전체 backdrop)만 바꾼 scene_edit 를 돌려준다. 참조가 없으면 null.
-// 원본에서 해당 키만 고친다 — 파서가 버릴 깨진 부분이나 다른 구간·필드는 조용히 지우지 않는다.
+// 이 path 를 쓰던 곳(구간별 image, 예전 형식의 연출 전체 backdrop)만 바꾼 scene_edit 를 돌려줌. 참조가 없으면 null.
+// 원본에서 해당 키만 고침 — 파서가 버릴 깨진 부분이나 다른 구간·필드는 삭제 x
 function dropReference(raw: unknown, path: string): Record<string, unknown> | null {
   if (typeof raw !== "object" || raw === null) return null;
   const edit = { ...(raw as Record<string, unknown>) };
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/sequences/[
   const folder = folderOf(user.id, id);
   const names = await listAll(supabase, folder);
   if (!names) return jsonError("internal_error", 500);
-  // 여기는 빨리 알려 주기 위한 검사다. 최종 방어선은 스토리지 insert 정책(연출 소유 확인 + 폴더당 상한)이다.
+  // 빨리 알려 주기 위한 검사. 최종 방어선은 스토리지 insert 정책(연출 소유 확인 + 폴더당 상한).
   if (names.length >= UPLOADS_PER_SEQUENCE) return jsonError("image_limit", 409);
 
   const path = `${folder}/${crypto.randomUUID()}.${EXT[contentType]}`;
@@ -103,7 +103,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext<"/api/sequences
   if (!row) return jsonError("not_found", 404);
   if (row.status !== "approved") return jsonError("not_approved", 409);
 
-  // 먼저 참조를 끊는다. 객체 삭제가 실패해도 화면이 사라진 이미지를 가리키지 않는다.
+  // 참조 해제. 객체 삭제가 실패해도 화면이 사라진 이미지를 가리키지 않도록
   const cleaned = dropReference(row.scene_edit, path!);
   if (cleaned) {
     const { error: resetError } = await supabase

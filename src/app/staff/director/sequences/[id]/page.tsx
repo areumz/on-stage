@@ -9,7 +9,7 @@ import { sequenceName } from "@/lib/director/format";
 import { isUuid } from "@/lib/director/http";
 import { parseSceneEdit } from "@/lib/stage/scene";
 
-// 같은 주소가 초안이면 진행·검토 흐름, 승인본이면 재생 화면이다. 승인이 끝나면 클라이언트가 router.refresh() 로 이 페이지를 다시 그린다.
+// 같은 주소가 초안이면 진행·검토 흐름, 승인본이면 재생 화면. 승인이 끝나면 클라이언트가 router.refresh() 로 이 페이지를 리렌더링.
 export default async function SequencePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isUuid(id)) notFound();

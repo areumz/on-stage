@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-// 분석·연출 진행 화면이 같이 쓰는 카드. 진행은 퍼센트가 아니라 단계 문구로 보여 준다:
+// 분석·연출 진행 화면이 같이 쓰는 카드. 진행은 퍼센트가 아니라 단계 문구로 보여줌:
 // 분석 progress 는 0.1 → 0.4 → 1.0 단계 값이고 연출(/runs)에는 progress 가 아예 없어서 막대를 그리면 오래 멈춘 것처럼 보인다.
 
 export type StepState = "done" | "now" | "todo";
@@ -57,7 +57,7 @@ export default function ProgressCard({
 }) {
   return (
     <section className="flex flex-col gap-5 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
-      {/* 문구가 바뀌면 스크린리더가 한 번 읽는다. 단계 목록은 읽지 않게 이 영역 밖에 둔다. */}
+      {/* 문구가 바뀌면 스크린리더가 한 번 읽음. 단계 목록은 읽지 않게 이 영역 밖에 위치. */}
       <div role="status" aria-live="polite" className="flex flex-col gap-2">
         {eta && <p className="self-end text-[12.5px] text-white/60">{eta}</p>}
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{headline}</h2>

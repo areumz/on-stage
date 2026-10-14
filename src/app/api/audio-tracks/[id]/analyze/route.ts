@@ -28,8 +28,8 @@ async function loadTrack(supabase: SupabaseClient, id: string) {
 
 const DB_STATUS: Record<string, AnalysisStatus> = { queued: "pending", running: "running", error: "error" };
 
-// Python 상태를 audio_tracks 에 반영한다. done 의 저장은 멱등이다(같은 값을 다시 써도 같다).
-// 반영하지 못하면 응답을 만들지 않고 Response 를 돌려준다.
+// Python 상태를 audio_tracks 에 반영. done 의 저장은 멱등.
+// 반영하지 못하면 응답을 만들지 않고 Response 를 돌려줌.
 async function sync(supabase: SupabaseClient, track: AudioTrackRow, body: AnalyzeBody): Promise<Response | null> {
   let patch: Record<string, unknown> | null = null;
   // done 인데 결과가 없으면 성공처럼 넘기지 않는다 (다음 단계가 analysis_not_ready 로 막힌다)
@@ -55,7 +55,7 @@ async function sync(supabase: SupabaseClient, track: AudioTrackRow, body: Analyz
   return data.length === 0 ? jsonError("forbidden", 403) : null;
 }
 
-// 분석 시작. 같은 id 로 다시 POST 해도 안전하다(Python 이 멱등으로 처리): 오류 뒤 "다시 시도"도 이 라우트다.
+// 분석 시작. 같은 id 로 다시 POST 해도 안전(Python 이 멱등으로 처리): 오류 뒤 "다시 시도"도 이 라우트
 export async function POST(_req: NextRequest, ctx: RouteContext<"/api/audio-tracks/[id]/analyze">) {
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);
@@ -85,7 +85,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext<"/api/audio-trac
   }
 }
 
-// 진행 폴링. 탭을 닫았다 와도 결과는 Python 에 7일 남아 있어 여기서 받아 저장한다.
+// 진행 폴링. 탭을 닫았다 와도 결과는 Python 에 7일 남아 있어 여기서 받아 저장
 export async function GET(_req: NextRequest, ctx: RouteContext<"/api/audio-tracks/[id]/analyze">) {
   const [{ id }, auth] = await Promise.all([ctx.params, authed()]);
   if (!auth) return jsonError("unauthorized", 401);

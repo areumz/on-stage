@@ -4,8 +4,7 @@ import SequencePlayer from "@/components/director/SequencePlayer";
 import { getDemo } from "@/lib/director/demo";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-// 데모 곡 재생. 분석 결과와 시퀀스는 JSON 으로 들어 있어 Python 을 부르지 않는다.
-// 오디오 재생에만 시드 곡 행(audio_tracks, user_id null)의 id 가 필요하다(재생용 서명 URL 발급).
+// 데모 곡 재생. (분석 결과와 시퀀스는 JSON 으로 들어 있어 Python 을 부르지 않음)
 export default async function DemoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const demo = getDemo(slug);

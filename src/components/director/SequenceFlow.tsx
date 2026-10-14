@@ -68,7 +68,7 @@ export default function SequenceFlow({
   const [stuck, setStuck] = useState(false);
 
   const mounted = useRef(true);
-  const gen = useRef(0); // 폴링·요청 세대. 새 요청이 시작되면 이전 응답은 버린다
+  const gen = useRef(0); // 폴링·요청 세대. 새 요청이 시작되면 이전 응답은 버림
   const lock = useRef(false); // 중복 제출 방지
   const failures = useRef(0);
   const refreshed = useRef(false);
@@ -87,7 +87,7 @@ export default function SequenceFlow({
     setFatal({ code, since: Date.now(), job, draftId });
   };
 
-  // 단계 값을 정해 두고 서버 상태를 다시 확인하기 시작한다
+  // 단계 값을 정해 두고 서버 상태 다시 확인 시작
   const restart = (h: RunPhase) => {
     gen.current++;
     failures.current = 0;
@@ -103,7 +103,7 @@ export default function SequenceFlow({
     async () => {
       const g = gen.current;
       const r = await pollSequence(sequenceId);
-      if (!mounted.current || g !== gen.current) return true; // 낡은 응답. 새로 시작한 쪽이 폴링을 이어 간다
+      if (!mounted.current || g !== gen.current) return true; // 낡은 응답. 새로 시작한 쪽이 폴링을 이어감
       if (!r.ok) {
         if (pollErrorAction(r.error, ++failures.current) === "quiet") return false;
         showFatal(displayCode(r.error));
@@ -123,7 +123,7 @@ export default function SequenceFlow({
     { enabled: !fatal && (view === null || shouldPoll(view)), resetKey: pollKey },
   );
 
-  // 승인되어 저장까지 끝났으면 서버 페이지를 다시 그려 재생 화면을 연다
+  // 승인되어 저장까지 끝났으면 서버 페이지를 다시 그려 재생 화면 오픈
   useEffect(() => {
     if (view?.kind === "approved" && !refreshed.current) {
       refreshed.current = true;
@@ -131,7 +131,7 @@ export default function SequenceFlow({
     }
   }, [view, router]);
 
-  // 새 화면(확인·검토·오류)이 나타나면 키보드·스크린리더 사용자가 알 수 있게 영역으로 포커스를 옮긴다
+  // 새 화면(확인·검토·오류)이 나타나면 키보드·스크린리더 사용자가 알 수 있게 영역으로 포커스를 옮김
   const focusKey = fatal ? `f${fatal.since}` : view?.kind === "confirm" || view?.kind === "review" ? view.interrupt.interruptId : null;
   useEffect(() => {
     if (focusKey) focusRef.current?.focus();
@@ -164,7 +164,7 @@ export default function SequenceFlow({
     const act = resumeErrorAction(e);
     if (act === "refetch") {
       submittedId.current = null;
-      restart(hint); // 화면이 낡았다. 바로 다시 불러온다
+      restart(hint); // 화면이 낡았으므로 바로 다시 불러옴
     } else if (act === "fatal") showFatal(displayCode(e));
     else {
       // inline·keep: 화면(사용자가 고친 내용)을 유지하고 다시 제출할 수 있게 한다

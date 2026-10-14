@@ -5,10 +5,10 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { DoubleSide, MeshBasicMaterial, SRGBColorSpace, TextureLoader, type Group, type Mesh, type Texture } from "three";
 import type { Backdrop } from "@/lib/stage/scene";
 
-// 뒤 벽(배경 패널 position [0,3,-2.4], 9×5.5, 두께 0.3 → 앞면 z=-2.25) 바로 앞에 그린다.
-// gyro·cube 는 회전하면 벽 뒤로 파고들어 가려지므로 벽에서 반지름만큼만 띄우고(z -1.0/-1.1) 크기를 줄여 중앙과 스포트 빛줄기를 덜 가린다.
+// 뒤 벽(배경 패널 position [0,3,-2.4], 9×5.5, 두께 0.3 → 앞면 z=-2.25) 바로 앞에 그림
+// gyro·cube 는 회전하면 벽 뒤로 파고들어 가려지므로 벽에서 반지름만큼만 띄우고(z -1.0/-1.1) 크기를 줄여 중앙과 스포트 빛줄기를 덜 가림
 // 효과는 전부 MeshBasicMaterial(조명 영향 없음)이라 스포트라이트 세기와 무관하게 은은하게 보이고,
-// 재질·지오메트리는 마운트 때 한 번만 만든다(재생 화면이 ~10Hz로 값을 바꿔도 GPU 리소스 재생성 없음).
+// 재질·지오메트리는 마운트 때 한 번만 만듦(재생 화면이 ~10Hz로 값을 바꿔도 GPU 리소스 재생성 없음).
 const WALL_Z = -2.1;
 const TINT = "#c9b8ff"; // RenderScene 에 색이 없어 흰색~보라 중립 톤으로 고정
 
@@ -21,7 +21,7 @@ function useSmoothActivity(target: number) {
   return v;
 }
 
-// react-hooks/immutability 가 훅이 돌려준 three 객체를 프레임 콜백에서 직접 고치는 걸 막아서, 값 갱신은 이 헬퍼로 한다
+// react-hooks/immutability 가 훅이 돌려준 three 객체를 프레임 콜백에서 직접 고치는 걸 막아서, 값 갱신은 이 헬퍼로 할 것
 export const setOpacity = (m: { opacity: number }, v: number) => {
   m.opacity = v;
 };
@@ -168,9 +168,9 @@ function Cube({ activity }: { activity: number }) {
   );
 }
 
-// 이미지 벽 — imageUrl 은 서명 URL(비밀)이라 로그를 남기지 않는다. 로드 실패·지연이면 아무것도 안 그린다.
-// url 이 바뀌면 새 이미지가 올 때까지 이전 이미지를 유지하고, 교체된 뒤에 이전 텍스처를 dispose 한다.
-// 이미지는 뒤 벽(9×5.5) 전체를 cover 로 채운다: 비율이 다르면 넘치는 쪽을 가운데 기준으로 잘라 낸다(늘어나지 않음).
+// 이미지 벽 — imageUrl 은 서명 URL이라 로그를 남기지 않음. 로드 실패·지연이면 아무것도 안 그림
+// url 이 바뀌면 새 이미지가 올 때까지 이전 이미지를 유지하고, 교체된 뒤에 이전 텍스처를 dispose
+// 이미지는 뒤 벽(9×5.5) 전체를 cover 로 채움: 비율이 다르면 넘치는 쪽을 가운데 기준으로 자름(늘어나지 않음).
 const WALL_W = 9;
 const WALL_H = 5.5;
 type Loaded = { tex: Texture; w: number; h: number };
