@@ -10,7 +10,8 @@ import type { Artist } from "@/lib/types";
 
 // 안쪽 반경은 중앙 문구(STAGE.ONE)가 들어갈 자리를 비워 두는 값이다
 export const RING_RADII = [1.9, 2.55, 3.2];
-export const FOV_DEG = 50;
+// 화각을 좁히면(= 카메라를 멀리) 원근이 약해져, 기울인 궤도의 앞쪽이 과하게 커지거나 아래로 쏠리지 않는다
+export const FOV_DEG = 25;
 // 노드 반지름·라벨이 궤도 반경보다 살짝 더 뻗어나가는 여유분
 const CAMERA_MARGIN = 1.2;
 

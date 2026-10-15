@@ -28,8 +28,11 @@ export default async function Home({
         {focus && <FocusFromQuery slug={focus} />}
         {/* 중앙 레이블명: DOM 오버레이가 캔버스보다 선명해서 이 방식으로 채택 */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <h1 className="font-serif-hero text-2xl tracking-widest sm:text-3xl lg:text-4xl">STAGE.ONE</h1>
-          <p className="mt-2 text-xs text-brand-soft sm:text-sm">{artists.length} artists · est. 2020</p>
+          {/* 안쪽 궤도 안에 들어가도록 창의 높이·폭 중 좁은 쪽에 맞춰 줄어든다 */}
+          <h1 className="font-serif-hero tracking-widest" style={{ fontSize: "clamp(1.1rem, min(5.2vh, 6vw), 2.25rem)" }}>
+            STAGE.ONE
+          </h1>
+          <p className="mt-2 text-brand-soft" style={{ fontSize: "clamp(0.65rem, min(1.9vh, 2.4vw), 0.875rem)" }}>{artists.length} artists · est. 2020</p>
         </div>
         <p className="absolute bottom-4 left-8 text-xs tracking-[0.2em] text-white/40">
           HOVER · CLICK TO ENTER

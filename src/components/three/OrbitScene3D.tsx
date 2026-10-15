@@ -5,7 +5,7 @@ import { Html, Line } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, type RefObject } from "react";
-import { AdditiveBlending, CanvasTexture, Vector3, type Group, type MeshStandardMaterial, type PerspectiveCamera } from "three";
+import { AdditiveBlending, CanvasTexture, Color, Vector3, type Group, type MeshStandardMaterial, type PerspectiveCamera } from "three";
 import Scene3D from "@/components/three/Scene3D";
 import { FOV_DEG, OrbitCameraRig, RING_RADII, useOrbitSpin } from "@/components/three/orbitShared";
 import { FACE_ANGLE_3D, ORBIT_TILT, ringPoints } from "@/lib/geometry";
@@ -34,7 +34,9 @@ function getGlowTexture(): CanvasTexture {
 }
 
 // 앞쪽(카메라에 가까운) 노드는 또렷하게, 뒤쪽은 흐리게 — 목업의 앞/뒤 불투명도(1 / 0.62)
+// 투명도로 흐리게 하면 구체 뒤의 궤도선이 비쳐 보여서, 불투명 재질의 색을 배경색 쪽으로 섞어 흐리게 한다.
 const BACK_OPACITY = 0.62;
+const BG_COLOR = new Color("#0e0a1f"); // globals.css의 --color-bg-dark
 const DEPTH_RANGE = 3; // 이 범위(월드 z)에서 뒤→앞으로 보간
 
 function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<string | null> }) {
@@ -49,6 +51,7 @@ function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<
   const size = 0.32 * artist.size;
   const enter = () => router.push(`/artists/${artist.slug}`);
   const tmp = useMemo(() => new Vector3(), []);
+  const baseColor = useMemo(() => new Color(artist.color), [artist.color]);
   const { camera, size: view } = useThree();
 
   useFrame(() => {
@@ -67,23 +70,28 @@ function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<
     }
     const t = Math.min(1, Math.max(0, (tmp.z + DEPTH_RANGE / 2) / DEPTH_RANGE));
     const opacity = BACK_OPACITY + (1 - BACK_OPACITY) * t;
-    if (material.current) material.current.opacity = opacity;
+    if (material.current) {
+      material.current.color.copy(BG_COLOR).lerp(baseColor, opacity);
+      material.current.emissive.copy(BG_COLOR).lerp(baseColor, opacity);
+    }
     if (nameEl.current) nameEl.current.style.opacity = String(opacity);
     if (initialsEl.current) initialsEl.current.style.opacity = String(opacity);
   });
 
   return (
     <group ref={group} position={[Math.cos(a) * r, Math.sin(a) * r, 0]}>
-      <sprite scale={[size * 3.4, size * 3.4, 1]}>
+      <sprite renderOrder={1} scale={[size * 3.4, size * 3.4, 1]}>
         <spriteMaterial map={getGlowTexture()} color={artist.color} transparent depthWrite={false} blending={AdditiveBlending} opacity={0.55} />
       </sprite>
+      {/* 기울어진 궤도선이 노드 앞쪽을 가로지르면 선 조각이 구체 위로 삐져나와 보인다. 노드를 선보다 나중에 그려 항상 덮는다 */}
       <mesh
+        renderOrder={2}
         onClick={enter}
         onPointerOver={() => { setHovered(true); document.body.style.cursor = "pointer"; }}
         onPointerOut={() => { setHovered(false); document.body.style.cursor = "auto"; }}
       >
         <sphereGeometry args={[size, 32, 32]} />
-        <meshStandardMaterial ref={material} color={artist.color} emissive={artist.color} emissiveIntensity={0.5} roughness={1} metalness={0} transparent />
+        <meshStandardMaterial ref={material} color={artist.color} emissive={artist.color} emissiveIntensity={0.16} roughness={0.85} metalness={0} transparent depthTest={false} />
       </mesh>
       {/* 패널(z-40)보다 아래에 깔리도록 z-index 범위를 낮춘다 */}
       <Html center zIndexRange={[20, 0]} pointerEvents="none">
@@ -100,7 +108,7 @@ function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<
           ref={nameEl}
           type="button"
           onClick={enter}
-          className="whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold tracking-[0.2em] text-[#CFC6E6] hover:text-white focus-visible:outline-2 focus-visible:outline-brand-soft"
+          className="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-[0.15em] text-[#CFC6E6] sm:text-xs sm:tracking-[0.2em] hover:text-white focus-visible:outline-2 focus-visible:outline-brand-soft"
         >
           {artist.name}
         </button>
@@ -131,8 +139,8 @@ export default function OrbitScene3D({ artists }: { artists: Artist[] }) {
     // 모바일 GPU 부담을 줄이려고 dpr 상한을 1.5로 (Scene3D가 canvasProps로 덮어쓰기를 허용)
     <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }} dpr={[1, 1.5]}>
       <OrbitCameraRig verticalScale={ORBIT_VERTICAL_SCALE} />
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[-2, 3, 5]} intensity={0.8} />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[-3, 4, 5]} intensity={2.2} />
       <Orbits3D artists={artists} />
     </Scene3D>
   );
