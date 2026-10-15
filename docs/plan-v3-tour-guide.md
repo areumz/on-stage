@@ -507,7 +507,7 @@ A1·A2는 서로 독립이다. A3은 A1·A2에 의존하고, A4·A5는 A3 이후
 
 **주의**:
 1. **파일 이동뿐이다.** import는 `@/` 별칭이라 수정이 필요 없고 주소(URL)는 변하지 않는다. 이동 후 `npx tsc --noEmit`으로 확인한다.
-2. **레이아웃(서버 컴포넌트):** `NEXT_PUBLIC_GUIDE_API_URL`이 비어 있으면 패널 없이 `children`만 렌더한다. 있으면 `getArtistSlugs()`로 slug 목록을 읽어 Provider에 넘긴다. `getArtistSlugs`는 `getArtists`와 달리 조인 없이 `slug`만 읽고 `byArtistDisplayOrder`로 정렬한다.
+2. **레이아웃(서버 컴포넌트):** Task 0 실측: 서버 레이아웃의 `process.env`는 동적 렌더링일 때만 런타임에 평가되고, 그렇지 않으면 빌드 시점 값으로 굳을 수 있다. 환경변수를 읽기 전에 `await connection()`(`next/server`)을 호출해 런타임 평가를 보장한다. `NEXT_PUBLIC_GUIDE_API_URL`이 비어 있으면 패널 없이 `children`만 렌더한다. 있으면 `getArtistSlugs()`로 slug 목록을 읽어 Provider에 넘긴다. `getArtistSlugs`는 `getArtists`와 달리 조인 없이 `slug`만 읽고 `byArtistDisplayOrder`로 정렬한다.
 3. **로케일:** 초기값은 `navigator.language`(`ko`로 시작하면 `ko`, 아니면 `en`), 서버 스냅샷은 `ko`(`useSyncExternalStore`). 토글로 덮어쓴다.
 4. **`send`:** 진행 중이면 무시(`busyRef`), `requestId`는 `crypto.randomUUID()`, `context`는 **요청을 보내는 순간** `window.location.pathname`과 `getCurrentSection()`으로 만든다. 스트림이 `done`이나 `error` 없이 끝나면 `fail`을 보낸다.
 5. **액션 실행:** `pendingAction`을 모아 두고 **`done`을 받은 뒤에만** 실행한다(오류·취소에서는 실행하지 않는다). 같은 `{type,slug,…}`가 3초 안에 다시 오면 무시한다. 실행은 `try/catch`로 감싸 실패해도 답변은 이미 화면에 있다.
