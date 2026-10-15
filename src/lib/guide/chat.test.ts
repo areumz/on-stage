@@ -86,3 +86,13 @@ describe("chatReducer", () => {
     expect(s.status).toBe("idle");
   });
 });
+
+describe("reset (새 대화 시작)", () => {
+  it("session_limit 뒤 reset하면 대화창이 비고 idle로 돌아온다", () => {
+    let s = send();
+    s = chatReducer(s, { type: "event", event: { event: "error", code: "session_limit" } });
+    expect(s).toMatchObject({ status: "error", errorCode: "session_limit" });
+    s = chatReducer(s, { type: "reset" });
+    expect(s).toEqual(initialChat);
+  });
+});

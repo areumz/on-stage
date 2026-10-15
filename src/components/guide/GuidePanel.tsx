@@ -87,7 +87,9 @@ export default function GuidePanel() {
       : g.state.status === "idle" && last?.role === "assistant"
         ? last.text
         : "";
-  const showRetry = g.state.errorCode !== "off_topic" && g.state.errorCode !== "too_long";
+  const code = g.state.errorCode;
+  // 같은 입력을 다시 보내도 결과가 같은 오류(또는 아직 답변 중)에는 재시도를 두지 않는다
+  const showRetry = !!code && !["off_topic", "too_long", "busy", "session_limit"].includes(code);
 
   return (
     <section
@@ -215,6 +217,11 @@ export default function GuidePanel() {
               {errorTitle(g.locale, g.state.errorCode)}
             </p>
             <p className="text-[13px] leading-normal text-[#A1A1A8]">{errorText(g.locale, g.state.errorCode)}</p>
+            {g.state.errorCode === "session_limit" && (
+              <button type="button" onClick={g.newChat} className="h-10 self-start rounded-full border border-white/18 bg-white/8 px-[18px] text-[13px] font-semibold">
+                {L.newChat}
+              </button>
+            )}
             {showRetry && (
               <button type="button" onClick={g.retry} className="h-10 self-start rounded-full border border-white/18 bg-white/8 px-[18px] text-[13px] font-semibold">
                 {L.retry}

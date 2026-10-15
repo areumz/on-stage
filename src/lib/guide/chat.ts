@@ -22,7 +22,8 @@ export type ChatAction =
   | { type: "chip"; chip: ActionChip }
   | { type: "fail" }
   | { type: "aborted" }
-  | { type: "dropFailed" };
+  | { type: "dropFailed" }
+  | { type: "reset" };
 
 export const initialChat: ChatState = { messages: [], status: "idle", errorCode: null, toolKey: null };
 
@@ -73,6 +74,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, status: "error", errorCode: "network", toolKey: null, messages: dropEmptyAssistant(state.messages) };
     case "aborted":
       return { ...state, status: "idle", toolKey: null, messages: dropEmptyAssistant(state.messages) };
+    case "reset":
+      return initialChat;
     case "dropFailed": {
       // 마지막 사용자 말풍선(과 그 뒤의 답변)을 지운다 — 같은 질문을 새 요청으로 다시 보내기 위해
       const idx = state.messages.findLastIndex((m) => m.role === "user");

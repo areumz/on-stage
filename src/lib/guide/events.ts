@@ -1,7 +1,7 @@
 // src/lib/guide/events.ts
 // 에이전트 계약(contracts/guide_events.py)의 SSE 이벤트·액션 모양. 프레임: `event:` 이름 + `data:` JSON.
 // 일반 이벤트의 data에는 event 필드가 없고, action의 data는 액션 객체 그대로다.
-export const ERROR_CODES = ["rate_limited", "off_topic", "too_long", "busy", "upstream", "internal"] as const;
+export const ERROR_CODES = ["rate_limited", "off_topic", "too_long", "busy", "session_limit", "upstream", "internal"] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
 export type UiAction =

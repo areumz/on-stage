@@ -12,7 +12,7 @@ import type { Locale } from "@/lib/guide/dictionary";
 import type { UiAction } from "@/lib/guide/events";
 import { requestFocus } from "@/lib/guide/orbitFocus";
 import { getCurrentSection } from "@/lib/guide/sections";
-import { getSessionId } from "@/lib/guide/session";
+import { getSessionId, resetSessionId } from "@/lib/guide/session";
 import { streamGuide } from "@/lib/guide/stream";
 
 const FOCUS_MS = 700; // 궤도에서 openTour: 카메라가 도착할 시간을 주고 이동
@@ -28,6 +28,7 @@ export type GuideApi = {
   stop: () => void;
   retry: () => void;
   retryAction: () => void;
+  newChat: () => void;
 };
 
 const Ctx = createContext<GuideApi | null>(null);
@@ -201,6 +202,8 @@ export default function GuideProvider({
           return;
         }
         if (e.event === "done" || e.event === "error") ended = true;
+        // 상한에 닿은 세션은 더 못 쓴다 — 다음 전송은 새 sessionId로 간다(대화창은 "새 대화 시작" 때 비운다)
+        if (e.event === "error" && e.code === "session_limit") resetSessionId();
         dispatch({ type: "event", event: e });
         // 액션은 답변이 정상 종료(done)된 뒤에만 실행한다
         if (e.event === "done" && pendingAction) runAction(pendingAction);
@@ -216,6 +219,13 @@ export default function GuideProvider({
   const stop = useCallback(() => {
     clearNav();
     abortRef.current?.abort();
+  }, [clearNav]);
+
+  const newChat = useCallback(() => {
+    clearNav();
+    abortRef.current?.abort();
+    resetSessionId();
+    dispatch({ type: "reset" });
   }, [clearNav]);
 
   const retry = useCallback(() => {
@@ -235,8 +245,8 @@ export default function GuideProvider({
   }, [apiUrl]);
 
   const value = useMemo<GuideApi>(
-    () => ({ state, open, setOpen, locale, setLocale, send: (t) => void send(t), stop, retry, retryAction }),
-    [state, open, setOpen, locale, send, stop, retry, retryAction],
+    () => ({ state, open, setOpen, locale, setLocale, send: (t) => void send(t), stop, retry, retryAction, newChat }),
+    [state, open, setOpen, locale, send, stop, retry, retryAction, newChat],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -44,3 +44,15 @@ describe("parseGuideEvent — 방어", () => {
     expect(parseGuideEvent("error", '{"code":"new_code"}')).toEqual({ event: "error", code: "internal" });
   });
 });
+
+describe("session_limit·highlightCity", () => {
+  it("session_limit은 그대로 오류 코드로 해석한다", () => {
+    expect(parseGuideEvent("error", '{"code":"session_limit"}')).toEqual({ event: "error", code: "session_limit" });
+  });
+  it("highlightCity 액션을 해석한다", () => {
+    expect(parseGuideEvent("action", '{"type":"highlightCity","slug":"aurora","city":"SEO"}')).toEqual({
+      event: "action",
+      action: { type: "highlightCity", slug: "aurora", city: "SEO" },
+    });
+  });
+});

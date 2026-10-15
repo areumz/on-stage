@@ -10,7 +10,7 @@ type ErrorCard = { title: string; body: string };
 type UiStrings = {
   title: string; ask: string; sub: string; foot: string; close: string; placeholder: string;
   send: string; stop: string; retry: string; language: string;
-  empty: string; retracted: string; toolGeneric: string;
+  empty: string; retracted: string; newChat: string; toolGeneric: string;
   chips: Record<ChipKind, string>; // {NAME}은 slug 대문자
   tools: Record<string, string>;
   errors: Record<ErrorCode | "network", ErrorCard>;
@@ -30,6 +30,7 @@ export const DICT: Record<Locale, UiStrings> = {
     language: "언어 / Language",
     empty: "궁금한 아티스트나 투어 일정을 물어보세요.",
     retracted: "확인되지 않은 정보는 답하지 않아요",
+    newChat: "새 대화 시작",
     toolGeneric: "정보를 확인하는 중이에요",
     chips: {
       focus: "궤도 카메라가 {NAME}로 이동했어요",
@@ -45,7 +46,8 @@ export const DICT: Record<Locale, UiStrings> = {
       rate_limited: { title: "질문이 몰리고 있어요", body: "잠시 후에 다시 물어봐 주세요." },
       off_topic: { title: "이 질문은 제가 도와드리기 어려워요.", body: "아티스트, 공연, 투어 일정에 관해 다시 물어봐 주세요. 예: '서울에서 곧 공연하는 팀은?'" },
       too_long: { title: "질문이 너무 길어요", body: "200자 이내로 줄여 주세요." },
-      busy: { title: "답변을 만드는 중이에요", body: "이전 질문에 답하는 중이에요. 잠시만 기다려 주세요." },
+      busy: { title: "아직 답변 중이에요", body: "이전 질문에 답하는 중이에요. 잠시만 기다려 주세요." },
+      session_limit: { title: "대화가 길어졌어요", body: "새 대화를 시작하면 이어서 물어볼 수 있어요." },
       upstream: { title: "답변을 불러오지 못했어요", body: "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요." },
       internal: { title: "문제가 생겼어요", body: "잠시 후 다시 시도해 주세요." },
       network: { title: "답변을 불러오지 못했어요", body: "연결이 잠깐 끊겼어요. 다시 시도를 눌러 주세요." },
@@ -64,6 +66,7 @@ export const DICT: Record<Locale, UiStrings> = {
     language: "언어 / Language",
     empty: "Ask about an artist or the tour schedule.",
     retracted: "I don't answer with information I couldn't verify",
+    newChat: "Start a new chat",
     toolGeneric: "Checking the info…",
     chips: {
       focus: "The orbit camera moved to {NAME}",
@@ -80,6 +83,7 @@ export const DICT: Record<Locale, UiStrings> = {
       off_topic: { title: "I can't help with that one.", body: "Try asking about artists, shows, or tour dates, e.g. 'Who's playing in Seoul soon?'" },
       too_long: { title: "That question is too long", body: "Please keep it under 200 characters." },
       busy: { title: "Still answering", body: "Still answering your previous question. One moment." },
+      session_limit: { title: "This chat has gotten long", body: "Start a new chat to keep asking." },
       upstream: { title: "Couldn't load the answer", body: "I couldn't get an answer right now. Please try again shortly." },
       internal: { title: "Something went wrong", body: "Please try again shortly." },
       network: { title: "Couldn't load the answer", body: "The connection dropped for a moment. Tap Try again to resend." },
