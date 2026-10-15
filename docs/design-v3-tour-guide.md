@@ -27,7 +27,7 @@
 
 ### 2.2 폴백 플래그 (D3)
 
-- **추천:** 우선순위 `?orbit=2d` > 서버 환경변수 `ORBIT_VIEW=2d` > 기본 3D. `app/page.tsx`가 서버 컴포넌트라 `searchParams`와 서버 env를 그대로 읽고 어느 쪽을 그릴지 정해 내려준다. `NEXT_PUBLIC_`을 쓰지 않아 브라우저에 노출되지 않고, 빌드 시점에 굳지도 않는다.
+- **추천:** 우선순위 `?orbit=2d` > 서버 환경변수 `ORBIT_VIEW=2d` > 기본 3D. `app/page.tsx`가 서버 컴포넌트라 `searchParams`와 서버 env를 그대로 읽고 어느 쪽을 그릴지 정해 내려준다.
 - 이름을 `view`로 하지 않는 이유: 에이전트 계약의 `context.view`(`orbit | tour`)와 헷갈린다. 그래서 **`orbit`**.
 - 선택지: 클라이언트 `useSearchParams`(Suspense 필요, 깜빡임), 환경변수만(데모 중 즉시 전환 불가).
 - WebGL 자체가 안 되는 브라우저는 지금처럼 `Scene3D`의 안내 문구가 나온다. 2D 폴백도 WebGL이라 이 경우는 해결 못 한다 — **범위 밖**으로 둔다(DOM 전용 폴백은 하지 않음).
@@ -257,9 +257,11 @@ plan 파일: `docs/plan-v3-tour-guide.md` (하나의 파일, 2a → 체크포인
 
 | 항목                                   | 이유                                                                       | 대응                                                                                                    |
 | -------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Next 16 문서 미확인                    | `node_modules` 없음. AGENTS.md는 구현 전 문서 읽기를 요구                  | 구현 시작 전 `npm install` 후 `node_modules/next/dist/docs/`의 라우팅·레이아웃·`searchParams` 문서 확인 |
-| `router.push("/x#tour")`의 해시 스크롤 | 새 페이지로 이동하며 해시 위치로 스크롤되는지 문서 근거를 아직 못 봤다     | 안 되면 도착 후 `scrollIntoView`를 한 번 호출                                                           |
-| `searchParams`가 Promise인지           | 이 저장소의 `params`는 이미 `Promise`(page.tsx). 같은 규칙일 가능성이 높다 | 문서 확인 후 동일하게 `await`                                                                           |
+| Next 16 문서 미확인 | `node_modules` 없음. AGENTS.md는 구현 전 문서 읽기를 요구 | **확인 완료(Task 0)**: `npm install` 후 `node_modules/next/dist/docs/` 확인, 아래 3~4행 참조. 기준선 `npm test` 392 통과, `npm run lint` 통과 |
+| `router.push("/x#tour")`의 해시 스크롤 | 새 페이지로 이동하며 해시 위치로 스크롤되는지 문서 근거를 아직 못 봤다 | **확인(Task 0)**: `<Link>`만 명시됨(`link.md` "When there is a hash defined it will scroll to the specific id"). `use-router.md`는 `router.push` 해시 스크롤을 언급하지 않음 → 도착 후 `scrollIntoView` 한 번 호출 유지(B6) |
+| `searchParams`가 Promise인지 | 이 저장소의 `params`는 이미 `Promise`(page.tsx). 같은 규칙일 가능성이 높다 | **확인(Task 0)**: `page.md` "`searchParams: Promise<{ [key: string]: string | string[] | undefined }>`" → `await searchParams`(A4). 계획 가정과 일치 |
+| `(fans)` 레이아웃 유지 | 그룹 내 페이지 이동에서 레이아웃이 유지되는지 | **확인(Task 0)**: `03-layouts-and-pages.md` "On navigation, layouts preserve state, remain interactive, and do not rerender"; `route-groups.md` 전체 새로고침은 서로 다른 root layout 사이에서만. 단 현재 `src/app/(fans)`는 없고 root layout은 `src/app/layout.tsx` → B6에서 그룹을 만들어야 함. 레이아웃은 리렌더되지 않아 `searchParams` 접근 불가 |
+| 서버 레이아웃의 `process.env` → 클라 prop | 서버 컴포넌트가 env를 읽어 클라이언트 컴포넌트에 넘겨도 되는지 | **확인(Task 0)**: `environment-variables.md` — 런타임 평가는 동적 렌더링 때만("await connection() ... this env variable is evaluated at runtime"). 동적 API 없이 읽으면 빌드 시점 값으로 굳을 수 있음 → B6에서 `await connection()` 등으로 동적 렌더링을 보장하거나 `NEXT_PUBLIC_GUIDE_API_URL`(빌드 시 인라인)로 처리. 계획 가정과 일부 다름 |
 | WebGL 컨텍스트                         | 아티스트 페이지는 이미 캔버스 3개. 패널은 DOM이라 추가 없음                | 체크포인트 #9로 확인                                                                                    |
 | 오래 열린 `/` 탭                       | 자동 회전이 계속 돈다                                                      | R3F가 숨겨진 탭에서 프레임을 멈춘다. 체크포인트 #8에서 확인                                             |
 | 접근성                                 | 패널·입력·라벨                                                             | 라벨은 `button`, 패널 열림은 `aria-expanded`, 답변은 `aria-live`. 체크포인트 #4                         |
