@@ -1,20 +1,21 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type RefObject } from "react";
 import type { Group } from "three";
-import { cameraDistanceForRadius, ringPoints } from "@/lib/geometry";
+import { FACE_ANGLE_2D, ringPoints } from "@/lib/geometry";
 import Scene3D from "@/components/three/Scene3D";
+import { FOV_DEG, OrbitCameraRig, RING_RADII, useOrbitSpin } from "@/components/three/orbitShared";
 import type { Artist } from "@/lib/types";
 
-const RING_RADII = [1.4, 2.3, 3.2];
-const FOV_DEG = 50;
-// 노드 반지름·라벨이 궤도 반경보다 살짝 더 뻗어나가는 여유분
-const CAMERA_MARGIN = 1.2;
+const FOCUS_SCALE = 1.35;
+const HOVER_SCALE = 1.2;
 
-function ArtistNode({ artist, rotation }: { artist: Artist; rotation: React.RefObject<number> }) {
+function ArtistNode({ artist, rotation, focused }: {
+  artist: Artist; rotation: RefObject<number>; focused: RefObject<string | null>;
+}) {
   const router = useRouter();
   const group = useRef<Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -24,14 +25,15 @@ function ArtistNode({ artist, rotation }: { artist: Artist; rotation: React.RefO
 
   useFrame(() => {
     // 부모 회전을 상쇄해 노드(텍스트)는 항상 정립
-    if (group.current) group.current.rotation.z = -(rotation.current ?? 0);
+    if (!group.current) return;
+    group.current.rotation.z = -(rotation.current ?? 0);
+    group.current.scale.setScalar(hovered ? HOVER_SCALE : focused.current === artist.slug ? FOCUS_SCALE : 1);
   });
 
   return (
     <group position={[Math.cos(a) * r, Math.sin(a) * r, 0]}>
       <group
         ref={group}
-        scale={hovered ? 1.2 : 1}
         onClick={() => router.push(`/artists/${artist.slug}`)}
         onPointerOver={() => { setHovered(true); document.body.style.cursor = "pointer"; }}
         onPointerOut={() => { setHovered(false); document.body.style.cursor = "auto"; }}
@@ -53,42 +55,24 @@ function ArtistNode({ artist, rotation }: { artist: Artist; rotation: React.RefO
 }
 
 function Orbits({ artists }: { artists: Artist[] }) {
-  const group = useRef<Group>(null);
-  const rotation = useRef(0);
+  const { groupRef, rotation, focused } = useOrbitSpin(artists, FACE_ANGLE_2D);
   const rings = useMemo(() => RING_RADII.map(ringPoints), []);
 
-  useFrame((_, delta) => {
-    rotation.current += delta * 0.08;
-    if (group.current) group.current.rotation.z = rotation.current;
-  });
-
   return (
-    <group ref={group}>
+    <group ref={groupRef}>
       {rings.map((pts, i) => (
         <Line key={i} points={pts} color="#3a2f5e" lineWidth={1} />
       ))}
       {artists.map((a) => (
-        <ArtistNode key={a.slug} artist={a} rotation={rotation} />
+        <ArtistNode key={a.slug} artist={a} rotation={rotation} focused={focused} />
       ))}
     </group>
   );
 }
 
-// 컨테이너 가로세로비가 좁아지면(수직 FOV 고정, 가로 FOV만 aspect에 비례해 줄어듦) 궤도 바깥쪽
-// 노드가 화면 밖으로 잘리는 문제 — 리사이즈마다 카메라 거리를 다시 계산해
-// 궤도 전체(가장 바깥 반경 기준)가 항상 프레임 안에 들어오게 한다.
-function OrbitCameraRig() {
-  const { camera, size } = useThree();
-  useEffect(() => {
-    const z = cameraDistanceForRadius(RING_RADII.at(-1)! * CAMERA_MARGIN, FOV_DEG, size.width / size.height);
-    camera.position.set(0, 0, z);
-  }, [camera, size.width, size.height]);
-  return null;
-}
-
 export default function OrbitScene({ artists }: { artists: Artist[] }) {
   return (
-    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }}>
+    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }} resize={{ scroll: false, offsetSize: true }}>
       <OrbitCameraRig />
       <Orbits artists={artists} />
     </Scene3D>

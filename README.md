@@ -84,6 +84,8 @@ npm install
 4. `npm run seed`로 아티스트·공연·갤러리·데모 계정을 시딩합니다
 5. `npm run dev`로 실행 후 [http://localhost:3000](http://localhost:3000) 확인
 
+   A탭 궤도는 기본 3D이고, `?orbit=2d` 또는 서버 env `ORBIT_VIEW=2d`로 평면 폴백을 쓸 수 있습니다 (`?focus=<slug>`로 포커스 동작 확인).
+
 Most functionality is visible in the deployed demo (link above). To run it locally, you'll need
 Node 22 and your own Supabase project.
 
@@ -100,6 +102,8 @@ npm install
 3. Link the project with `npx supabase link` and apply the schema with `npx supabase db push`
 4. Seed artists, shows, gallery images, and the demo account with `npm run seed`
 5. Run `npm run dev` and open [http://localhost:3000](http://localhost:3000)
+
+   The A-tab orbit is 3D by default; use `?orbit=2d` or the server env `ORBIT_VIEW=2d` for the flat fallback (`?focus=<slug>` previews focus).
 
 ---
 
