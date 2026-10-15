@@ -8,7 +8,8 @@ import { cameraDistanceForEllipse, focusRotationTarget } from "@/lib/geometry";
 import { requestFocus, takeFocus, useFocusRequest } from "@/lib/guide/orbitFocus";
 import type { Artist } from "@/lib/types";
 
-export const RING_RADII = [1.4, 2.3, 3.2];
+// 안쪽 반경은 중앙 문구(STAGE.ONE)가 들어갈 자리를 비워 두는 값이다
+export const RING_RADII = [1.9, 2.55, 3.2];
 export const FOV_DEG = 50;
 // 노드 반지름·라벨이 궤도 반경보다 살짝 더 뻗어나가는 여유분
 const CAMERA_MARGIN = 1.2;
