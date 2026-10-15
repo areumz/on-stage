@@ -53,8 +53,11 @@ describe("planAction", () => {
     });
   });
 
-  it("highlightCity는 아직 처리하지 않는다", () => {
-    expect(planAction({ type: "highlightCity", slug: "nova", city: "SEO" }, orbit, known)).toEqual({ kind: "none" });
+  it("highlightCity는 해당 아티스트의 투어 페이지에서만 강조한다", () => {
+    const act = { type: "highlightCity", slug: "nova", city: "SEO" } as const;
+    expect(planAction(act, { view: "tour", slug: "nova", section: "tour" }, known)).toEqual({ kind: "highlight", slug: "nova", city: "SEO" });
+    expect(planAction(act, { view: "tour", slug: "aurora" }, known)).toEqual({ kind: "none" });
+    expect(planAction(act, orbit, known)).toEqual({ kind: "none" });
   });
 
   it("context가 없으면(알 수 없는 화면) 이동 계열은 none", () => {

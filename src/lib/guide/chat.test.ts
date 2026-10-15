@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import sample from "./guide_events_sample.json";
+import { parseGuideEvent } from "./events";
 import { chatReducer, initialChat, lastUserText } from "./chat";
 
 const send = (s = initialChat, text = "안녕", id = "m1") => chatReducer(s, { type: "send", id, text });
@@ -47,6 +49,15 @@ describe("chatReducer", () => {
     expect(s.messages.at(-1)).toMatchObject({ text: "", retracted: true });
   });
 
+  it("fixture retract_unverified: text_delta → retract → done 뒤 입력창이 돌아온다", () => {
+    let s = send();
+    for (const item of sample.retract_unverified) {
+      s = chatReducer(s, { type: "event", event: parseGuideEvent(item.event, JSON.stringify(item.data))! as never });
+    }
+    expect(s.status).toBe("idle");
+    expect(s.messages.at(-1)).toMatchObject({ text: "", retracted: true });
+  });
+
   it("error는 status와 코드를 남기고, 비어 있는 답변 말풍선은 지운다", () => {
     let s = send();
     s = chatReducer(s, { type: "event", event: { event: "error", code: "rate_limited" } });
@@ -73,5 +84,15 @@ describe("chatReducer", () => {
     s = chatReducer(s, { type: "dropFailed" });
     expect(s.messages).toEqual([]);
     expect(s.status).toBe("idle");
+  });
+});
+
+describe("reset (새 대화 시작)", () => {
+  it("session_limit 뒤 reset하면 대화창이 비고 idle로 돌아온다", () => {
+    let s = send();
+    s = chatReducer(s, { type: "event", event: { event: "error", code: "session_limit" } });
+    expect(s).toMatchObject({ status: "error", errorCode: "session_limit" });
+    s = chatReducer(s, { type: "reset" });
+    expect(s).toEqual(initialChat);
   });
 });

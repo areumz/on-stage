@@ -14,3 +14,12 @@ export function getSessionId(): string {
     return (memo ??= crypto.randomUUID());
   }
 }
+
+// 새 대화: 새 UUID로 바꾼다(서버의 세션 턴 상한은 sessionId 단위)
+export function resetSessionId(): string {
+  const id = (memo = crypto.randomUUID());
+  try {
+    sessionStorage.setItem(KEY, id);
+  } catch {}
+  return id;
+}

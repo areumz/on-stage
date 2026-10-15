@@ -8,5 +8,17 @@
   "error": [
     {"event": "text_delta", "data": {"text": "가장 가까운 공연은 "}},
     {"event": "error", "data": {"code": "rate_limited"}}
+  ],
+  "success_highlight_city": [
+    {"event": "tool_status", "data": {"tool": "getArtist", "key": "tool.getArtist"}},
+    {"event": "text_delta", "data": {"text": "AURORA의 도쿄 공연은 1월이에요."}},
+    {"event": "action", "data": {"type": "highlightCity", "slug": "aurora", "city": "TYO"}},
+    {"event": "done", "data": {}}
+  ],
+  "retract_unverified": [
+    {"event": "text_delta", "data": {"text": "도쿄 공연은 "}},
+    {"event": "text_delta", "data": {"text": "3월이에요."}},
+    {"event": "retract", "data": {"reason": "unverified"}},
+    {"event": "done", "data": {}}
   ]
 }

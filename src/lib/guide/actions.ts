@@ -9,6 +9,7 @@ export type ActionPlan =
   | { kind: "focus"; slug: string }
   | { kind: "gotoOrbit"; slug: string }
   | { kind: "scroll"; section: ArtistSection }
+  | { kind: "highlight"; slug: string; city: string }
   | { kind: "navigate"; path: string; focusSlug?: string };
 
 const NONE: ActionPlan = { kind: "none" };
@@ -33,5 +34,7 @@ export function planAction(action: UiAction, ctx: GuideContext | null, knownSlug
     return ctx.view === "orbit" ? { kind: "navigate", path, focusSlug: action.slug } : { kind: "navigate", path };
   }
 
-  return NONE; // highlightCity는 에이전트 4단계
+  // highlightCity: 해당 아티스트의 투어 페이지에서만. 없는 도시 코드는 화면에서 조용히 무시된다
+  if (ctx.view === "tour" && ctx.slug === action.slug) return { kind: "highlight", slug: action.slug, city: action.city };
+  return NONE;
 }

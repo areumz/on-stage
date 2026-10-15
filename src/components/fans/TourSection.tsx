@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import TourOrbit from "@/components/three/TourOrbit";
+import { subscribeHighlight } from "@/lib/guide/cityHighlight";
 import { useSectionScroll } from "@/lib/hooks";
 import type { Artist, City } from "@/lib/types";
 
@@ -15,6 +16,22 @@ export default function TourSection({ artist }: { artist: Artist }) {
   const [selected, setSelected] = useState<City | null>(null);
   const [toast, setToast] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 가이드의 highlightCity: 이 아티스트의 도시일 때만 잠깐 강조(없는 코드는 무시)
+  useEffect(() => {
+    const off = subscribeHighlight((slug, code) => {
+      if (slug !== artist.slug || !artist.cities.some((c) => c.code === code)) return;
+      setHighlight(code);
+      if (highlightTimer.current) clearTimeout(highlightTimer.current);
+      highlightTimer.current = setTimeout(() => setHighlight(null), 2200);
+    });
+    return () => {
+      off();
+      if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    };
+  }, [artist.slug, artist.cities]);
 
   // 선택된 도시가 있을 때, 궤도(캔버스)·정보 카드가 아닌 바깥을 클릭하면 선택 해제
   useEffect(() => {
@@ -68,7 +85,7 @@ export default function TourSection({ artist }: { artist: Artist }) {
         )}
       </div>
       <div className="h-[70vh]">
-        <TourOrbit artist={artist} progress={progress} onSelect={setSelected} />
+        <TourOrbit artist={artist} progress={progress} highlight={highlight} onSelect={setSelected} />
       </div>
     </section>
   );
