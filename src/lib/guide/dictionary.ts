@@ -5,7 +5,7 @@ import type { ErrorCode } from "@/lib/guide/events";
 export type Locale = "ko" | "en";
 
 type UiStrings = {
-  title: string; open: string; close: string; placeholder: string; send: string; stop: string; retry: string;
+  title: string; ask: string; sub: string; foot: string; open: string; close: string; placeholder: string; send: string; stop: string; retry: string;
   empty: string; retracted: string; toolGeneric: string;
   tools: Record<string, string>;
   errors: Record<ErrorCode | "network", string>;
@@ -14,6 +14,9 @@ type UiStrings = {
 export const DICT: Record<Locale, UiStrings> = {
   ko: {
     title: "투어 가이드",
+    ask: "투어 가이드에게 묻기",
+    sub: "아티스트와 공연을 안내해요",
+    foot: "투어·아티스트 질문에 답해요 · 이 서비스는 대화를 저장하지 않아요",
     open: "투어 가이드 열기",
     close: "닫기",
     placeholder: "아티스트나 공연 일정을 물어보세요",
@@ -40,6 +43,9 @@ export const DICT: Record<Locale, UiStrings> = {
   },
   en: {
     title: "Tour Guide",
+    ask: "Ask the Tour Guide",
+    sub: "Ask about artists and shows",
+    foot: "Answers about tours and artists · This service doesn't save chats",
     open: "Open tour guide",
     close: "Close",
     placeholder: "Ask about an artist or a tour date",

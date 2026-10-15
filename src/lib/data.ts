@@ -98,6 +98,14 @@ export async function getArtists(): Promise<Artist[]> {
   return byArtistDisplayOrder(data as ArtistJoinRow[]).map((row) => toArtist(row, supabase));
 }
 
+// 가이드 패널의 액션 slug 재검증용. getArtists와 달리 조인 없이 slug만 읽는다.
+export async function getArtistSlugs(): Promise<string[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("artists").select("slug");
+  if (error) throw new Error(`getArtistSlugs: ${error.message}`);
+  return byArtistDisplayOrder(data as { slug: string }[]).map((r) => r.slug);
+}
+
 export async function getArtist(slug: string): Promise<Artist | undefined> {
   const supabase = await createServerSupabase();
   const { data, error } = await orderedArtistQuery(supabase).eq("slug", slug).maybeSingle();

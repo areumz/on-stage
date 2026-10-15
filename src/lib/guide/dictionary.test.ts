@@ -16,4 +16,10 @@ describe("dictionary", () => {
     expect(toolStatusText("ko", "tool.searchShows")).not.toBe(toolStatusText("ko", "tool.unknown"));
     expect(toolStatusText("en", "tool.unknown")).toBe(DICT.en.toolGeneric);
   });
+
+  it("패널 문구(ask/sub/foot)가 ko/en 모두 있다", () => {
+    for (const locale of ["ko", "en"] as const) {
+      for (const k of ["ask", "sub", "foot"] as const) expect(DICT[locale][k].length, `${locale}:${k}`).toBeGreaterThan(0);
+    }
+  });
 });

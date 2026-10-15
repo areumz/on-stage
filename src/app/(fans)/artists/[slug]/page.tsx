@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import TabToggle from "@/components/common/TabToggle";
+import ArtistSectionTracker from "@/components/fans/ArtistSectionTracker";
 import AlbumSection from "@/components/fans/AlbumSection";
 import GallerySection from "@/components/fans/GallerySection";
 import TourSection from "@/components/fans/TourSection";
@@ -14,8 +15,9 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
 
   return (
     <main className="bg-bg-dark text-white">
+      <ArtistSectionTracker />
       {/* Hero */}
-      <section className="relative flex h-screen flex-col">
+      <section id="hero" className="relative flex h-screen flex-col">
         <div className="absolute inset-0">
           <HeroBackground color={artist.color} shader={artist.shader} />
         </div>
