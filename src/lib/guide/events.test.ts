@@ -4,7 +4,7 @@ import sample from "./guide_events_sample.json";
 import { parseGuideEvent } from "./events";
 
 describe("parseGuideEvent — 에이전트 fixture", () => {
-  const all = [...sample.success, ...sample.error, ...sample.retract_unverified];
+  const all = [...sample.success, ...sample.error, ...sample.success_highlight_city, ...sample.retract_unverified];
 
   it("fixture의 모든 이벤트를 해석한다", () => {
     for (const item of all) {
@@ -48,6 +48,13 @@ describe("parseGuideEvent — 방어", () => {
 describe("session_limit·highlightCity", () => {
   it("session_limit은 그대로 오류 코드로 해석한다", () => {
     expect(parseGuideEvent("error", '{"code":"session_limit"}')).toEqual({ event: "error", code: "session_limit" });
+  });
+  it("fixture success_highlight_city의 action은 TYO 강조 액션이다", () => {
+    const a = sample.success_highlight_city.find((i) => i.event === "action")!;
+    expect(parseGuideEvent("action", JSON.stringify(a.data))).toEqual({
+      event: "action",
+      action: { type: "highlightCity", slug: "aurora", city: "TYO" },
+    });
   });
   it("highlightCity 액션을 해석한다", () => {
     expect(parseGuideEvent("action", '{"type":"highlightCity","slug":"aurora","city":"SEO"}')).toEqual({
