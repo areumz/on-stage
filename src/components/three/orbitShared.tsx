@@ -4,7 +4,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { MathUtils, type Group } from "three";
-import { cameraDistanceForRadius, focusRotationTarget } from "@/lib/geometry";
+import { cameraDistanceForEllipse, focusRotationTarget } from "@/lib/geometry";
 import { requestFocus, takeFocus, useFocusRequest } from "@/lib/guide/orbitFocus";
 import type { Artist } from "@/lib/types";
 
@@ -19,12 +19,14 @@ const ARRIVE_EPS = 0.002;
 const RESUME_AFTER_S = 8; // 도착 후 이 시간이 지나면 자동 회전 재개
 
 // 컨테이너 가로세로비에 맞춰 궤도 전체가 프레임 안에 들어오게 카메라 거리를 다시 계산한다.
-export function OrbitCameraRig() {
+// verticalScale: 궤도 세로 폭 비율(기울인 3D는 1보다 작게, 평면 2D는 1)
+export function OrbitCameraRig({ verticalScale = 1 }: { verticalScale?: number }) {
   const { camera, size } = useThree();
   useEffect(() => {
-    const z = cameraDistanceForRadius(RING_RADII.at(-1)! * CAMERA_MARGIN, FOV_DEG, size.width / size.height);
+    const r = RING_RADII.at(-1)! * CAMERA_MARGIN;
+    const z = cameraDistanceForEllipse(r, r * verticalScale, FOV_DEG, size.width / size.height);
     camera.position.set(0, 0, z);
-  }, [camera, size.width, size.height]);
+  }, [camera, size.width, size.height, verticalScale]);
   return null;
 }
 

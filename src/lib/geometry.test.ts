@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cameraDistanceForRadius, shortestAngleDelta, focusRotationTarget, FACE_ANGLE_3D, FACE_ANGLE_2D } from "./geometry";
+import { cameraDistanceForEllipse, cameraDistanceForRadius, shortestAngleDelta, focusRotationTarget, FACE_ANGLE_3D, FACE_ANGLE_2D } from "./geometry";
 
 // OrbitScene 실사용값: 바깥 궤도 반경(3.2) * 여유 배율(1.2) — 노드 반지름·라벨이 궤도보다
 // 살짝 더 뻗어나가는 부분까지 프레임에 담기 위한 실효 반경. 배율 자체는 호출부(OrbitScene)
@@ -60,5 +60,23 @@ describe("focusRotationTarget", () => {
     expect(norm(nodeAngle + t)).toBeCloseTo(norm(face), 9);
     expect(angDiff(t, current)).toBeLessThanOrEqual(Math.PI + 1e-9);
     expect(Math.abs(t - current)).toBeLessThanOrEqual(Math.PI + 1e-9);
+  });
+});
+
+describe("cameraDistanceForEllipse", () => {
+  it("원(rx=ry)이면 cameraDistanceForRadius와 같다", () => {
+    for (const aspect of [0.55, 1, 1.78]) {
+      expect(cameraDistanceForEllipse(3.84, 3.84, 50, aspect)).toBeCloseTo(cameraDistanceForRadius(3.84, 50, aspect));
+    }
+  });
+
+  it("세로가 짧은 타원은 같은 가로 반경의 원보다 가까이 당긴다 (가로가 넉넉한 화면)", () => {
+    expect(cameraDistanceForEllipse(3.84, 3.84 * 0.5, 50, 2)).toBeLessThan(cameraDistanceForRadius(3.84, 50, 2));
+  });
+
+  it("좁은 화면에서는 가로가 결정한다", () => {
+    const z = cameraDistanceForEllipse(3.84, 1, 50, 0.5);
+    const halfWidth = z * Math.tan((50 / 2) * (Math.PI / 180)) * 0.5;
+    expect(halfWidth).toBeGreaterThanOrEqual(3.84 - 1e-9);
   });
 });

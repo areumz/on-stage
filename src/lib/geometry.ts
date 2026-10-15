@@ -33,3 +33,11 @@ export function shortestAngleDelta(from: number, to: number): number {
 export function focusRotationTarget(current: number, nodeAngle: number, faceAngle: number): number {
   return current + shortestAngleDelta(current, faceAngle - nodeAngle);
 }
+
+// 타원(가로 반경 rx, 세로 반경 ry)이 수직·수평 양쪽 프레임에 들어오는 카메라 거리.
+// 궤도를 기울이면 세로 폭만 줄어 같은 프레임에서 더 크게(가까이) 그릴 수 있다. ry === rx 이면
+// cameraDistanceForRadius 와 같은 값이다.
+export function cameraDistanceForEllipse(rx: number, ry: number, fovDeg: number, aspect: number): number {
+  const tanHalf = Math.tan((fovDeg / 2) * (Math.PI / 180));
+  return Math.max(ry / tanHalf, rx / (tanHalf * aspect));
+}

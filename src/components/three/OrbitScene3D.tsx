@@ -11,6 +11,8 @@ import { FOV_DEG, OrbitCameraRig, RING_RADII, useOrbitSpin } from "@/components/
 import { FACE_ANGLE_3D, ORBIT_TILT, ringPoints } from "@/lib/geometry";
 import type { Artist } from "@/lib/types";
 
+// 50° 기울인 궤도의 세로 폭 ≈ sin(50°)=0.77, 앞쪽이 원근으로 커지는 몫을 더해 0.9
+const ORBIT_VERTICAL_SCALE = 0.9;
 const FOCUS_SCALE = 1.35;
 const HOVER_SCALE = 1.2;
 
@@ -73,7 +75,7 @@ export default function OrbitScene3D({ artists }: { artists: Artist[] }) {
   return (
     // 모바일 GPU 부담을 줄이려고 dpr 상한을 1.5로 (Scene3D가 canvasProps로 덮어쓰기를 허용)
     <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }} dpr={[1, 1.5]}>
-      <OrbitCameraRig />
+      <OrbitCameraRig verticalScale={ORBIT_VERTICAL_SCALE} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[2, 3, 5]} intensity={1.5} />
       <Orbits3D artists={artists} />
