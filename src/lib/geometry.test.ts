@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cameraDistanceForRadius } from "./geometry";
+import { cameraDistanceForRadius, shortestAngleDelta, focusRotationTarget, FACE_ANGLE_3D, FACE_ANGLE_2D } from "./geometry";
 
 // OrbitScene 실사용값: 바깥 궤도 반경(3.2) * 여유 배율(1.2) — 노드 반지름·라벨이 궤도보다
 // 살짝 더 뻗어나가는 부분까지 프레임에 담기 위한 실효 반경. 배율 자체는 호출부(OrbitScene)
@@ -26,5 +26,39 @@ describe("cameraDistanceForRadius", () => {
     const zSquare = cameraDistanceForRadius(EFFECTIVE_RADIUS, FOV_DEG, 1);
     const zWide = cameraDistanceForRadius(EFFECTIVE_RADIUS, FOV_DEG, 1.78);
     expect(zWide).toBe(zSquare);
+  });
+});
+
+const TAU = Math.PI * 2;
+const norm = (a: number) => ((a % TAU) + TAU) % TAU;
+// 2π 경계 근처 비교용: 각도 차이를 (-π, π]로 접어 절댓값을 본다
+const angDiff = (a: number, b: number) => Math.abs(shortestAngleDelta(a, b));
+
+describe("shortestAngleDelta", () => {
+  it("같은 각도면 0", () => {
+    expect(shortestAngleDelta(1.2, 1.2)).toBe(0);
+  });
+  it("2π 경계를 넘어 짧은 쪽으로 돈다", () => {
+    expect(shortestAngleDelta(0.1, TAU - 0.1)).toBeCloseTo(-0.2, 9);
+    expect(shortestAngleDelta(TAU - 0.1, 0.1)).toBeCloseTo(0.2, 9);
+  });
+  it("결과는 (-π, π] 범위", () => {
+    expect(shortestAngleDelta(0, Math.PI)).toBeCloseTo(Math.PI, 9);
+    expect(shortestAngleDelta(0, -Math.PI)).toBeCloseTo(Math.PI, 9);
+  });
+});
+
+describe("focusRotationTarget", () => {
+  const cases: [number, number, number][] = [
+    [0, 1, FACE_ANGLE_3D],
+    [20, 2.5, FACE_ANGLE_3D],
+    [-13, 5.9, FACE_ANGLE_2D],
+    [7, 0, FACE_ANGLE_2D],
+  ];
+  it.each(cases)("current=%d nodeAngle=%d: 노드가 faceAngle에 오고 반 바퀴 이내", (current, nodeAngle, face) => {
+    const t = focusRotationTarget(current, nodeAngle, face);
+    expect(norm(nodeAngle + t)).toBeCloseTo(norm(face), 9);
+    expect(angDiff(t, current)).toBeLessThanOrEqual(Math.PI + 1e-9);
+    expect(Math.abs(t - current)).toBeLessThanOrEqual(Math.PI + 1e-9);
   });
 });
