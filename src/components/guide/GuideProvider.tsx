@@ -117,7 +117,13 @@ export default function GuideProvider({
         clearNav();
         if (plan.focusSlug) {
           requestFocus(plan.focusSlug);
-          navTimerRef.current = setTimeout(() => go(plan.path), FOCUS_MS);
+          navTimerRef.current = setTimeout(() => {
+            try {
+              go(plan.path);
+            } catch {
+              dispatch({ type: "chip", chip: { kind: "failed", slug: plan.focusSlug! } });
+            }
+          }, FOCUS_MS);
         } else {
           go(plan.path);
         }
@@ -133,8 +139,11 @@ export default function GuideProvider({
     lastPlanRef.current = { plan, slug };
     try {
       execute(plan);
-      const kind = plan.kind === "focus" || plan.kind === "gotoOrbit" ? "focus" : "navigating";
-      dispatch({ type: "chip", chip: { kind, slug } });
+      // 같은 페이지 안 스크롤은 화면 이동이 아니므로 칩을 남기지 않는다
+      if (plan.kind !== "scroll") {
+        const kind = plan.kind === "focus" || plan.kind === "gotoOrbit" ? "focus" : "navigating";
+        dispatch({ type: "chip", chip: { kind, slug } });
+      }
     } catch {
       dispatch({ type: "chip", chip: { kind: "failed", slug } });
     }

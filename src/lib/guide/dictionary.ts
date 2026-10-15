@@ -8,7 +8,7 @@ export type ChipKind = "focus" | "navigating" | "failed";
 type ErrorCard = { title: string; body: string };
 
 type UiStrings = {
-  title: string; ask: string; sub: string; foot: string; open: string; close: string; placeholder: string;
+  title: string; ask: string; sub: string; foot: string; close: string; placeholder: string;
   send: string; stop: string; retry: string; language: string;
   empty: string; retracted: string; toolGeneric: string;
   chips: Record<ChipKind, string>; // {NAME}은 slug 대문자
@@ -22,7 +22,6 @@ export const DICT: Record<Locale, UiStrings> = {
     ask: "투어 가이드에게 묻기",
     sub: "아티스트와 공연을 안내해요",
     foot: "투어·아티스트 질문에 답해요 · 이 서비스는 대화를 저장하지 않아요",
-    open: "투어 가이드 열기",
     close: "투어 가이드 닫기",
     placeholder: "투어·아티스트에 대해 물어보세요",
     send: "보내기",
@@ -57,7 +56,6 @@ export const DICT: Record<Locale, UiStrings> = {
     ask: "Ask the Tour Guide",
     sub: "Ask about artists and shows",
     foot: "Answers about tours and artists · This service doesn't save chats",
-    open: "Open tour guide",
     close: "Close tour guide",
     placeholder: "Ask about artists or the tour",
     send: "Send",

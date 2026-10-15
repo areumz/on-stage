@@ -80,6 +80,13 @@ export default function GuidePanel() {
     setDraft("");
   }
 
+  // 완료된 답변과 오류만 스크린리더에 알린다(스트리밍 중 글자마다 읽지 않게)
+  const announce =
+    g.state.status === "error" && g.state.errorCode
+      ? `${errorTitle(g.locale, g.state.errorCode)}. ${errorText(g.locale, g.state.errorCode)}`
+      : g.state.status === "idle" && last?.role === "assistant"
+        ? last.text
+        : "";
   const showRetry = g.state.errorCode !== "off_topic" && g.state.errorCode !== "too_long";
 
   return (
@@ -119,7 +126,8 @@ export default function GuidePanel() {
         </button>
       </header>
 
-      <div ref={listRef} aria-live="polite" className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-[14px_16px] text-sm md:gap-3.5 md:p-[18px]">
+      <p role="status" aria-live="polite" className="sr-only">{announce}</p>
+      <div ref={listRef} className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-[14px_16px] text-sm md:gap-3.5 md:p-[18px]">
         {msgs.length === 0 && <p className="text-[#8E8E93]">{L.empty}</p>}
         {msgs.map((m) =>
           m.role === "user" ? (
@@ -128,7 +136,7 @@ export default function GuidePanel() {
             </p>
           ) : (
             <div key={m.id} className="flex flex-col items-start gap-2">
-              {m.toolKey && (
+              {m.toolKey && (m.text || !(streaming && m === last)) && (
                 <p className="flex items-center gap-1.5 text-xs text-[#8E8E93]">
                   <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2.4">
                     <path d="M5 12.5l4.5 4.5L19 7.5" />
