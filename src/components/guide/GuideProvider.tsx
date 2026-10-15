@@ -27,6 +27,7 @@ export type GuideApi = {
   send: (text: string) => void;
   stop: () => void;
   retry: () => void;
+  retryAction: () => void;
 };
 
 const Ctx = createContext<GuideApi | null>(null);
@@ -64,17 +65,36 @@ export default function GuideProvider({
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pendingScrollRef = useRef<string | null>(null);
+  const lastPlanRef = useRef<{ plan: ActionPlan; slug: string } | null>(null);
 
-  useEffect(() => () => { if (navTimerRef.current) clearTimeout(navTimerRef.current); }, []);
+  const clearNav = useCallback(() => {
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    navTimerRef.current = null;
+  }, []);
 
-  // router.push는 해시 스크롤이 문서화돼 있지 않아서, 도착(경로 변경) 뒤 한 번 직접 스크롤한다
+  useEffect(() => clearNav, [clearNav]);
+
+  // router.push는 해시 스크롤이 문서화돼 있지 않아서, 도착(경로 변경) 뒤 한 번 직접 스크롤한다.
+  // 경로가 바뀌면 대기 중인 이동 타이머도 끝난 것이다.
   useEffect(() => {
+    clearNav();
     const id = pendingScrollRef.current;
     if (!id) return;
     pendingScrollRef.current = null;
     const raf = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }));
     return () => cancelAnimationFrame(raf);
-  }, [pathname]);
+  }, [pathname, clearNav]);
+
+  // 같은 경로(해시만 다름)면 바로 스크롤하고, 다른 경로면 도착 뒤 스크롤하도록 표시하고 이동한다
+  const go = useCallback((path: string) => {
+    const [target, hash] = path.split("#");
+    if (target === window.location.pathname) {
+      if (hash) document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    pendingScrollRef.current = hash ?? null;
+    router.push(path);
+  }, [router]);
 
   const execute = useCallback((plan: ActionPlan) => {
     switch (plan.kind) {
@@ -83,25 +103,37 @@ export default function GuideProvider({
         break;
       case "gotoOrbit":
         requestFocus(plan.slug);
-        router.push("/");
+        go("/");
         break;
       case "scroll":
         document.getElementById(plan.section)?.scrollIntoView({ behavior: "smooth" });
         break;
       case "navigate":
-        pendingScrollRef.current = plan.path.split("#")[1] ?? null;
+        clearNav();
         if (plan.focusSlug) {
           requestFocus(plan.focusSlug);
-          if (navTimerRef.current) clearTimeout(navTimerRef.current);
-          navTimerRef.current = setTimeout(() => router.push(plan.path), FOCUS_MS);
+          navTimerRef.current = setTimeout(() => go(plan.path), FOCUS_MS);
         } else {
-          router.push(plan.path);
+          go(plan.path);
         }
         break;
       case "none":
         break;
     }
-  }, [router]);
+  }, [go, clearNav]);
+
+  // 실행하고 칩을 남긴다. 실패해도 답변은 이미 화면에 있다.
+  const perform = useCallback((plan: ActionPlan, slug: string) => {
+    if (plan.kind === "none") return;
+    lastPlanRef.current = { plan, slug };
+    try {
+      execute(plan);
+      const kind = plan.kind === "focus" || plan.kind === "gotoOrbit" ? "focus" : "navigating";
+      dispatch({ type: "chip", chip: { kind, slug } });
+    } catch {
+      dispatch({ type: "chip", chip: { kind: "failed", slug } });
+    }
+  }, [execute]);
 
   const runAction = useCallback((action: UiAction) => {
     // 같은 액션이 연달아 오면 무시 (서버 필터는 view+slug만 본다)
@@ -111,23 +143,31 @@ export default function GuideProvider({
     lastActionRef.current = { key, at: now };
     try {
       const ctx = contextFromPath(window.location.pathname, getCurrentSection());
-      execute(planAction(action, ctx, artistSlugs));
+      perform(planAction(action, ctx, artistSlugs), action.slug);
     } catch {
-      // 실행 실패는 삼킨다: 답변은 이미 화면에 있다
+      dispatch({ type: "chip", chip: { kind: "failed", slug: action.slug } });
     }
-  }, [artistSlugs, execute]);
+  }, [artistSlugs, perform]);
+
+  const retryAction = useCallback(() => {
+    const last = lastPlanRef.current;
+    if (last) perform(last.plan, last.slug);
+  }, [perform]);
 
   const send = useCallback(async (raw: string) => {
     const text = raw.trim();
     if (!text || busyRef.current) return;
     busyRef.current = true;
+    clearNav();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     dispatch({ type: "send", id: crypto.randomUUID(), text });
 
     let pendingAction: UiAction | null = null;
     let ended = false;
-    const result = await streamGuide({
+    let result: Awaited<ReturnType<typeof streamGuide>> = "failed";
+    try {
+      result = await streamGuide({
       url: `${apiUrl}/guide/stream`,
       signal: ctrl.signal,
       body: {
@@ -148,12 +188,17 @@ export default function GuideProvider({
         if (e.event === "done" && pendingAction) runAction(pendingAction);
       },
     });
-    busyRef.current = false;
+    } finally {
+      busyRef.current = false;
+    }
     if (result === "aborted") dispatch({ type: "aborted" });
     else if (!ended) dispatch({ type: "fail" });
-  }, [apiUrl, locale, runAction]);
+  }, [apiUrl, locale, runAction, clearNav]);
 
-  const stop = useCallback(() => abortRef.current?.abort(), []);
+  const stop = useCallback(() => {
+    clearNav();
+    abortRef.current?.abort();
+  }, [clearNav]);
 
   const retry = useCallback(() => {
     const text = lastUserText(state);
@@ -172,8 +217,8 @@ export default function GuideProvider({
   }, [apiUrl]);
 
   const value = useMemo<GuideApi>(
-    () => ({ state, open, setOpen, locale, setLocale, send: (t) => void send(t), stop, retry }),
-    [state, open, setOpen, locale, send, stop, retry],
+    () => ({ state, open, setOpen, locale, setLocale, send: (t) => void send(t), stop, retry, retryAction }),
+    [state, open, setOpen, locale, send, stop, retry, retryAction],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

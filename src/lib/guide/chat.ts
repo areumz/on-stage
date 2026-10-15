@@ -1,7 +1,12 @@
 // src/lib/guide/chat.ts
 import type { ErrorCode, GuideEvent } from "@/lib/guide/events";
 
-export type ChatMessage = { id: string; role: "user" | "assistant"; text: string; retracted?: boolean };
+export type ActionChip = { kind: "focus" | "navigating" | "failed"; slug: string };
+export type ChatMessage = {
+  id: string; role: "user" | "assistant"; text: string; retracted?: boolean;
+  toolKey?: string; // 이 답변이 부른 마지막 도구(답변 위 상태 줄에 남는다)
+  chip?: ActionChip; // 답변 아래 액션 칩
+};
 
 export type ChatState = {
   messages: ChatMessage[];
@@ -14,6 +19,7 @@ export type ChatState = {
 export type ChatAction =
   | { type: "send"; id: string; text: string }
   | { type: "event"; event: Exclude<GuideEvent, { event: "action" }> }
+  | { type: "chip"; chip: ActionChip }
   | { type: "fail" }
   | { type: "aborted" }
   | { type: "dropFailed" };
@@ -49,7 +55,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const e = action.event;
       switch (e.event) {
         case "tool_status":
-          return { ...state, toolKey: e.key };
+          return { ...state, toolKey: e.key, messages: withLast(state.messages, (m) => ({ ...m, toolKey: e.key })) };
         case "text_delta":
           return { ...state, messages: withLast(state.messages, (m) => ({ ...m, text: m.text + e.text })) };
         case "retract":
@@ -61,6 +67,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
       return state;
     }
+    case "chip":
+      return { ...state, messages: withLast(state.messages, (m) => ({ ...m, chip: action.chip })) };
     case "fail":
       return { ...state, status: "error", errorCode: "network", toolKey: null, messages: dropEmptyAssistant(state.messages) };
     case "aborted":

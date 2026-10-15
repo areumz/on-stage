@@ -8,7 +8,14 @@ export default async function FansLayout({ children }: { children: React.ReactNo
   await connection(); // env를 빌드 시점이 아니라 요청 시점에 읽도록 동적 렌더링 보장
   const apiUrl = process.env.NEXT_PUBLIC_GUIDE_API_URL;
   if (!apiUrl) return <>{children}</>;
-  const artistSlugs = await getArtistSlugs();
+  let artistSlugs: string[];
+  try {
+    artistSlugs = await getArtistSlugs();
+  } catch (e) {
+    // 가이드가 사이트 전체를 죽이지 않게 한다
+    console.error("guide: getArtistSlugs failed", e instanceof Error ? e.message : "unknown");
+    return <>{children}</>;
+  }
   return (
     <GuideProvider apiUrl={apiUrl} artistSlugs={artistSlugs}>
       {children}

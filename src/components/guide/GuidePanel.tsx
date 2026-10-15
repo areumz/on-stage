@@ -2,41 +2,72 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useGuide } from "@/components/guide/GuideProvider";
-import { DICT, errorText, toolStatusText } from "@/lib/guide/dictionary";
+import { chipText, DICT, errorText, errorTitle, toolStatusText } from "@/lib/guide/dictionary";
 
 const MAX_CHARS = 200; // 에이전트 L0 한도와 맞춤
+const ACCENT = "#A97FCB";
 
-function Icon({ className }: { className: string }) {
+// 목업의 아이콘 배지: 연한 배경 + 테두리 + 액센트 색 선 아이콘
+function Badge({ box, icon }: { box: string; icon: number }) {
   return (
-    <span aria-hidden className={`flex shrink-0 items-center justify-center rounded-full bg-[#A97FCB] ${className}`}>
-      <svg viewBox="0 0 24 24" className="h-1/2 w-1/2" fill="none" stroke="#0F0D1B" strokeWidth="2">
-        <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-20 12 12)" />
-        <circle cx="12" cy="12" r="2" fill="#0F0D1B" stroke="none" />
+    <span
+      aria-hidden
+      className={`flex shrink-0 items-center justify-center rounded-full border border-[#A97FCB66] bg-[#A97FCB26] text-[#A97FCB] ${box}`}
+    >
+      <svg width={icon} height={icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-20 12 12)" />
+        <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
       </svg>
     </span>
   );
 }
+
+const CHIP_BASE = "flex h-9 items-center gap-2 rounded-full border pl-3 pr-3.5 text-[12.5px]";
 
 export default function GuidePanel() {
   const g = useGuide();
   const L = DICT[g.locale];
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pillRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
+  const { open, setOpen } = g;
   const streaming = g.state.status === "streaming";
+  const msgs = g.state.messages;
+  const last = msgs.at(-1);
+  const waiting = streaming && last?.role === "assistant" && !last.text && !last.retracted;
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [g.state.messages, g.state.toolKey, g.open]);
+  }, [msgs, g.state.status, open]);
 
-  if (!g.open) {
+  // 열면 입력으로, 닫으면 알약 버튼으로 포커스를 옮긴다
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+    else if (wasOpenRef.current) pillRef.current?.focus();
+    wasOpenRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, setOpen]);
+
+  if (!open) {
     return (
       <button
+        ref={pillRef}
         type="button"
         aria-expanded={false}
-        onClick={() => g.setOpen(true)}
-        className="fixed bottom-20 right-4 z-40 flex h-[52px] items-center gap-2.5 rounded-full border border-white/15 bg-[rgba(24,24,34,0.72)] py-0 pl-2 pr-5 text-sm font-medium text-white backdrop-blur-xl hover:bg-[rgba(24,24,34,0.85)] md:right-6"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-16 right-4 z-40 flex h-[52px] items-center gap-2.5 rounded-full border border-white/16 bg-[rgba(24,24,34,0.72)] pl-3.5 pr-5 text-sm font-semibold text-[#F5F5F7] backdrop-blur-xl hover:bg-[rgba(24,24,34,0.85)] md:bottom-20 md:right-8 md:pl-4 md:pr-[22px]"
       >
-        <Icon className="h-9 w-9" />
+        <Badge box="h-[30px] w-[30px]" icon={18} />
         {L.ask}
       </button>
     );
@@ -49,99 +80,166 @@ export default function GuidePanel() {
     setDraft("");
   }
 
+  const showRetry = g.state.errorCode !== "off_topic" && g.state.errorCode !== "too_long";
+
   return (
     <section
       aria-label={L.title}
-      className="fixed inset-x-0 bottom-0 z-40 flex h-[70dvh] flex-col rounded-t-[28px] border border-white/12 bg-[rgba(18,18,26,0.78)] text-white backdrop-blur-2xl md:inset-x-auto md:bottom-20 md:right-6 md:h-[34rem] md:w-[392px] md:rounded-3xl"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-[70dvh] flex-col rounded-t-[28px] border border-b-0 border-white/12 bg-[rgba(18,18,26,0.92)] text-[#F5F5F7] backdrop-blur-2xl md:inset-x-auto md:bottom-[76px] md:right-8 md:h-auto md:max-h-[calc(100dvh-172px)] md:min-h-[320px] md:w-[392px] md:rounded-3xl md:border-b md:bg-[rgba(18,18,26,0.78)]"
     >
-      <div aria-hidden className="mx-auto mt-2 h-1 w-9 rounded-full bg-white/22 md:hidden" />
-      <header className="flex items-center gap-3 px-4 py-2 md:pt-3">
-        <Icon className="h-9 w-9" />
-        <div className="min-w-0 flex-1">
+      <div aria-hidden className="flex h-[22px] shrink-0 items-center justify-center md:hidden">
+        <div className="h-1 w-9 rounded-full bg-white/22" />
+      </div>
+      <header className="flex shrink-0 items-center gap-2.5 border-b border-white/[0.07] pb-2 pl-[18px] pr-2 md:gap-3 md:pb-3 md:pt-3.5">
+        <span className="md:hidden"><Badge box="h-8 w-8" icon={18} /></span>
+        <span className="hidden md:block"><Badge box="h-9 w-9" icon={20} /></span>
+        <div className="min-w-0 grow">
           <h2 className="text-[15px] font-bold">{L.title}</h2>
-          <p className="truncate text-xs text-[#8E8E93]">{L.sub}</p>
+          <p className="mt-px hidden truncate text-xs text-[#8E8E93] md:block">{L.sub}</p>
         </div>
-        <div className="flex overflow-hidden rounded-full border border-white/15 text-xs">
+        <div role="group" aria-label={L.language} className="flex shrink-0 rounded-full border border-white/14 bg-white/4 p-0.5">
           {(["ko", "en"] as const).map((l) => (
             <button
               key={l}
               type="button"
               aria-pressed={g.locale === l}
               onClick={() => g.setLocale(l)}
-              className={`px-2.5 py-1.5 ${g.locale === l ? "bg-white/14 text-white" : "text-white/60 hover:text-white"}`}
+              className={`h-9 w-10 rounded-full text-xs font-bold tracking-[0.4px] md:h-8 md:w-[38px] ${
+                g.locale === l ? "bg-white/14 text-[#F5F5F7]" : "bg-transparent text-[#8E8E93]"
+              }`}
             >
               {l.toUpperCase()}
             </button>
           ))}
         </div>
-        <button type="button" aria-label={L.close} onClick={() => g.setOpen(false)} className="h-11 w-11 shrink-0 text-white/60 hover:text-white">
-          ✕
+        <button type="button" aria-label={L.close} onClick={() => setOpen(false)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#8E8E93] hover:text-white">
+          <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </header>
 
-      <div ref={listRef} aria-live="polite" className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
-        {g.state.messages.length === 0 && <p className="text-[#8E8E93]">{L.empty}</p>}
-        {g.state.messages.map((m, i) => {
-          const isLast = i === g.state.messages.length - 1;
-          const tool = m.role === "assistant" && isLast && g.state.toolKey;
-          return (
-            <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
-              {tool && (
-                <p className="mb-1 flex items-center gap-1.5 text-xs text-[#8E8E93]">
-                  <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="#34C759" strokeWidth="2.2">
-                    <path d="M3 8.5l3 3 7-7" />
+      <div ref={listRef} aria-live="polite" className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-[14px_16px] text-sm md:gap-3.5 md:p-[18px]">
+        {msgs.length === 0 && <p className="text-[#8E8E93]">{L.empty}</p>}
+        {msgs.map((m) =>
+          m.role === "user" ? (
+            <p key={m.id} className="max-w-[260px] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] border border-[#A97FCB66] bg-[#A97FCB26] px-3.5 py-2.5 leading-normal md:max-w-[280px] md:py-[11px]">
+              {m.text}
+            </p>
+          ) : (
+            <div key={m.id} className="flex flex-col items-start gap-2">
+              {m.toolKey && (
+                <p className="flex items-center gap-1.5 text-xs text-[#8E8E93]">
+                  <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2.4">
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
                   </svg>
-                  {toolStatusText(g.locale, tool)}
+                  {toolStatusText(g.locale, m.toolKey)}
                 </p>
               )}
-              {(m.retracted || m.text || m.role === "user" || streaming) && (
-                <p
-                  className={`whitespace-pre-wrap border px-3.5 py-2.5 leading-relaxed ${
-                    m.role === "user"
-                      ? "max-w-[280px] rounded-[18px_18px_6px_18px] border-[#A97FCB66] bg-[#A97FCB26]"
-                      : "max-w-[320px] rounded-[18px_18px_18px_6px] border-white/8 bg-white/6"
-                  }`}
-                >
-                  {m.retracted ? L.retracted : m.text || "…"}
+              {m.text && (
+                <p className="max-w-[300px] whitespace-pre-wrap rounded-[18px_18px_18px_6px] border border-white/8 bg-white/6 px-3.5 py-2.5 leading-[1.55] md:max-w-[320px] md:py-3">
+                  {m.text}
                 </p>
+              )}
+              {m.retracted && (
+                <p className="flex items-center gap-1.5 text-xs text-[#8E8E93]">
+                  <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 11v5M12 8h.01" />
+                  </svg>
+                  {L.retracted}
+                </p>
+              )}
+              {m.chip?.kind === "focus" && (
+                <p className={`${CHIP_BASE} border-[#A97FCB66] bg-[#A97FCB26]`}>
+                  <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} strokeWidth="2">
+                    <circle cx="12" cy="12" r="8" />
+                    <circle cx="12" cy="12" r="2.4" fill={ACCENT} stroke="none" />
+                  </svg>
+                  {chipText(g.locale, "focus", m.chip.slug)}
+                </p>
+              )}
+              {m.chip?.kind === "navigating" && (
+                <p className={`${CHIP_BASE} border-white/14 bg-white/5`}>
+                  <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" strokeWidth="2">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                  {chipText(g.locale, "navigating", m.chip.slug)}
+                </p>
+              )}
+              {m.chip?.kind === "failed" && (
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <p className={`${CHIP_BASE} border-[rgba(255,180,84,0.55)] bg-[rgba(255,180,84,0.10)]`}>
+                    <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB454" strokeWidth="2">
+                      <path d="M12 4l9 16H3z" />
+                      <path d="M12 10v4M12 17h.01" />
+                    </svg>
+                    {chipText(g.locale, "failed", m.chip.slug)}
+                  </p>
+                  <button type="button" onClick={g.retryAction} className="h-9 rounded-full border border-white/18 bg-white/6 px-3.5 text-[12.5px] font-semibold">
+                    {L.retry}
+                  </button>
+                </div>
               )}
             </div>
-          );
-        })}
+          ),
+        )}
+        {waiting && (
+          <p className="flex items-center gap-2 text-xs text-[#8E8E93]">
+            <span aria-hidden className="flex gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#A97FCB]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#A97FCB] opacity-60" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#A97FCB] opacity-30" />
+            </span>
+            {g.state.toolKey ? toolStatusText(g.locale, g.state.toolKey) : L.toolGeneric}
+          </p>
+        )}
         {g.state.status === "error" && g.state.errorCode && (
-          <p className="rounded-xl border border-white/15 px-3 py-2 text-xs text-white/80">
-            {errorText(g.locale, g.state.errorCode)}
-            {g.state.errorCode !== "off_topic" && g.state.errorCode !== "too_long" && (
-              <button type="button" onClick={g.retry} className="ml-2 underline">
+          <div role="alert" className="flex max-w-[320px] flex-col gap-2.5 self-start rounded-[18px_18px_18px_6px] border border-[rgba(255,107,99,0.45)] bg-[rgba(255,107,99,0.08)] px-3.5 py-3">
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <svg aria-hidden width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6B63" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7.5v5M12 16h.01" />
+              </svg>
+              {errorTitle(g.locale, g.state.errorCode)}
+            </p>
+            <p className="text-[13px] leading-normal text-[#A1A1A8]">{errorText(g.locale, g.state.errorCode)}</p>
+            {showRetry && (
+              <button type="button" onClick={g.retry} className="h-10 self-start rounded-full border border-white/18 bg-white/8 px-[18px] text-[13px] font-semibold">
                 {L.retry}
               </button>
             )}
-          </p>
+          </div>
         )}
       </div>
 
-      <form onSubmit={submit} className="flex gap-2 px-3 pt-2">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          maxLength={MAX_CHARS}
-          placeholder={L.placeholder}
-          aria-label={L.placeholder}
-          className="h-12 min-w-0 flex-1 rounded-full border border-white/15 bg-white/6 px-4 text-sm outline-none placeholder:text-[#8E8E93] focus:border-[#A97FCB]"
-        />
-        {streaming ? (
-          <button type="button" aria-label={L.stop} onClick={g.stop} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A97FCB]">
-            <span aria-hidden className="h-3.5 w-3.5 rounded-[3px] bg-[#0F0D1B]" />
-          </button>
-        ) : (
-          <button type="submit" aria-label={L.send} disabled={!draft.trim()} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A97FCB] disabled:opacity-40">
-            <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#0F0D1B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
-          </button>
-        )}
-      </form>
-      <p className="px-4 pb-3 pt-2 text-center text-[11.5px] text-[#8E8E93]">{L.foot}</p>
+      <div className="flex shrink-0 flex-col gap-2.5 px-3.5 pb-3.5">
+        <form onSubmit={submit} className="flex items-center gap-2">
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            maxLength={MAX_CHARS}
+            placeholder={L.placeholder}
+            aria-label={L.placeholder}
+            className="h-12 min-w-0 grow rounded-full border border-white/14 bg-white/5 px-[18px] text-sm text-[#F5F5F7] outline-none placeholder:text-[#8E8E93] focus:border-[#A97FCB]"
+          />
+          {streaming ? (
+            <button type="button" aria-label={L.stop} onClick={g.stop} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/18 bg-white/8 text-[#F5F5F7]">
+              <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="5" y="5" width="14" height="14" rx="2.5" />
+              </svg>
+            </button>
+          ) : (
+            <button type="submit" aria-label={L.send} disabled={!draft.trim()} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A97FCB] text-[#0F0D1B] disabled:opacity-40">
+              <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          )}
+        </form>
+        <p className="text-center text-[11.5px] text-[#8E8E93]">{L.foot}</p>
+      </div>
     </section>
   );
 }

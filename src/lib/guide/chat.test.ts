@@ -25,6 +25,21 @@ describe("chatReducer", () => {
     expect(s).toMatchObject({ status: "idle", toolKey: null });
   });
 
+  it("tool_status의 키는 현재 답변 말풍선에 남고 done 뒤에도 유지된다", () => {
+    let s = send();
+    s = chatReducer(s, { type: "event", event: { event: "tool_status", tool: "searchShows", key: "tool.searchShows" } });
+    s = chatReducer(s, { type: "event", event: { event: "done" } });
+    expect(s.messages.at(-1)!.toolKey).toBe("tool.searchShows");
+  });
+
+  it("chip은 마지막 답변 말풍선에 붙는다", () => {
+    let s = send();
+    s = chatReducer(s, { type: "event", event: { event: "done" } });
+    s = chatReducer(s, { type: "chip", chip: { kind: "focus", slug: "aurora" } });
+    expect(s.messages.at(-1)!.chip).toEqual({ kind: "focus", slug: "aurora" });
+    expect(s.messages[0].chip).toBeUndefined();
+  });
+
   it("retract는 답변을 비우고 retracted로 표시", () => {
     let s = send();
     s = chatReducer(s, { type: "event", event: { event: "text_delta", text: "틀린 답" } });
