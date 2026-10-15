@@ -41,6 +41,7 @@ export function useOrbitSpin(artists: Artist[], faceAngle: number) {
   const focused = useRef<string | null>(null);
   const idle = useRef(0);
   const request = useFocusRequest();
+  const events = useThree((state) => state.events);
 
   useEffect(() => {
     const r = takeFocus();
@@ -66,6 +67,9 @@ export function useOrbitSpin(artists: Artist[], faceAngle: number) {
       rotation.current += delta * AUTO_SPEED;
     }
     if (groupRef.current) groupRef.current.rotation.z = rotation.current;
+    // R3F는 마우스가 움직일 때만 hover를 다시 계산한다. 노드가 도는 동안 마우스를 가만히 두면 노드가
+    // 빠져나가도 손가락 커서가 남고, 새로 들어온 노드는 hover가 안 된다 — 매 프레임 마지막 포인터 위치로 다시 계산한다.
+    events.update?.();
   });
 
   return { groupRef, rotation, focused };

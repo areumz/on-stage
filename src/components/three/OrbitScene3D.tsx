@@ -94,7 +94,7 @@ function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<
         <meshStandardMaterial ref={material} color={artist.color} emissive={artist.color} emissiveIntensity={0.16} roughness={0.85} metalness={0} transparent depthTest={false} />
       </mesh>
       {/* 패널(z-40)보다 아래에 깔리도록 z-index 범위를 낮춘다 */}
-      <Html center zIndexRange={[20, 0]} pointerEvents="none">
+      <Html center zIndexRange={[20, 0]} pointerEvents="none" className="pointer-events-none">
         <span
           ref={initialsEl}
           className="select-none whitespace-nowrap font-semibold text-white/90"
@@ -103,12 +103,14 @@ function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<
           {artist.initials}
         </span>
       </Html>
-      <Html center zIndexRange={[20, 0]}>
+      {/* 이름표 래퍼가 노드 중심에 놓이므로 래퍼는 이벤트를 통과시키고 버튼만 받게 한다.
+          안 그러면 래퍼가 구체 위를 덮어 hover/클릭이 구체에 닿지 않는다 */}
+      <Html center zIndexRange={[20, 0]} pointerEvents="none" className="pointer-events-none">
         <button
           ref={nameEl}
           type="button"
           onClick={enter}
-          className="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-[0.15em] text-[#CFC6E6] sm:text-xs sm:tracking-[0.2em] hover:text-white focus-visible:outline-2 focus-visible:outline-brand-soft"
+          className="pointer-events-auto whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-[0.15em] text-[#CFC6E6] sm:text-xs sm:tracking-[0.2em] hover:text-white focus-visible:outline-2 focus-visible:outline-brand-soft"
         >
           {artist.name}
         </button>
