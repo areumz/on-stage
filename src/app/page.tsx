@@ -1,16 +1,27 @@
 import Header from "@/components/common/Header";
 import NowTicker from "@/components/fans/NowTicker";
 import OrbitScene from "@/components/three/OrbitScene";
+import OrbitScene3D from "@/components/three/OrbitScene3D";
+import { FocusFromQuery } from "@/components/three/orbitShared";
 import { getArtists } from "@/lib/data";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ orbit?: string; focus?: string }>;
+}) {
+  const { orbit, focus } = await searchParams;
   const artists = await getArtists();
+
+  // ?orbit=2d > 서버 env ORBIT_VIEW=2d > 3D. 에이전트 계약의 context.view와 이름이 겹치지 않게 "orbit".
+  const use2d = (orbit ?? process.env.ORBIT_VIEW) === "2d";
 
   return (
     <main className="flex h-screen flex-col bg-bg-dark text-white">
       <Header dark />
       <div className="relative flex-1">
-        {artists.length > 0 && <OrbitScene artists={artists} />}
+        {artists.length > 0 && (use2d ? <OrbitScene artists={artists} /> : <OrbitScene3D artists={artists} />)}
+        {focus && <FocusFromQuery slug={focus} />}
         {/* 중앙 레이블명: DOM 오버레이가 캔버스보다 선명해서 이 방식으로 채택 */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <h1 className="font-serif-hero text-4xl tracking-widest">STAGE.ONE</h1>
