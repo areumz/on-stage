@@ -42,6 +42,27 @@ export function useOrbitSpin(artists: Artist[], faceAngle: number) {
   const idle = useRef(0);
   const request = useFocusRequest();
   const events = useThree((state) => state.events);
+  const gl = useThree((state) => state.gl);
+  // 마우스가 캔버스 안에 있을 때만 hover를 다시 계산한다(R3F는 떠난 뒤에도 마지막 위치를 기억한다)
+  const inside = useRef(false);
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const enter = (e: PointerEvent) => { if (e.pointerType === "mouse") inside.current = true; };
+    const leave = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      inside.current = false;
+      document.body.style.cursor = "auto";
+    };
+    el.addEventListener("pointerenter", enter);
+    el.addEventListener("pointerleave", leave);
+    el.addEventListener("pointercancel", leave);
+    return () => {
+      el.removeEventListener("pointerenter", enter);
+      el.removeEventListener("pointerleave", leave);
+      el.removeEventListener("pointercancel", leave);
+    };
+  }, [gl]);
 
   useEffect(() => {
     const r = takeFocus();
@@ -69,7 +90,7 @@ export function useOrbitSpin(artists: Artist[], faceAngle: number) {
     if (groupRef.current) groupRef.current.rotation.z = rotation.current;
     // R3F는 마우스가 움직일 때만 hover를 다시 계산한다. 노드가 도는 동안 마우스를 가만히 두면 노드가
     // 빠져나가도 손가락 커서가 남고, 새로 들어온 노드는 hover가 안 된다 — 매 프레임 마지막 포인터 위치로 다시 계산한다.
-    events.update?.();
+    if (inside.current) events.update?.();
   });
 
   return { groupRef, rotation, focused };

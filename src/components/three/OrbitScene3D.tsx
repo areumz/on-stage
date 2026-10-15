@@ -4,7 +4,7 @@
 import { Html, Line } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { AdditiveBlending, CanvasTexture, Color, Vector3, type Group, type MeshStandardMaterial, type PerspectiveCamera } from "three";
 import Scene3D from "@/components/three/Scene3D";
 import { FOV_DEG, OrbitCameraRig, RING_RADII, useOrbitSpin } from "@/components/three/orbitShared";
@@ -52,7 +52,11 @@ function ArtistNode3D({ artist, focused }: { artist: Artist; focused: RefObject<
   const enter = () => router.push(`/artists/${artist.slug}`);
   const tmp = useMemo(() => new Vector3(), []);
   const baseColor = useMemo(() => new Color(artist.color), [artist.color]);
-  const { camera, size: view } = useThree();
+  const camera = useThree((s) => s.camera);
+  const view = useThree((s) => s.size);
+
+  // 호버된 채로 클릭해 이동하면 onPointerOut이 오지 않으므로 커서를 되돌린다
+  useEffect(() => () => { document.body.style.cursor = "auto"; }, []);
 
   useFrame(() => {
     const g = group.current;
@@ -139,7 +143,8 @@ function Orbits3D({ artists }: { artists: Artist[] }) {
 export default function OrbitScene3D({ artists }: { artists: Artist[] }) {
   return (
     // 모바일 GPU 부담을 줄이려고 dpr 상한을 1.5로 (Scene3D가 canvasProps로 덮어쓰기를 허용)
-    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }} dpr={[1, 1.5]}>
+    // resize: CSS scale된 래퍼(가이드 패널 열림) 안에서도 캔버스가 리사이즈되지 않게 offsetSize를 쓰고 스크롤 재측정을 끈다
+    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }} dpr={[1, 1.5]} resize={{ scroll: false, offsetSize: true }}>
       <OrbitCameraRig verticalScale={ORBIT_VERTICAL_SCALE} />
       <ambientLight intensity={0.4} />
       <directionalLight position={[-3, 4, 5]} intensity={2.2} />

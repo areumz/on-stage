@@ -72,7 +72,7 @@ function Orbits({ artists }: { artists: Artist[] }) {
 
 export default function OrbitScene({ artists }: { artists: Artist[] }) {
   return (
-    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }}>
+    <Scene3D camera={{ position: [0, 0, 8], fov: FOV_DEG }} resize={{ scroll: false, offsetSize: true }}>
       <OrbitCameraRig />
       <Orbits artists={artists} />
     </Scene3D>

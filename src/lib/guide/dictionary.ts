@@ -48,7 +48,7 @@ export const DICT: Record<Locale, UiStrings> = {
       busy: { title: "답변을 만드는 중이에요", body: "이전 질문에 답하는 중이에요. 잠시만 기다려 주세요." },
       upstream: { title: "답변을 불러오지 못했어요", body: "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요." },
       internal: { title: "문제가 생겼어요", body: "잠시 후 다시 시도해 주세요." },
-      network: { title: "답변을 불러오지 못했어요", body: "연결이 잠깐 끊겼어요. 같은 질문을 다시 보낼게요." },
+      network: { title: "답변을 불러오지 못했어요", body: "연결이 잠깐 끊겼어요. 다시 시도를 눌러 주세요." },
     },
   },
   en: {
@@ -82,7 +82,7 @@ export const DICT: Record<Locale, UiStrings> = {
       busy: { title: "Still answering", body: "Still answering your previous question. One moment." },
       upstream: { title: "Couldn't load the answer", body: "I couldn't get an answer right now. Please try again shortly." },
       internal: { title: "Something went wrong", body: "Please try again shortly." },
-      network: { title: "Couldn't load the answer", body: "The connection dropped for a moment. I'll resend the same question." },
+      network: { title: "Couldn't load the answer", body: "The connection dropped for a moment. Tap Try again to resend." },
     },
   },
 };

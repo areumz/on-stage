@@ -26,7 +26,10 @@ export async function streamGuide(opts: {
       body: JSON.stringify(opts.body), // context가 undefined면 필드가 빠진다
       signal: opts.signal,
     });
-    if (!res.ok || !res.body) return "failed";
+    if (!res.ok || !res.body) {
+      void res.body?.cancel().catch(() => {});
+      return "failed";
+    }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     const parse = createSseParser();
@@ -36,6 +39,11 @@ export async function streamGuide(opts: {
       for (const m of parse(decoder.decode(value, { stream: true }))) {
         const e = parseGuideEvent(m.event, m.data);
         if (e) opts.onEvent(e);
+        if (e && (e.event === "done" || e.event === "error")) {
+          // 프록시가 연결을 열어 둬도 done에서 끝낸다
+          await reader.cancel().catch(() => {});
+          return "ok";
+        }
       }
     }
     return "ok";

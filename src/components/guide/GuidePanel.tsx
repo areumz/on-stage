@@ -176,6 +176,7 @@ export default function GuidePanel() {
                 </p>
               )}
               {m.chip?.kind === "failed" && (
+                // 재시도는 마지막 계획만 다시 실행하므로 마지막 메시지에서만 보인다
                 <div className="flex flex-wrap items-center gap-2.5">
                   <p className={`${CHIP_BASE} border-[rgba(255,180,84,0.55)] bg-[rgba(255,180,84,0.10)]`}>
                     <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB454" strokeWidth="2">
@@ -184,9 +185,11 @@ export default function GuidePanel() {
                     </svg>
                     {chipText(g.locale, "failed", m.chip.slug)}
                   </p>
-                  <button type="button" onClick={g.retryAction} className="h-9 rounded-full border border-white/18 bg-white/6 px-3.5 text-[12.5px] font-semibold">
-                    {L.retry}
-                  </button>
+                  {m === last && (
+                    <button type="button" onClick={g.retryAction} className="h-9 rounded-full border border-white/18 bg-white/6 px-3.5 text-[12.5px] font-semibold">
+                      {L.retry}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

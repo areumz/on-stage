@@ -45,4 +45,33 @@ describe("streamGuide", () => {
     ctrl.abort();
     expect(await streamGuide({ url: "http://x", body, signal: ctrl.signal, onEvent: () => {} })).toBe("aborted");
   });
+
+  it("done 뒤 연결이 열려 있어도 끝난다", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(enc.encode("event: done\ndata: {}\n\n")); // close하지 않는다
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, { status: 200 })));
+    const got: GuideEvent[] = [];
+    const r = await streamGuide({ url: "http://x", body, signal: new AbortController().signal, onEvent: (e) => got.push(e) });
+    expect(r).toBe("ok");
+    expect(got.map((e) => e.event)).toEqual(["done"]);
+  });
+
+  it("한글 바이트가 조각 중간에서 잘려도 깨지지 않는다", async () => {
+    const bytes = enc.encode('event: text_delta\ndata: {"text":"가나"}\n\n');
+    const cut = bytes.indexOf(0xea) + 1; // "가"(3바이트) 중간
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(bytes.slice(0, cut));
+        c.enqueue(bytes.slice(cut));
+        c.close();
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, { status: 200 })));
+    const got: GuideEvent[] = [];
+    await streamGuide({ url: "http://x", body, signal: new AbortController().signal, onEvent: (e) => got.push(e) });
+    expect(got[0]).toMatchObject({ event: "text_delta", text: "가나" });
+  });
 });

@@ -77,7 +77,11 @@ export default function GuideProvider({
     navTimerRef.current = null;
   }, []);
 
-  useEffect(() => clearNav, [clearNav]);
+  // 언마운트: 진행 중인 스트림을 끊고 이동 타이머를 지운다
+  useEffect(() => () => {
+    clearNav();
+    abortRef.current?.abort();
+  }, [clearNav]);
 
   // router.push는 해시 스크롤이 문서화돼 있지 않아서, 도착(경로 변경) 뒤 한 번 직접 스크롤한다.
   // 경로가 바뀌면 대기 중인 이동 타이머도 끝난 것이다.

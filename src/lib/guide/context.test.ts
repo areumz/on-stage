@@ -17,6 +17,10 @@ describe("contextFromPath", () => {
     expect(contextFromPath("/staff/dashboard", null)).toBeNull();
     expect(contextFromPath("/artists", null)).toBeNull();
   });
+  it("퍼센트 인코딩된 slug를 디코드하고, 깨진 인코딩은 null", () => {
+    expect(contextFromPath("/artists/a%20b", null)).toEqual({ view: "tour", slug: "a b" });
+    expect(contextFromPath("/artists/%E0%A4%A", null)).toBeNull();
+  });
   it("orbit에는 section을 붙이지 않는다", () => {
     expect(contextFromPath("/", "tour")).toEqual({ view: "orbit" });
   });
