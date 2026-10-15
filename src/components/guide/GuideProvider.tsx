@@ -38,6 +38,11 @@ export function useGuide(): GuideApi {
   return v;
 }
 
+// 패널이 없는 곳(가이드 비활성)에서도 쓸 수 있는 읽기 전용 접근자
+export function useGuideOptional(): GuideApi | null {
+  return useContext(Ctx);
+}
+
 const noopSubscribe = () => () => {};
 const detectLocale = (): Locale => (navigator.language.toLowerCase().startsWith("ko") ? "ko" : "en");
 
