@@ -35,3 +35,14 @@ describe("dictionary", () => {
     expect(chipText("ko", "navigating", "aurora")).toContain("AURORA");
   });
 });
+
+describe("off_topic 안내 문구", () => {
+  it("제목+본문이 합의된 문구와 같다", () => {
+    expect(`${errorTitle("ko", "off_topic")} ${errorText("ko", "off_topic")}`).toBe(
+      "이 질문은 제가 도와드리기 어려워요. 아티스트, 공연, 투어 일정에 관해 다시 물어봐 주세요. 예: '서울에서 곧 공연하는 팀은?'",
+    );
+    expect(`${errorTitle("en", "off_topic")} ${errorText("en", "off_topic")}`).toBe(
+      "I can't help with that one. Try asking about artists, shows, or tour dates, e.g. 'Who's playing in Seoul soon?'",
+    );
+  });
+});

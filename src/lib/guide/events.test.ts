@@ -4,7 +4,7 @@ import sample from "./guide_events_sample.json";
 import { parseGuideEvent } from "./events";
 
 describe("parseGuideEvent — 에이전트 fixture", () => {
-  const all = [...sample.success, ...sample.error];
+  const all = [...sample.success, ...sample.error, ...sample.retract_unverified];
 
   it("fixture의 모든 이벤트를 해석한다", () => {
     for (const item of all) {

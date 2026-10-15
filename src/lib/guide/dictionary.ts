@@ -43,7 +43,7 @@ export const DICT: Record<Locale, UiStrings> = {
     },
     errors: {
       rate_limited: { title: "질문이 몰리고 있어요", body: "잠시 후에 다시 물어봐 주세요." },
-      off_topic: { title: "도와드릴 수 없는 질문이에요", body: "STAGE.ONE의 아티스트와 투어에 대해서만 답할 수 있어요." },
+      off_topic: { title: "이 질문은 제가 도와드리기 어려워요.", body: "아티스트, 공연, 투어 일정에 관해 다시 물어봐 주세요. 예: '서울에서 곧 공연하는 팀은?'" },
       too_long: { title: "질문이 너무 길어요", body: "200자 이내로 줄여 주세요." },
       busy: { title: "답변을 만드는 중이에요", body: "이전 질문에 답하는 중이에요. 잠시만 기다려 주세요." },
       upstream: { title: "답변을 불러오지 못했어요", body: "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요." },
@@ -77,7 +77,7 @@ export const DICT: Record<Locale, UiStrings> = {
     },
     errors: {
       rate_limited: { title: "Lots of questions right now", body: "Please try again in a moment." },
-      off_topic: { title: "I can't help with that", body: "I can only answer about STAGE.ONE artists and tours." },
+      off_topic: { title: "I can't help with that one.", body: "Try asking about artists, shows, or tour dates, e.g. 'Who's playing in Seoul soon?'" },
       too_long: { title: "That question is too long", body: "Please keep it under 200 characters." },
       busy: { title: "Still answering", body: "Still answering your previous question. One moment." },
       upstream: { title: "Couldn't load the answer", body: "I couldn't get an answer right now. Please try again shortly." },

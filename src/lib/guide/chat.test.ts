@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import sample from "./guide_events_sample.json";
+import { parseGuideEvent } from "./events";
 import { chatReducer, initialChat, lastUserText } from "./chat";
 
 const send = (s = initialChat, text = "안녕", id = "m1") => chatReducer(s, { type: "send", id, text });
@@ -44,6 +46,15 @@ describe("chatReducer", () => {
     let s = send();
     s = chatReducer(s, { type: "event", event: { event: "text_delta", text: "틀린 답" } });
     s = chatReducer(s, { type: "event", event: { event: "retract", reason: "x" } });
+    expect(s.messages.at(-1)).toMatchObject({ text: "", retracted: true });
+  });
+
+  it("fixture retract_unverified: text_delta → retract → done 뒤 입력창이 돌아온다", () => {
+    let s = send();
+    for (const item of sample.retract_unverified) {
+      s = chatReducer(s, { type: "event", event: parseGuideEvent(item.event, JSON.stringify(item.data))! as never });
+    }
+    expect(s.status).toBe("idle");
     expect(s.messages.at(-1)).toMatchObject({ text: "", retracted: true });
   });
 
