@@ -11,6 +11,7 @@ type UiStrings = {
   title: string; ask: string; sub: string; foot: string; close: string; placeholder: string;
   send: string; stop: string; retry: string; language: string;
   empty: string; retracted: string; newChat: string; toolGeneric: string;
+  suggestions: string[]; // 추천 칩. 일반 질문처럼 전송된다(UI 권장 30자 이내). 에이전트 회귀 테스트 통과분만 확정
   chips: Record<ChipKind, string>; // {NAME}은 slug 대문자
   tools: Record<string, string>;
   errors: Record<ErrorCode | "network", ErrorCard>;
@@ -32,6 +33,7 @@ export const DICT: Record<Locale, UiStrings> = {
     retracted: "확인되지 않은 정보는 답하지 않아요",
     newChat: "새 대화 시작",
     toolGeneric: "정보를 확인하는 중이에요",
+    suggestions: ["서울에서 곧 공연하는 팀은?", "이번 달 공연 일정 알려줘", "AURORA는 어떤 팀이야?", "다음 공연이 가장 가까운 팀은?"],
     chips: {
       focus: "궤도 카메라가 {NAME}로 이동했어요",
       navigating: "{NAME} 투어 페이지로 이동 중",
@@ -68,6 +70,7 @@ export const DICT: Record<Locale, UiStrings> = {
     retracted: "I don't answer with information I couldn't verify",
     newChat: "Start a new chat",
     toolGeneric: "Checking the info…",
+    suggestions: ["Who's playing in Seoul soon?", "What shows are coming up?", "Tell me about AURORA", "Which show is next?"],
     chips: {
       focus: "The orbit camera moved to {NAME}",
       navigating: "Heading to the {NAME} tour page",

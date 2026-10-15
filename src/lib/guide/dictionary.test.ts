@@ -46,3 +46,12 @@ describe("off_topic 안내 문구", () => {
     );
   });
 });
+
+describe("추천 칩", () => {
+  it("ko/en 모두 있고 30자 이내(서버 한도 200자 안)", () => {
+    for (const locale of ["ko", "en"] as const) {
+      expect(DICT[locale].suggestions.length).toBeGreaterThan(0);
+      for (const q of DICT[locale].suggestions) expect(q.length, q).toBeLessThanOrEqual(30);
+    }
+  });
+});

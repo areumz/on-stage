@@ -12,6 +12,7 @@ import type { Locale } from "@/lib/guide/dictionary";
 import type { UiAction } from "@/lib/guide/events";
 import { requestFocus } from "@/lib/guide/orbitFocus";
 import { getCurrentSection } from "@/lib/guide/sections";
+import { requestHighlight } from "@/lib/guide/cityHighlight";
 import { getSessionId, resetSessionId } from "@/lib/guide/session";
 import { streamGuide } from "@/lib/guide/stream";
 
@@ -118,6 +119,10 @@ export default function GuideProvider({
       case "scroll":
         document.getElementById(plan.section)?.scrollIntoView({ behavior: "smooth" });
         break;
+      case "highlight":
+        document.getElementById("tour")?.scrollIntoView({ behavior: "smooth" });
+        requestHighlight(plan.slug, plan.city);
+        break;
       case "navigate":
         clearNav();
         if (plan.focusSlug) {
@@ -145,7 +150,7 @@ export default function GuideProvider({
     try {
       execute(plan);
       // 같은 페이지 안 스크롤은 화면 이동이 아니므로 칩을 남기지 않는다
-      if (plan.kind !== "scroll") {
+      if (plan.kind !== "scroll" && plan.kind !== "highlight") {
         const kind = plan.kind === "focus" || plan.kind === "gotoOrbit" ? "focus" : "navigating";
         dispatch({ type: "chip", chip: { kind, slug } });
       }

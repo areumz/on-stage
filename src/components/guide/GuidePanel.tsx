@@ -131,6 +131,20 @@ export default function GuidePanel() {
       <p role="status" aria-live="polite" className="sr-only">{announce}</p>
       <div ref={listRef} className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-[14px_16px] text-sm md:gap-3.5 md:p-[18px]">
         {msgs.length === 0 && <p className="text-[#8E8E93]">{L.empty}</p>}
+        {msgs.length === 0 && !streaming && (
+          <div className="flex flex-wrap gap-2">
+            {L.suggestions.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => g.send(q)}
+                className="min-h-9 rounded-full border border-white/14 bg-white/5 px-3.5 py-1.5 text-left text-[12.5px] text-[#F5F5F7] hover:bg-white/10"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
         {msgs.map((m) =>
           m.role === "user" ? (
             <p key={m.id} className="max-w-[260px] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] border border-[#A97FCB66] bg-[#A97FCB26] px-3.5 py-2.5 leading-normal md:max-w-[280px] md:py-[11px]">
