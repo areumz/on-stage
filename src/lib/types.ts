@@ -29,6 +29,7 @@ export type TrackRow = {
   duration: string;
   cover_from: string;
   cover_to: string;
+  audio_path: string | null; // music 버킷 경로, NULL = 음원 없음
 };
 
 export type ShowRow = {
@@ -101,6 +102,7 @@ export type Track = {
   duration: string;
   // 싱글 커버 — 실제 커버 아트가 없어 2스톱 그라디언트로 대체 (design.md 8장 2차에서 교체)
   cover: { from: string; to: string };
+  audio?: string; // 실제 음원 공개 URL — 있는 트랙만 재생 버튼
 };
 
 // A탭 HeroBackground 셰이더 패턴 3종 (design-v2.md §8)

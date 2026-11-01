@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { MUSIC } from "@/lib/music";
 import type { Artist, Track } from "@/lib/types";
 
 const EQ_HEIGHTS = [10, 16, 12, 18, 8];
@@ -93,14 +92,14 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
   const [playing, setPlaying] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const loaded = useRef<number | null>(null);
-  const music = MUSIC[artist.slug];
+  const hasAudio = artist.tracks.some((t) => t.audio);
 
-  function toggle(n: number) {
+  function toggle(t: Track) {
     const audio = audioRef.current!;
-    if (playing === n) return audio.pause();
-    if (loaded.current !== n) {
-      audio.src = encodeURI(music[n]);
-      loaded.current = n;
+    if (playing === t.no) return audio.pause();
+    if (loaded.current !== t.no) {
+      audio.src = t.audio!;
+      loaded.current = t.no;
     }
     audio.play().catch(() => {}); // 트랙을 빠르게 바꿀 때의 AbortError — 상태는 이벤트가 맞춤
   }
@@ -156,13 +155,13 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
                 </span>
                 <span className="text-sm text-white/40">{t.duration}</span>
               </button>
-              {music?.[t.no] && (
+              {t.audio && (
                 <button
                   type="button"
                   aria-label={`${t.title} ${isPlaying ? "일시정지" : "재생"}`}
                   onMouseEnter={() => setActive(i)}
                   onFocus={() => setActive(i)}
-                  onClick={() => toggle(t.no)}
+                  onClick={() => toggle(t)}
                   className="absolute inset-y-0 -left-4 w-12 cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-brand-soft"
                 />
               )}
@@ -170,7 +169,7 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
           );
         })}
       </ul>
-      {music && (
+      {hasAudio && (
         <audio
           ref={audioRef}
           preload="none"
