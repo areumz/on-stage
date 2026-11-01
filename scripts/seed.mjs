@@ -1,7 +1,7 @@
 // 멱등 시드. npm run seed로 실행 (node --env-file=.env.local).
 // 원본은 src/data/artists.json · public/gallery/*.jpg — DB로 옮겨도 지우지 않는다 (§4.7 주의).
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -153,6 +153,30 @@ async function upsertTracks(artist, artistId) {
   }));
   const { error } = await supabase.from("tracks").upsert(rows, { onConflict: "artist_id,no" });
   assertNoError(error, `tracks upsert (${artist.slug})`);
+}
+
+// 음원은 git에 없다(.gitignore) — 로컬 public/music/<slug>/NN.제목.mp3 가 있을 때만 올린다.
+// Storage 키는 한글 불가라 music/<slug>/NN.mp3 로 번호만 쓰고, 트랙 번호 NN 행에 경로를 기록한다.
+async function uploadMusic(artist, artistId) {
+  const dir = path.join("public/music", artist.slug);
+  if (!existsSync(dir)) return;
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".mp3"))) {
+    const no = Number(file.split(".")[0]);
+    const storagePath = `${artist.slug}/${String(no).padStart(2, "0")}.mp3`;
+    const { error: uploadError } = await supabase.storage
+      .from("music")
+      .upload(storagePath, readFileSync(path.join(dir, file)), { contentType: "audio/mpeg", upsert: true });
+    assertNoError(uploadError, `music upload (${storagePath})`);
+
+    const { data, error } = await supabase
+      .from("tracks")
+      .update({ audio_path: storagePath })
+      .eq("artist_id", artistId)
+      .eq("no", no)
+      .select("no");
+    assertNoError(error, `tracks audio_path (${storagePath})`);
+    console.log(`music: ${storagePath}${data.length ? "" : " — 경고: 트랙 " + no + "번이 없다"}`);
+  }
 }
 
 // 도시 배열의 원래 순서(=featured 우선, 그중에서도 항상 서울이 0번)로 날짜·venue를 정하면
@@ -311,6 +335,7 @@ async function main() {
   for (const artist of artistsJson.artists) {
     const artistId = idBySlug.get(artist.slug);
     await upsertTracks(artist, artistId);
+    await uploadMusic(artist, artistId);
     await recreateShowsAndSales(artist, artistId, today);
     await uploadGallery(artist, artistId);
   }

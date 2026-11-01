@@ -3,7 +3,7 @@ import { neighborSwap } from "./trackOrder";
 import type { TrackRow } from "./types";
 
 function track(id: string, no: number): TrackRow {
-  return { id, artist_id: "artist-1", no, title: `Track ${no}`, duration: "3:00", cover_from: "#000000", cover_to: "#ffffff" };
+  return { id, artist_id: "artist-1", no, title: `Track ${no}`, duration: "3:00", cover_from: "#000000", cover_to: "#ffffff", audio_path: null };
 }
 
 const tracks = [track("a", 1), track("b", 2), track("c", 3)];

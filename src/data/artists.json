@@ -164,20 +164,20 @@
       "tracks": [
         {
           "no": 1,
+          "title": "A Room Without Noise",
+          "duration": "3:04",
+          "cover": {
+            "from": "#7F77DD",
+            "to": "#3F3A9E"
+          }
+        },
+        {
+          "no": 2,
           "title": "Crimson",
           "duration": "3:21",
           "cover": {
             "from": "#A79FF0",
             "to": "#5A52C7"
-          }
-        },
-        {
-          "no": 2,
-          "title": "Silk Road",
-          "duration": "3:56",
-          "cover": {
-            "from": "#7F77DD",
-            "to": "#3F3A9E"
           }
         },
         {
@@ -193,39 +193,39 @@
       "gallery": [
         {
           "src": "/gallery/velvet-1.jpg",
-          "creator": "woodleywonderworks",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/73645804@N00/8688125693"
+          "creator": "AI generated (ChatGPT)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/velvet-2.jpg",
-          "creator": "woodleywonderworks",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/73645804@N00/8688124571"
+          "creator": "AI generated (ChatGPT)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/velvet-3.jpg",
-          "creator": "woodleywonderworks",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/73645804@N00/8689244446"
+          "creator": "AI generated (ChatGPT)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/velvet-4.jpg",
-          "creator": "woodleywonderworks",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/73645804@N00/8689242294"
+          "creator": "AI generated (ChatGPT)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/velvet-5.jpg",
-          "creator": "woodleywonderworks",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/73645804@N00/8689241858"
+          "creator": "AI generated (ChatGPT)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/velvet-6.jpg",
-          "creator": "Pedro Kwezi Images",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/33320323@N08/3684483511"
+          "creator": "AI generated (ChatGPT)",
+          "license": "AI",
+          "origin": ""
         }
       ]
     },

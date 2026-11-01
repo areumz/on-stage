@@ -80,6 +80,7 @@ function toArtist(row: ArtistJoinRow, supabase: SupabaseClient): Artist {
       title: t.title,
       duration: t.duration,
       cover: { from: t.cover_from, to: t.cover_to },
+      ...(t.audio_path && { audio: supabase.storage.from("music").getPublicUrl(t.audio_path).data.publicUrl }),
     })),
     gallery: row.gallery_images.map((g) => toGalleryPhoto(g, supabase)),
     shader: {
