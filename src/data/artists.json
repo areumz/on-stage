@@ -83,39 +83,39 @@
       "gallery": [
         {
           "src": "/gallery/aurora-1.jpg",
-          "creator": "Bill Hamway",
-          "license": "CC0 1.0",
-          "origin": "https://stocksnap.io/photo/concert-singer-WJO2RVRV0A"
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/aurora-2.jpg",
-          "creator": "Samuel Zeller",
-          "license": "CC0 1.0",
-          "origin": "https://stocksnap.io/photo/concert-singer-J45DTZD2VJ"
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/aurora-3.jpg",
-          "creator": "Austin Neill",
-          "license": "CC0 1.0",
-          "origin": "https://stocksnap.io/photo/concert-singer-F66MXRQS1K"
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/aurora-4.jpg",
-          "creator": "Austin Neill",
-          "license": "CC0 1.0",
-          "origin": "https://stocksnap.io/photo/concert-singer-7OC4YX7S20"
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/aurora-5.jpg",
-          "creator": "NeONBRAND",
-          "license": "CC0 1.0",
-          "origin": "https://stocksnap.io/photo/concert-singer-NQSVRJOY0Y"
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
         },
         {
           "src": "/gallery/aurora-6.jpg",
-          "creator": "Man Alive!",
-          "license": "CC BY 2.0",
-          "origin": "https://www.flickr.com/photos/24365773@N03/5194606248"
+          "creator": "AI generated (Google Gemini)",
+          "license": "AI",
+          "origin": ""
         }
       ]
     },
@@ -594,8 +594,8 @@
       "tracks": [
         {
           "no": 1,
-          "title": "Reverb",
-          "duration": "3:12",
+          "title": "우리의 푸른 계절 (Our Season of Youth)",
+          "duration": "3:01",
           "cover": {
             "from": "#6FB0F0",
             "to": "#2E74BE"
@@ -603,8 +603,8 @@
         },
         {
           "no": 2,
-          "title": "First Wave",
-          "duration": "3:45",
+          "title": "Strawberry Cake",
+          "duration": "2:58",
           "cover": {
             "from": "#378ADD",
             "to": "#1A4B87"
@@ -612,8 +612,8 @@
         },
         {
           "no": 3,
-          "title": "Blue Hour",
-          "duration": "3:58",
+          "title": "하루의 끝",
+          "duration": "3:01",
           "cover": {
             "from": "#2A6FB5",
             "to": "#12365F"
@@ -623,37 +623,37 @@
       "gallery": [
         {
           "src": "/gallery/echo-1.jpg",
-          "creator": "AI generated (Google Gemini)",
+          "creator": "AI generated (ChatGPT)",
           "license": "AI",
           "origin": ""
         },
         {
           "src": "/gallery/echo-2.jpg",
-          "creator": "AI generated (Google Gemini)",
+          "creator": "AI generated (ChatGPT)",
           "license": "AI",
           "origin": ""
         },
         {
           "src": "/gallery/echo-3.jpg",
-          "creator": "AI generated (Google Gemini)",
+          "creator": "AI generated (ChatGPT)",
           "license": "AI",
           "origin": ""
         },
         {
           "src": "/gallery/echo-4.jpg",
-          "creator": "AI generated (Google Gemini)",
+          "creator": "AI generated (ChatGPT)",
           "license": "AI",
           "origin": ""
         },
         {
           "src": "/gallery/echo-5.jpg",
-          "creator": "AI generated (Google Gemini)",
+          "creator": "AI generated (ChatGPT)",
           "license": "AI",
           "origin": ""
         },
         {
           "src": "/gallery/echo-6.jpg",
-          "creator": "AI generated (Google Gemini)",
+          "creator": "AI generated (ChatGPT)",
           "license": "AI",
           "origin": ""
         }

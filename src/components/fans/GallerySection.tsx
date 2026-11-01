@@ -14,10 +14,24 @@ const TILE_SIZES = "(min-width: 1024px) 306px, 33vw";
 // 이미 캐시된 썸네일을 깔아 두고 고해상도가 도착하면 위에 겹쳐 선명해지게 함
 function LightboxImage({ src, alt }: { src: string; alt: string }) {
   const [sharp, setSharp] = useState(false);
+  // 틀을 사진 비율에 맞춰 가로·정사각 사진도 잘림·여백 없이 둥근 모서리 유지
+  // 대부분 4:5라 그 값으로 시작하고, 캐시된 썸네일이 뜨는 즉시 실제 비율로 확정
+  const [ratio, setRatio] = useState(4 / 5);
   return (
-    <div className="animate-lightbox relative aspect-[4/5] h-[70vh] overflow-hidden rounded-xl">
+    <div
+      className="animate-lightbox relative overflow-hidden rounded-xl"
+      style={{ aspectRatio: ratio, height: `min(70vh, ${90 / ratio}vw)` }}
+    >
       {/* 1.4배 확대라 원래도 크게 흐리지 않음 — 약한 블러로 선명해지는 전환만 자연스럽게 */}
-      <Image src={src} alt="" aria-hidden fill sizes={TILE_SIZES} className="scale-105 object-cover blur-[3px]" />
+      <Image
+        src={src}
+        alt=""
+        aria-hidden
+        fill
+        sizes={TILE_SIZES}
+        onLoad={(e) => setRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+        className="scale-105 object-cover blur-[3px]"
+      />
       <Image
         src={src}
         alt={alt}
@@ -101,10 +115,12 @@ export default function GallerySection({ artist }: { artist: Artist }) {
             />
           ))}
         </div>
-        {/* AI 생성 이미지(echo/halo)는 저작권 표기 대상이 아니라 생성 사실만 밝힘
+        {/* AI 생성 이미지는 저작권 표기 대상이 아니라 생성 사실만 밝힘 — 도구명은 creator에서
             그 외는 CC-BY 출처 표기가 라이선스 조건이라 촬영자·링크를 노출 */}
         {photos.every((p) => p.license === "AI") ? (
-          <p className="mt-6 text-xs text-white/35">이미지: AI로 생성됨 (Google Gemini)</p>
+          <p className="mt-6 text-xs text-white/35">
+            이미지: {photos[0].creator.replace("AI generated", "AI로 생성됨")}
+          </p>
         ) : (
           <p className="mt-6 text-xs leading-relaxed text-white/35">
             사진{" "}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { MUSIC } from "@/lib/music";
 import type { Artist, Track } from "@/lib/types";
 
 const EQ_HEIGHTS = [10, 16, 12, 18, 8];
@@ -88,6 +89,21 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
   // 트랙 hover / 커버 클릭 / 드래그가 모두 이 하나를 바꿈 —
   // 그래서 어느 경로로 바뀌든 커버와 트랙 행이 같이 반응함 (CSS :hover를 쓰지 않는 이유)
   const [active, setActive] = useState(0);
+  // 재생 중인 트랙 번호 — audio의 play/pause 이벤트로만 바꿔 실제 재생 상태와 어긋나지 않게 함
+  const [playing, setPlaying] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const loaded = useRef<number | null>(null);
+  const music = MUSIC[artist.slug];
+
+  function toggle(n: number) {
+    const audio = audioRef.current!;
+    if (playing === n) return audio.pause();
+    if (loaded.current !== n) {
+      audio.src = encodeURI(music[n]);
+      loaded.current = n;
+    }
+    audio.play().catch(() => {}); // 트랙을 빠르게 바꿀 때의 AbortError — 상태는 이벤트가 맞춤
+  }
 
   return (
     <section id="album" className="mx-auto min-h-screen max-w-3xl px-8 py-32">
@@ -99,8 +115,10 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
       <ul className="mt-14 divide-y divide-white/10">
         {artist.tracks.map((t, i) => {
           const on = i === active;
+          const isPlaying = playing === t.no;
+          const icon = on || isPlaying;
           return (
-            <li key={t.no}>
+            <li key={t.no} className="relative">
               {/* button이라 Tab으로 도달 가능 — 마우스 hover와 동일하게 focus에서도 미리보기 전환 */}
               <button
                 type="button"
@@ -109,17 +127,17 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
                 className={`-mx-4 flex w-full items-baseline gap-6 rounded-lg px-4 py-5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-soft ${on ? "bg-brand/10" : ""}`}
               >
                 <span className="relative w-8 shrink-0 font-serif-hero text-2xl" style={{ color: artist.color }}>
-                  <span className={`transition-opacity ${on ? "opacity-0" : "opacity-100"}`}>
+                  <span className={`transition-opacity ${icon ? "opacity-0" : "opacity-100"}`}>
                     {no(t.no)}
                   </span>
-                  {/* 재생 아이콘 — 시각 장식만, 실제 재생은 범위 밖 */}
+                  {/* 재생/일시정지 아이콘 — 음원이 있는 트랙은 위에 겹친 버튼이 클릭을 받음 */}
                   <svg
                     viewBox="0 0 20 20"
                     fill="currentColor"
                     aria-hidden="true"
-                    className={`absolute left-0 top-1/2 h-5 w-5 -translate-y-1/2 transition-opacity ${on ? "opacity-100" : "opacity-0"}`}
+                    className={`absolute left-0 top-1/2 h-5 w-5 -translate-y-1/2 transition-opacity ${icon ? "opacity-100" : "opacity-0"}`}
                   >
-                    <path d="M5 3.5v13l11-6.5-11-6.5z" />
+                    <path d={isPlaying ? "M5 3.5h3.5v13H5zM11.5 3.5H15v13h-3.5z" : "M5 3.5v13l11-6.5-11-6.5z"} />
                   </svg>
                 </span>
                 <span className="flex-1 text-lg">{t.title}</span>
@@ -138,10 +156,28 @@ export default function AlbumSection({ artist }: { artist: Artist }) {
                 </span>
                 <span className="text-sm text-white/40">{t.duration}</span>
               </button>
+              {music?.[t.no] && (
+                <button
+                  type="button"
+                  aria-label={`${t.title} ${isPlaying ? "일시정지" : "재생"}`}
+                  onMouseEnter={() => setActive(i)}
+                  onFocus={() => setActive(i)}
+                  onClick={() => toggle(t.no)}
+                  className="absolute inset-y-0 -left-4 w-12 cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-brand-soft"
+                />
+              )}
             </li>
           );
         })}
       </ul>
+      {music && (
+        <audio
+          ref={audioRef}
+          preload="none"
+          onPlay={() => setPlaying(loaded.current)}
+          onPause={() => setPlaying(null)}
+        />
+      )}
     </section>
   );
 }

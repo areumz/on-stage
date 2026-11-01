@@ -2,62 +2,50 @@
   {
     "file": "gallery/aurora-1.jpg",
     "artist": "aurora",
-    "pick": 3,
-    "title": "Concert Singer",
     "src": "/gallery/aurora-1.jpg",
-    "creator": "Bill Hamway",
-    "license": "CC0 1.0",
-    "origin": "https://stocksnap.io/photo/concert-singer-WJO2RVRV0A"
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
   },
   {
     "file": "gallery/aurora-2.jpg",
     "artist": "aurora",
-    "pick": 1,
-    "title": "Concert Singer",
     "src": "/gallery/aurora-2.jpg",
-    "creator": "Samuel Zeller",
-    "license": "CC0 1.0",
-    "origin": "https://stocksnap.io/photo/concert-singer-J45DTZD2VJ"
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
   },
   {
     "file": "gallery/aurora-3.jpg",
     "artist": "aurora",
-    "pick": 0,
-    "title": "Concert Singer",
     "src": "/gallery/aurora-3.jpg",
-    "creator": "Austin Neill",
-    "license": "CC0 1.0",
-    "origin": "https://stocksnap.io/photo/concert-singer-F66MXRQS1K"
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
   },
   {
     "file": "gallery/aurora-4.jpg",
     "artist": "aurora",
-    "pick": 2,
-    "title": "Concert Singer",
     "src": "/gallery/aurora-4.jpg",
-    "creator": "Austin Neill",
-    "license": "CC0 1.0",
-    "origin": "https://stocksnap.io/photo/concert-singer-7OC4YX7S20"
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
   },
   {
     "file": "gallery/aurora-5.jpg",
     "artist": "aurora",
-    "pick": 4,
-    "title": "Concert Singer",
     "src": "/gallery/aurora-5.jpg",
-    "creator": "NeONBRAND",
-    "license": "CC0 1.0",
-    "origin": "https://stocksnap.io/photo/concert-singer-NQSVRJOY0Y"
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
   },
   {
     "file": "gallery/aurora-6.jpg",
     "artist": "aurora",
-    "pick": 18,
-    "title": "Beach House",
     "src": "/gallery/aurora-6.jpg",
-    "creator": "Man Alive!",
-    "license": "CC BY 2.0",
-    "origin": "https://www.flickr.com/photos/24365773@N03/5194606248"
+    "creator": "AI generated (Google Gemini)",
+    "license": "AI",
+    "origin": ""
   },
   {
     "file": "gallery/velvet-1.jpg",
@@ -243,7 +231,7 @@
     "file": "gallery/echo-1.jpg",
     "artist": "echo",
     "src": "/gallery/echo-1.jpg",
-    "creator": "AI generated (Google Gemini)",
+    "creator": "AI generated (ChatGPT)",
     "license": "AI",
     "origin": ""
   },
@@ -251,7 +239,7 @@
     "file": "gallery/echo-2.jpg",
     "artist": "echo",
     "src": "/gallery/echo-2.jpg",
-    "creator": "AI generated (Google Gemini)",
+    "creator": "AI generated (ChatGPT)",
     "license": "AI",
     "origin": ""
   },
@@ -259,7 +247,7 @@
     "file": "gallery/echo-3.jpg",
     "artist": "echo",
     "src": "/gallery/echo-3.jpg",
-    "creator": "AI generated (Google Gemini)",
+    "creator": "AI generated (ChatGPT)",
     "license": "AI",
     "origin": ""
   },
@@ -267,7 +255,7 @@
     "file": "gallery/echo-4.jpg",
     "artist": "echo",
     "src": "/gallery/echo-4.jpg",
-    "creator": "AI generated (Google Gemini)",
+    "creator": "AI generated (ChatGPT)",
     "license": "AI",
     "origin": ""
   },
@@ -275,7 +263,7 @@
     "file": "gallery/echo-5.jpg",
     "artist": "echo",
     "src": "/gallery/echo-5.jpg",
-    "creator": "AI generated (Google Gemini)",
+    "creator": "AI generated (ChatGPT)",
     "license": "AI",
     "origin": ""
   },
@@ -283,7 +271,7 @@
     "file": "gallery/echo-6.jpg",
     "artist": "echo",
     "src": "/gallery/echo-6.jpg",
-    "creator": "AI generated (Google Gemini)",
+    "creator": "AI generated (ChatGPT)",
     "license": "AI",
     "origin": ""
   },
